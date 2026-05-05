@@ -1,0 +1,163 @@
+<div class="appointments-container">
+  <div class="header">
+    <div>
+      <!-- <a routerLink="/citizen" class="back-link">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Dashboard
+      </a> -->
+      <h1>Appointments</h1>
+      <p>Schedule your session with the Grama Niladhari for official services.</p>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <div class="calendar-section">
+      <div class="calendar-card">
+        <full-calendar #calendar [options]="calendarOptions"></full-calendar>
+      </div>
+
+      <!-- User's Existing Appointments (Moved here) -->
+      <div class="card-section current-appointments" *ngIf="userAppointments.length > 0">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          My Scheduled Appointments
+        </h3>
+        <div class="appointment-card" *ngFor="let app of userAppointments">
+          <div class="app-info">
+            <span class="app-service">{{ app.service }}</span>
+            <span class="app-time">{{ app.date | date:'mediumDate' }} • {{ app.time }}</span>
+          </div>
+          <button class="cancel-btn" (click)="confirmCancel(app.id)">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Section: Service & Slots -->
+    <div class="detail-panel">
+      <!-- Holiday Warning -->
+      <div class="holiday-panel" *ngIf="isHoliday">
+        <div class="icon">🚩</div>
+        <div class="info">
+          <h4>{{ isHoliday ? holidayDetail?.summary : 'Selected Date' }}</h4>
+          <p *ngIf="isHoliday">Official bookings are unavailable for this date due to a holiday.</p>
+          <p *ngIf="!isHoliday" style="font-weight: 500;">{{ selectedDate | date:'fullDate' }}</p>
+        </div>
+      </div>
+
+      <!-- Service Selection -->
+      <div class="card-section service-select">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          Select Service Type
+        </h3>
+        <select [(ngModel)]="selectedService" [disabled]="isHoliday">
+          <option value="" disabled selected>Choose a service...</option>
+          <option *ngFor="let service of services" [value]="service">{{ service }}</option>
+        </select>
+      </div>
+
+      <!-- Slot Selection -->
+      <div class="card-section" *ngIf="!isHoliday">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Available Slots
+        </h3>
+        <p class="section-desc" style="font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem;">
+          {{ selectedDate | date:'EEEE, MMM d, y' }}
+        </p>
+        
+        <div class="slots-grid" *ngIf="slots.length > 0">
+          <div class="slot-card" 
+               *ngFor="let slot of slots"
+               [class.available]="slot.status === 'available'"
+               [class.booked]="slot.status === 'booked'"
+               [class.selected]="selectedSlotId === slot.id"
+               (click)="selectSlot(slot)">
+            <span class="time">{{ slot.startTime }} - {{ slot.endTime }}</span>
+            <span class="duration">30 min</span>
+          </div>
+        </div>
+
+        <!-- No Slots Available message -->
+        <div class="no-slots-msg" *ngIf="slots.length === 0">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p>No available slots for this date.</p>
+        </div>
+      </div>
+
+      <!-- Confirmation -->
+      <div class="card-section booking-summary" *ngIf="!isHoliday">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Booking Summary
+        </h3>
+        <div class="summary-item">
+          <span class="label">Date:</span>
+          <span class="value">{{ selectedDate | date:'fullDate' }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Time:</span>
+          <span class="value">{{ getSelectedSlotTime() }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Service:</span>
+          <span class="value">{{ selectedService || 'Not selected' }}</span>
+        </div>
+        
+        <button class="confirm-btn" 
+                [disabled]="!selectedSlotId || !selectedService"
+                (click)="onBook()">
+          Confirm Booking
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showCancelModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="warning-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3>Cancel Appointment?</h3>
+        <p>This action cannot be undone. Are you sure you want to cancel this scheduled session?</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()">Keep Appointment</button>
+        <button class="btn-danger" (click)="confirmCancellation()">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal (Success/Error) -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+    <div class="modal-content" (click)="$event.stopPropagation()" [class.error]="alertType === 'error'">
+      <div class="modal-header">
+        <div class="status-icon" [class.success]="alertType === 'success'" [class.error]="alertType === 'error'">
+          <svg *ngIf="alertType === 'success'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <svg *ngIf="alertType === 'error'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3>{{ alertType === 'success' ? 'Success' : 'Error' }}</h3>
+        <p>{{ alertMessage }}</p>
+      </div>
+      <div class="modal-actions">
+        <button [class]="alertType === 'success' ? 'btn-primary' : 'btn-danger'" (click)="closeAlert()">Dismiss</button>
+      </div>
+    </div>
+  </div>
+  <!-- Calendar Popover (Details on Click) -->
+  <div class="calendar-popover" 
+       *ngIf="showPopover" 
+       [style.top]="popoverPosition.top" 
+       [style.left]="popoverPosition.left"
+       [class]="popoverType"
+       (click)="closePopover()">
+    <div class="popover-arrow"></div>
+    <div class="popover-content">
+      <span class="popover-label">{{ popoverLabel }}</span>
+      <h4 class="popover-title">{{ popoverContent }}</h4>
+      <p class="popover-hint">Click to dismiss</p>
+    </div>
+  </div>
+</div>

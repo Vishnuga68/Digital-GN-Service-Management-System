@@ -1,0 +1,70 @@
+<div class="downloads-container fade-in">
+  <div class="content-wrapper">
+    <!-- Header Section -->
+    <header class="page-header">
+      <div class="header-titles">
+        <h1>{{ 'Download Forms & Documents' }}</h1>
+        <p>{{ 'Access official GN forms and downloadable documents' }}</p>
+      </div>
+
+      <div class="header-actions">
+        <div class="category-filter-minimal">
+          <select [(ngModel)]="selectedCategory" (change)="onCategoryChange()" class="minimal-select">
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat === 'All' ? 'All Categories' : cat }}</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <!-- Loading Skeleton -->
+    <div class="loading-area" *ngIf="isLoading">
+      <div class="skeleton-card" *ngFor="let i of [1,2,3]"></div>
+    </div>
+
+    <!-- Grid Section -->
+    <main class="forms-main" *ngIf="!isLoading">
+      
+      <!-- Empty State -->
+      <div class="empty-state card" *ngIf="filteredForms.length === 0">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l5 5v11a2 2 0 0 1-2 2z"></path><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        </div>
+        <h2>No documents available</h2>
+        <p>Try adjusting your search or filters.</p>
+      </div>
+
+      <!-- Compact Grid List -->
+      <div class="forms-grid" *ngIf="filteredForms.length > 0">
+        <article class="form-card card slide-up" 
+                 *ngFor="let form of filteredForms" 
+                 (click)="downloadFile(form)">
+          
+          <div class="file-type-badge" [class.pdf]="form.fileType === 'PDF'" [class.docx]="form.fileType === 'DOCX'">
+            {{ form.fileType }}
+          </div>
+
+          <div class="card-content">
+            <div class="file-icon">
+              <svg *ngIf="form.fileType === 'PDF'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <svg *ngIf="form.fileType === 'DOCX'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l1-4l1 4"></path><path d="M9 13h2"></path></svg>
+            </div>
+            
+            <h3 class="form-title">{{ form.title }}</h3>
+            <p class="form-size">{{ form.fileSize }} • {{ form.category }}</p>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn-download-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download
+            </button>
+          </div>
+
+        </article>
+      </div>
+
+    </main>
+
+  </div>
+
+</div>

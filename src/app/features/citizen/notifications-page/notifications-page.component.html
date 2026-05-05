@@ -1,0 +1,108 @@
+<div class="page-body">
+
+      <div class="notifications-page-card fade-in">
+
+      <!-- Filter Tabs -->
+      <div class="filter-tabs">
+        <div class="tabs-group">
+          <button class="tab-btn" [class.active]="activeFilter === 'all'" (click)="setFilter('all')">All</button>
+          <button class="tab-btn" [class.active]="activeFilter === 'unread'" (click)="setFilter('unread')">Unread</button>
+          <button class="tab-btn" [class.active]="activeFilter === 'mention'" (click)="setFilter('mention')">Mentions</button>
+        </div>
+        
+        <div class="filter-actions">
+          <button class="btn-select" *ngIf="!isSelectionMode" (click)="toggleSelectionMode()">
+            Select
+          </button>
+          
+          <button class="btn-mark-all" *ngIf="!isSelectionMode" (click)="markAllAsRead()">
+            <img src="/assets/icons/read.png" alt="read">
+            Mark All as Read
+          </button>
+        </div>
+      </div>
+
+      <!-- Select All Bar -->
+      <div class="select-all-bar" *ngIf="isSelectionMode && filteredNotifications.length > 0">
+        <div class="bar-left">
+          <div class="checkbox-wrapper">
+            <input type="checkbox" [checked]="isAllSelected()" (change)="selectAll($event)" id="selectAll">
+            <label for="selectAll">Select All</label>
+          </div>
+          <span class="selected-count">{{ selectedIds.size }} selected</span>
+        </div>
+        
+        <div class="bar-actions">
+          <!-- Bulk delete with inline confirm -->
+          <div class="delete-confirm-wrapper" *ngIf="selectedIds.size > 0">
+            <button class="btn-bulk-delete" (click)="showBulkDeleteConfirm($event)" title="Delete Selected">
+              <img src="/assets/icons/delete.png" alt="delete">Delete
+            </button>
+            <div class="inline-confirm-panel" *ngIf="isBulkDeleteConfirmVisible" (click)="$event.stopPropagation()">
+              <!-- <span class="confirm-label">Delete {{ selectedIds.size }}?</span> -->
+              <button class="btn-yes" (click)="confirmBulkDelete()">Yes</button>
+              <button class="btn-no" (click)="hideBulkDeleteConfirm($event)">No</button>
+            </div>
+          </div>
+          <button class="btn-cancel-select" (click)="toggleSelectionMode()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Notifications List Grouped -->
+      <div class="notif-list-full custom-scroll" [class.selecting]="isSelectionMode" (click)="hideDeleteConfirm(); hideBulkDeleteConfirm()">
+        <div *ngFor="let group of groupedNotifications" class="notif-group">
+          <h4 class="group-header">{{ group.label }}</h4>
+          
+          <div class="notif-card" *ngFor="let notif of group.items" 
+               [class.unread]="!notif.read" 
+               [class.selected]="isSelected(notif.id)"
+               (click)="isSelectionMode ? toggleSelect(notif.id) : markAsRead(notif.id)">
+            
+            <div class="notif-checkbox" *ngIf="isSelectionMode" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isSelected(notif.id)" (change)="toggleSelect(notif.id)">
+            </div>
+
+            <div class="notif-body">
+              <div class="notif-row-main">
+                <h3 class="notif-title">{{ notif.title }}</h3>
+              </div>
+              <div class="notif-row-meta">
+                <span class="notif-meta"><span class="notif-category">{{ notif.category }}</span> - {{ notif.time }}</span>
+              </div>
+            </div>
+
+            <div class="notif-actions" (click)="$event.stopPropagation()" *ngIf="!isSelectionMode">
+              <button class="btn-view" (click)="viewNotification(notif.id)">Details</button>
+              
+              <!-- Inline delete confirm wrapper -->
+              <div class="delete-confirm-wrapper">
+                <button class="btn-icon-plain" 
+                        (click)="activeDeleteConfirmId === notif.id ? hideDeleteConfirm($event) : showDeleteConfirm(notif.id, $event)" 
+                        [class.active]="activeDeleteConfirmId === notif.id"
+                        title="Delete">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+                <div class="inline-confirm-panel" *ngIf="activeDeleteConfirmId === notif.id" (click)="$event.stopPropagation()">
+                  <span class="confirm-label">Delete it?</span>
+                  <button class="btn-yes" (click)="deleteNotification(notif.id); hideDeleteConfirm()">Yes</button>
+                  <button class="btn-no" (click)="hideDeleteConfirm($event)">No</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredNotifications.length === 0">
+          <i class="fas fa-bell-slash"></i>
+          <h3>No notifications found</h3>
+          <p>Try adjusting your search or filters</p>
+        </div>
+      </div>
+      
+      <!-- Pagination Mock -->
+      <div class="pagination-footer" *ngIf="filteredNotifications.length > 0 && !isSelectionMode">
+        <button class="btn-load-more">Load More Notifications</button>
+      </div>
+      </div> <!-- notifications-page-card -->
+    </div> <!-- page-body -->

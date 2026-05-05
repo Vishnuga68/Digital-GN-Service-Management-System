@@ -1,0 +1,111 @@
+<div class="dashboard-body fade-in">
+      
+  <!-- Top Section: Welcome and Quick Actions -->
+  <div class="top-row-container">
+    <!-- Welcome Section (Officer Name) -->
+    <div class="welcome-card gn-theme">
+      <div class="welcome-content">
+        <h2>Welcome, {{ officerName }} 👋</h2>
+        <p>Your GN Dashboard for {{ divisionName }} is ready for today's activities.</p>
+      </div>
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Officer Illustration" class="welcome-illustration">
+    </div>
+
+    <!-- GN Division Info Card -->
+    <div class="gn-info-card" title="Your GN Division Details">
+      <div class="gn-label">GN DIVISION</div>
+      <div class="gn-value">{{ divisionID }}</div>
+      <div class="gn-officer">{{ divisionName }}</div>
+    </div>
+
+    <!-- Quick Actions Section -->
+    <div class="quick-actions-section">
+      <div class="quick-actions-card">
+        <div class="action-card" (click)="router.navigate(['/gn-officer/requests'])" style="cursor: pointer;">
+          <div class="icon-circle qa-blue"><img src="/assets/icons/request_q.png" alt="request"></div>
+          <span class="action-text">View Requests</span>
+          <a class="expand-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+          </a>
+        </div>
+        <div class="action-card" (click)="router.navigate(['/gn-officer/appointments'])" style="cursor: pointer;">
+          <div class="icon-circle qa-green"><img src="/assets/icons/status_q.png" alt="status"></div>
+          <span class="action-text">View Appointments</span>
+          <a class="expand-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Layout Section (Charts & Overview) - SWAPPED -->
+  <div class="main-layout-section swapped">
+    
+    <!-- Left Section (Overview Cards & Bar Chart) -->
+    <div class="left-section flex-grow">
+      
+      <div class="overview-cards-container">
+        <div class="overview-card" *ngFor="let card of summaryCards" [ngClass]="card.color">
+          <div class="card-header">
+            <span class="indicator" [ngClass]="card.color"></span>
+            <span class="card-title">{{ card.title }}</span>
+          </div>
+          <h3>{{ card.value }}</h3>
+        </div>
+      </div>
+
+      <div class="chart-card bar-chart-card">
+        <h4>Weekly Request Summary</h4>
+        <div class="chart-wrapper">
+          <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Section (Pie Chart: Request Types) -->
+    <div class="right-section flex-fixed">
+      <div class="chart-card pie-chart-card">
+        <h4>Request Types Breakdown</h4>
+        <div class="chart-wrapper">
+          <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="pieChartType"></canvas>
+        </div>
+        
+        <div class="pie-chart-analysis">
+          <div class="analysis-item" *ngFor="let item of pieChartAnalysis">
+            <div class="item-left">
+              <span class="indicator" [style.background]="item.color"></span>
+              <span class="label">{{ item.label }}</span>
+            </div>
+            <div class="item-right">
+              <span class="value">{{ item.value }}</span>
+              <span class="percentage">({{ item.percentage }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Recent Activity Section -->
+  <div class="section-header">
+    <h3 class="section-title">Recent Requests</h3>
+  </div>
+  <div class="activity-section">
+    <div class="activity-list">
+      <div class="activity-card" *ngFor="let req of recentRequests" [routerLink]="['/gn-officer/requests', req.id]" style="cursor: pointer;">
+        <div class="act-details">
+          <h4>{{ req.id }} - {{ req.name }}</h4>
+          <p>{{ req.type }}</p>
+        </div>
+        <div class="act-meta">
+          <span class="date">{{ req.date }}</span>
+          <span class="status" [ngClass]="req.status.toLowerCase()">{{ req.status }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

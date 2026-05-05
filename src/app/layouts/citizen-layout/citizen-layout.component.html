@@ -1,0 +1,315 @@
+<div class="dashboard-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" [class.collapsed]="!isSidebarExpanded">
+    <div class="sidebar-header">
+      <div class="brand" *ngIf="isSidebarExpanded">
+        <img src="/assets/images/logo.png" alt="Logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3616/3616215.png'">
+      </div>
+      <button class="menu-toggle" [class.collapsed-toggle]="!isSidebarExpanded" (click)="toggleSidebar()" title="Toggle Sidebar">
+        <img src="/assets/icons/toggle.png" alt="toggle" class="toggle-icon">
+      </button>
+    </div>
+    
+    <nav class="nav-menu">
+      <a routerLink="/citizen" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><img src="/assets/icons/home.png" alt="Home" class="nav-icon"> <span>Home</span></a>
+      <a routerLink="/citizen/service-requests" routerLinkActive="active"><img src="/assets/icons/request.png" alt="Request" class="nav-icon"> <span>Request a Service</span></a>
+      <a routerLink="/citizen/appointments" routerLinkActive="active"><img src="/assets/icons/appointments.png" alt="Appointments" class="nav-icon"> <span>My Appointments</span></a>
+      <a routerLink="/citizen/announcements" routerLinkActive="active"><img src="/assets/icons/announcement.png" alt="Announcements" class="nav-icon"> <span>Announcements</span></a>
+      <a routerLink="/citizen/messages" routerLinkActive="active"><img src="/assets/icons/messages.png" alt="Messages" class="nav-icon"> <span>Messages</span></a>
+      <a routerLink="/citizen/downloads" routerLinkActive="active"><img src="/assets/icons/downloads.png" alt="Downloads" class="nav-icon"> <span>Download Forms</span></a>
+      <a routerLink="/citizen/registry" routerLinkActive="active"><img src="/assets/icons/registry.png" alt="Registry" class="nav-icon"> <span>My Registry</span></a>
+    </nav>
+    
+    <div class="help-box">
+      <p>Need assistance?</p>
+      <a routerLink="/citizen/help">Help & Guide</a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    
+    <!-- HEADER -->
+    <header class="header">
+      <div class="header-left">
+      </div>
+      
+      <div class="search-bar">
+        <img src="/assets/icons/search.png" alt="search" class="search-icon">
+        <input type="text" [placeholder]="searchPlaceholder">
+      </div>
+      
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switcher" *ngIf="isDashboard">
+          <select #langSelect (change)="switchLanguage(langSelect.value)">
+            <option value="en">English</option>
+            <option value="si">සිංහල</option>
+            <option value="ta">தமிழ்</option>
+          </select>
+        </div>
+        
+        <div class="notification-dropdown" *ngIf="isDashboard">
+          <div class="notifications" (click)="toggleNotificationModal($event)">
+            <img src="\assets\icons\notification.png" alt="notification" style="width: 20px; filter: grayscale(100%); opacity: 0.6;">
+            <span class="badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+          </div>
+
+          <!-- NOTIFICATION MODAL INLINE -->
+          <div class="edit-profile-modal notification-modal-inline fade-in" *ngIf="isNotificationModalOpen" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <div class="header-main">
+                <h3>Notifications</h3>
+              </div>
+              <div class="header-actions-right">
+                <button class="btn-header-icon" title="Expand" routerLink="/citizen/notifications" (click)="toggleNotificationModal()">
+                  <img src="assets/icons/expand.png" alt="expand">
+                </button>
+                <button class="close-x" (click)="toggleNotificationModal()">&times;</button>
+              </div>
+            </div>
+            
+            <div class="filter-tabs">
+              <div class="tabs-list">
+                <button class="tab-btn" [class.active]="activeNotificationFilter === 'all'" (click)="setNotificationFilter('all')">All</button>
+                <button class="tab-btn" [class.active]="activeNotificationFilter === 'unread'" (click)="setNotificationFilter('unread')">
+                  Unread <span class="tab-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+                </button>
+                <button class="tab-btn" [class.active]="activeNotificationFilter === 'mention'" (click)="setNotificationFilter('mention')">Mentions</button>
+              </div>
+              <button class="btn-mark-all" (click)="markAllAsRead()">
+                <img src="assets/icons/read.png" alt="read">
+                Mark All as Read
+              </button>
+            </div>
+
+            <div class="modal-body custom-scroll">
+              <div class="notif-list" *ngIf="filteredNotifications.length > 0; else emptyState">
+                <div class="notif-item" *ngFor="let notif of filteredNotifications" [class.unread]="!notif.read" (click)="markAsRead(notif.id)">
+                  <div class="notif-content">
+                    <div class="notif-row-main">
+                      <h4 class="notif-title">{{ notif.title }}</h4>
+                    </div>
+                    <div class="notif-row-meta">
+                      <span class="notif-meta"><span class="notif-category">{{ notif.category }}</span> - {{ notif.time }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #emptyState>
+                <div class="empty-state">
+                  <i class="fas fa-bell-slash"></i>
+                  <p>No notifications available</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+        
+        <div class="profile-dropdown">
+          <div class="avatar" (click)="toggleProfileModal($event)">
+            <img *ngIf="userImageUrl" [src]="userImageUrl" alt="Avatar" class="avatar-img">
+            <img *ngIf="!userImageUrl" src="/assets/images/default_profile.jpg" alt="Avatar" class="avatar-img">
+          </div>
+          
+          <!-- Redesigned Profile Modal -->
+          <div class="profile-modal" *ngIf="isProfileModalOpen">
+            <div class="modal-header">
+              <div class="modal-title-wrapper">
+                <img src="/assets/icons/profile.png" alt="Profile Icon" class="modal-icon">
+                <span class="modal-title">Profile</span>
+              </div>
+              <button class="close-btn" (click)="toggleProfileModal()" title="Close">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+              <div class="modal-avatar">
+                <img *ngIf="userImageUrl" [src]="userImageUrl" alt="Avatar" class="avatar-img-large">
+                <img *ngIf="!userImageUrl" src="/assets/images/default_profile.jpg" alt="Avatar" class="avatar-img-large">
+              </div>
+              <h3 class="user-name">{{ citizenName }}</h3>
+              <p class="user-role">Citizen</p>
+            </div>
+            
+            <div class="modal-actions">
+              <button class="btn-action btn-edit" (click)="toggleEditProfileModal()">Edit Profile</button>
+              <button class="btn-action btn-signout" (click)="logout()">Sign Out</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ROUTER OUTLET -->
+    <div class="dashboard-body">
+      <div class="router-wrapper">
+        <router-outlet></router-outlet>
+      </div>
+      <!-- FOOTER -->
+      <footer class="dashboard-footer">
+        <p>&copy; All Rights Reserved. GN System.</p>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<!-- EDIT PROFILE MODAL -->
+<div class="modal-overlay" *ngIf="isEditProfileModalOpen">
+  <div class="edit-profile-modal fade-in">
+    <div class="modal-header">
+      <h3>Edit Your Profile</h3>
+      <button class="close-x" (click)="toggleEditProfileModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Section 1: Profile Information -->
+      <div class="modal-section">
+        <!--<h4 class="section-label">Profile Information</h4>-->
+        <div class="profile-photo-row">
+          <div class="current-photo">
+            <img *ngIf="userImageUrl" [src]="userImageUrl" alt="Profile" class="avatar-img-edit">
+            <span *ngIf="!userImageUrl"><img src="/assets/images/default_profile.jpg" alt="Profile" class="avatar-img-edit"></span>
+          </div>
+          <div class="photo-actions">
+            <div class="photo-btns">
+              <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none;" accept="image/*">
+              <button class="btn-upload" (click)="fileInput.click()"> + Upload Photo</button>
+              <button class="btn-remove" (click)="removePhoto()">Remove Photo</button>
+            </div>
+            <p class="helper-text">Supported image formats: PNG and JPG. Maximum file size 5 MB.</p>
+          </div>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" [value]="citizenName" readonly class="readonly-input">
+          </div>
+          <div class="form-group">
+            <label>NIC Number</label>
+            <input type="text" [value]="citizenNIC" readonly class="readonly-input">
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Permanent Address</label>
+          <input type="text" [value]="citizenAddress" readonly class="readonly-input">
+        </div>
+      </div>
+
+      <!-- Section 2: Account Details -->
+      <div class="modal-section account-details-section">
+        <h4 class="section-label">Account Details</h4>
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label>Email Address</label>
+            <div class="input-with-action">
+              <input type="email" [value]="citizenEmail" readonly class="readonly-input">
+              <button class="btn-change" (click)="toggleChangeEmailModal()">Change Email</button>
+            </div>
+          </div>
+          <div class="form-group full-width">
+            <label>Password</label>
+            <div class="input-with-action">
+              <input type="password" [value]="citizenPassword" readonly class="readonly-input">
+              <button class="btn-change" (click)="toggleChangePasswordModal()">Change Password</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group full-width">
+          <label>Phone Number</label>
+          <input type="tel" [(ngModel)]="editablePhone" placeholder="+94 7X XXX XXXX">
+        </div>
+      </div>
+
+      <!-- Section 3: Delete Account -->
+      <div class="modal-section delete-section">
+        <h4 class="section-label danger">Delete Your Account?</h4>
+        <p class="danger-desc">Deleting your account will remove all access and data. This action cannot be undone.</p>
+        <button class="btn-delete-trigger" (click)="openDeleteModal()">Delete Account</button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="toggleEditProfileModal()">Close</button>
+      <button class="btn-primary" (click)="saveProfile()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRMATION MODAL -->
+<div class="modal-overlay danger-overlay" *ngIf="isDeleteModalOpen">
+  <div class="confirmation-modal fade-in">
+    <div class="modal-header">
+      <h3 class="danger">Confirm Account Deletion</h3>
+      <button class="close-x" (click)="closeDeleteModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <img src="/assets/icons/warning.png" alt="Warning" class="warning-img">
+      <p class="warning-title">Are you sure you want to delete your account?</p>
+      <!--<p class="warning-desc">All your data will be permanently removed. This action cannot be undone.</p>-->
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeDeleteModal()">Cancel</button>
+      <button class="btn-danger" (click)="confirmDeleteAccount()">Delete Permanently</button>
+    </div>
+  </div>
+</div>
+<!-- CHANGE EMAIL MODAL -->
+<div class="modal-overlay" *ngIf="isChangeEmailModalOpen">
+  <div class="edit-profile-modal change-sub-modal change-email-modal fade-in">
+    <div class="modal-header">
+      <h3>Change Email</h3>
+      <button class="close-x" (click)="toggleChangeEmailModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>New Email</label>
+        <div class="sub-group-content">
+          <input type="email" [(ngModel)]="newEmail" placeholder="Enter new email">
+          <div class="btn-row">
+            <button class="btn-action-small" (click)="sendOTP()" [disabled]="isOtpSent">Send OTP</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" *ngIf="isOtpSent">
+        <label>Enter OTP</label>
+        <div class="sub-group-content">
+          <input type="text" [(ngModel)]="otpValue" placeholder="Enter OTP">
+          <p class="helper-text success">OTP sent. Please check your inbox. Expires in 10 minutes.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="toggleChangeEmailModal()">Cancel</button>
+      <button class="btn-primary" (click)="verifyOTP()" [disabled]="!otpValue">Save / Verify</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="modal-overlay" *ngIf="isChangePasswordModalOpen">
+  <div class="edit-profile-modal change-sub-modal fade-in">
+    <div class="modal-header">
+      <h3>Change Password</h3>
+      <button class="close-x" (click)="toggleChangePasswordModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Old Password</label>
+        <input type="password" [(ngModel)]="oldPassword" placeholder="Enter old password">
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password">
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="toggleChangePasswordModal()">Cancel</button>
+      <button class="btn-primary" (click)="updatePassword()" [disabled]="!newPassword || newPassword !== confirmPassword">Save Changes</button>
+    </div>
+  </div>
+</div>

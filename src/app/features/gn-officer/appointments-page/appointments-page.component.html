@@ -1,0 +1,130 @@
+<div class="appointments-container fade-in">
+  <div class="header">
+    <div>
+      <h1>Appointment Management</h1>
+      <p>Manage your working slots, mark leaves, and view citizen appointments.</p>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Left: Calendar & Scheduled Appointments -->
+    <div class="calendar-section">
+      <div class="calendar-card">
+        <full-calendar #calendar [options]="calendarOptions"></full-calendar>
+      </div>
+
+      <!-- GN's Scheduled Appointments (Matching Citizen UI) -->
+      <div class="card-section current-appointments" *ngIf="userAppointments.length > 0">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          My Scheduled Appointments
+        </h3>
+        <div class="appointment-card" *ngFor="let app of userAppointments">
+          <div class="app-info">
+            <span class="app-service">{{ app.service }} - {{ app.citizenName }}</span>
+            <span class="app-time">{{ app.date | date:'mediumDate' }} • {{ app.time }}</span>
+          </div>
+          <div class="app-actions">
+            <button class="reschedule-btn" (click)="reschedule(app.id)">Reschedule</button>
+            <button class="cancel-btn" (click)="confirmCancel(app.id)">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Selected Day Details -->
+    <div class="detail-panel">
+      <!-- Holiday/Leave Panel -->
+      <div class="holiday-panel" *ngIf="isHoliday" [class.custom-leave]="holidayDetail?.type === 'leave'">
+        <div class="icon">{{ holidayDetail?.type === 'leave' ? '🛌' : '🚩' }}</div>
+        <div class="info">
+          <h4>{{ holidayDetail ? holidayDetail.summary : 'Marked Leave / Holiday' }}</h4>
+          <p>{{ holidayDetail?.type === 'leave' ? 'You have marked this day as leave.' : 'This is an official government holiday.' }}</p>
+          <button class="btn btn-warning outline remove-leave-btn" 
+                  *ngIf="holidayDetail?.type === 'leave'"
+                  (click)="removeLeave()">
+            Remove Leave
+          </button>
+          <span class="restricted-badge" *ngIf="holidayDetail?.type !== 'leave'">
+            Government Holiday - Fixed
+          </span>
+        </div>
+      </div>
+
+      <!-- Mark Leave Section -->
+      <div class="card-section mark-leave-card" *ngIf="!isHoliday">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          Manage Availability
+        </h3>
+        <p class="section-desc">
+          Set your status for {{ selectedDate | date:'EEEE, MMM d, y' }}
+        </p>
+        <button class="mark-leave-btn" (click)="markLeave()">
+          <span class="icon">📅</span>
+          Mark as Leave
+        </button>
+        <p class="hint">Citizens won't be able to book slots on this day.</p>
+      </div>
+
+      <!-- Booked Appointments for Selected Day -->
+      <div class="card-section day-appointments" *ngIf="selectedDayAppointments.length > 0">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          Appointments for {{ selectedDate | date:'MMM d' }} ({{selectedDayAppointments.length}})
+        </h3>
+        <div class="compact-app-card" *ngFor="let app of selectedDayAppointments">
+          <div class="compact-info">
+            <span class="citizen">{{ app.citizenName }}</span>
+            <span class="time-service">{{ app.time }} • {{ app.service }}</span>
+          </div>
+          <span class="badge" [ngClass]="{'status-pending': app.status === 'Pending', 'status-approved': app.status === 'Confirmed'}">{{app.status}}</span>
+        </div>
+      </div>
+
+      <div class="card-section empty-state" *ngIf="selectedDayAppointments.length === 0 && !isHoliday">
+         <div class="empty-content">
+           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+           <p>No appointments booked for this day.</p>
+         </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showCancelModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="warning-icon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3>Cancel Appointment?</h3>
+        <p>Are you sure you want to cancel this scheduled session? This will notify the citizen.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" (click)="closeModal()">Go Back</button>
+        <button class="btn-danger" (click)="confirmCancellation()">Yes, Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+
+    <div class="modal-content" (click)="$event.stopPropagation()" [class.error]="alertType === 'error'">
+      <div class="modal-header">
+        <div class="status-icon" [class.success]="alertType === 'success'" [class.error]="alertType === 'error'">
+          <svg *ngIf="alertType === 'success'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <svg *ngIf="alertType === 'error'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3>{{ alertType === 'success' ? 'Success' : 'Error' }}</h3>
+        <p>{{ alertMessage }}</p>
+      </div>
+      <div class="modal-actions">
+        <button [class]="alertType === 'success' ? 'btn-primary' : 'btn-danger'" (click)="closeAlert()">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+</div>

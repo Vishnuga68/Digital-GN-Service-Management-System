@@ -1,0 +1,264 @@
+$primary-color: #1E3A8A;
+$secondary-color: #2563EB;
+$bg-color: #EFF6FF;
+$white: #ffffff;
+$text-dark: #333333;
+$text-light: #666666;
+$error: #ef4444;
+$success: #10b981;
+
+.auth-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+  background-color: $bg-color;
+  padding: 1rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url('/assets/images/background.jpg');
+    background-size: cover;
+    background-position: center;
+    //filter: blur(6px) brightness(0.9);
+    //z-index: 0;
+  }
+}
+
+.auth-card {
+  background: rgba($white, 0.95);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px; 
+  position: relative;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.6);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: max-width 0.4s ease;
+
+  &.wide-card {
+    max-width: 850px;
+  }
+}
+
+.card-header {
+  padding: 2.5rem 2rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .logo-img {
+    max-width: 180px;
+    height: auto;
+    object-fit: contain;
+  }
+}
+
+.card-body {
+  padding: 0.5rem 2.5rem 1rem;
+}
+
+.card-footer {
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: flex-start;
+  border-top: 1px solid rgba(0,0,0,0.05);
+
+  .lang-dropdown {
+    padding: 0.4rem 0.8rem;
+    //border: 1px solid $secondary-color;
+    //border-radius: 6px;
+    background-color: transparent;
+    color: $secondary-color;
+    font-weight: 250;
+    cursor: pointer;
+    font-size: 0.7rem;
+    border: none;
+    //outline: none;
+    transition: all 0.2s ease;
+    
+    &:hover, &:focus {
+      border-color: $primary-color;
+      background: rgba($secondary-color, 0.05);
+    }
+
+    option {
+      color: $text-dark;
+      font-weight: 250;
+    }
+  }
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+    .half { flex: 1; }
+    .quarter { flex: 1; min-width: 150px; }
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+
+    label {
+      font-weight: 500;
+      color: $text-dark;
+      font-size: 0.9rem;
+      .req { color: $error; }
+    }
+
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.8rem;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      
+      &:focus {
+        outline: none;
+        border-color: $secondary-color;
+        box-shadow: 0 0 0 3px rgba($secondary-color, 0.2);
+      }
+    }
+  }
+
+  .form-links {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+
+    &.centered { justify-content: center; }
+    
+    a {
+      color: $secondary-color;
+      text-decoration: underline;
+      font-weight: 500;
+      transition: color 0.2s;
+      &:hover { color: $primary-color; }
+    }
+  }
+
+  .error-msg {
+    color: $error;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: -0.5rem;
+  }
+
+  .primary-btn {
+    background: $primary-color;
+    color: $white;
+    border: none;
+    padding: 0.9rem;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.1s;
+    margin-top: 0.8rem;
+
+    &:hover { background: #172B6B; }
+    &:active { transform: scale(0.98); }
+  }
+}
+
+.sub-title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: $primary-color;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.desc {
+  color: $text-light;
+  font-size: 0.9rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+// Fade in animation
+.fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Loading Spinner
+.loading-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba($white, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(2px);
+  border-radius: 12px;
+
+  .spinner {
+    border: 4px solid rgba($primary-color, 0.15);
+    border-top: 4px solid $primary-color;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    animation: spin 0.8s linear infinite;
+  }
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+// Toast Alert
+.toast {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: $white;
+  font-weight: 600;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  z-index: 100;
+
+  &.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  &.toast-success { background: $success; }
+  &.toast-error { background: $error; border-left: 4px solid darken($error, 15%); }
+}
+
+@media(max-width: 600px) {
+  .auth-form .form-row {
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .card-body {
+    padding: 1rem 1.5rem;
+  }
+  .card-footer {
+    justify-content: center;
+  }
+}

@@ -1,0 +1,125 @@
+<div class="page-container fade-in">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>GN Activity Monitoring</h1>
+      <p>Monitor real-time workload, citizen assignment, and availability of GN officers.</p>
+    </div>
+  </header>
+
+  <div class="content-card">
+    <div class="table-controls">
+      <div class="search-box">
+        <input type="text" placeholder="Search by name or division...">
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Officer ID</th>
+            <th>Name & Division</th>
+            <th>Workload</th>
+            <th>Citizens</th>
+            <th>Active Requests</th>
+            <th>Status</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let officer of gnOfficers">
+            <td><span class="id-badge">{{ officer.id }}</span></td>
+            <td>
+              <div class="officer-info">
+                <strong>{{ officer.name }}</strong>
+                <span>Div: {{ officer.division }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="workload-tag" [class]="getStatusClass(officer.workloadStatus)">
+                {{ officer.workloadStatus }}
+              </span>
+            </td>
+            <td><strong>{{ officer.citizenCount }}</strong></td>
+            <td><strong>{{ officer.activeRequests }}</strong></td>
+            <td>
+              <span class="status-pill" [class]="getStatusClass(officer.status)">{{ officer.status }}</span>
+            </td>
+            <td><span class="time-text">{{ officer.lastLogin }}</span></td>
+            <td>
+              <button class="btn-text" (click)="openDetails(officer)">More Details</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Officer Details Modal -->
+<div class="modal-overlay" *ngIf="isModalOpen">
+  <div class="modal-content fade-in" *ngIf="selectedOfficer">
+    <div class="modal-header">
+      <div class="header-title-wrapper">
+        <h2>Officer Performance Profile</h2>
+        <span class="id-badge">{{ selectedOfficer.id }}</span>
+      </div>
+      <button class="close-btn" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="profile-summary">
+        <div class="avatar-circle">{{ selectedOfficer.name.charAt(0) }}</div>
+        <div class="summary-info">
+          <h3>{{ selectedOfficer.name }}</h3>
+          <p>{{ selectedOfficer.division }} Division</p>
+          <span class="status-pill" [class]="getStatusClass(selectedOfficer.status)">{{ selectedOfficer.status }}</span>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Email Address</label>
+          <span>{{ selectedOfficer.email }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Phone Number</label>
+          <span>{{ selectedOfficer.phone }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Joined Date</label>
+          <span>{{ selectedOfficer.joinedDate | date:'longDate' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Performance Score</label>
+          <div class="score-display">
+            <span class="score-value">{{ selectedOfficer.performanceScore }}%</span>
+            <div class="score-bar"><div class="score-fill" [style.width.%]="selectedOfficer.performanceScore"></div></div>
+          </div>
+        </div>
+        
+        <div class="stats-section full-width">
+          <label>System Workload Breakdown</label>
+          <div class="stats-grid-mini">
+            <div class="stat-mini">
+              <span class="val">{{ selectedOfficer.citizenCount }}</span>
+              <span class="lab">Total Citizens</span>
+            </div>
+            <div class="stat-mini">
+              <span class="val">{{ selectedOfficer.activeRequests }}</span>
+              <span class="lab">Active Requests</span>
+            </div>
+            <div class="stat-mini">
+              <span class="val">{{ selectedOfficer.pendingAppointments }}</span>
+              <span class="lab">Appointments</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()">Close Profile</button>
+      <button class="btn-primary-small">View Full Reports</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,79 @@
+<div class="dashboard-body fade-in">
+      
+  <!-- Top Section: Welcome and Quick Actions -->
+  <div class="top-row-container">
+    <!-- Welcome Section -->
+    <div class="welcome-card ds-theme">
+      <div class="welcome-content">
+        <h2>Welcome back, <span>{{ officerName }}</span></h2>
+        <p>Here's what's happening in your DS division today.</p>
+      </div>
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Officer Illustration" class="welcome-illustration">
+    </div>
+
+    <!-- Division Info Card -->
+    <div class="gn-info-card">
+      <div class="gn-label">DIVISION</div>
+      <div class="gn-value">DS-01</div>
+      <div class="gn-officer">Colombo</div>
+    </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card" *ngFor="let stat of stats">
+      <div class="stat-icon" [style.background-color]="stat.color + '15'">
+        <img [src]="stat.icon" [alt]="stat.label">
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">{{ stat.label }}</span>
+        <span class="stat-value">{{ stat.value }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-content">
+    <!-- Quick Actions -->
+    <section class="quick-actions card">
+      <div class="card-header">
+        <h2>Quick Actions</h2>
+      </div>
+      <div class="actions-grid">
+        <button class="action-btn" routerLink="/ds-officer/monitoring">
+          <img src="/assets/icons/registry.png" alt="Monitor">
+          <span>GN Monitoring</span>
+        </button>
+        <button class="action-btn" routerLink="/ds-officer/registration">
+          <img src="/assets/icons/other-new.png" alt="Register">
+          <span>GN Registration</span>
+        </button>
+        <button class="action-btn" routerLink="/ds-officer/transfers">
+          <img src="/assets/icons/switch.png" alt="Transfers">
+          <span>GN Transfers</span>
+        </button>
+        <button class="action-btn">
+          <img src="/assets/icons/downloads.png" alt="Reports">
+          <span>Reports</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Recent Activity -->
+    <section class="recent-activity card">
+      <div class="card-header">
+        <h2>Recent Activities</h2>
+        <a href="#" class="view-all">View All</a>
+      </div>
+      <div class="activity-list">
+        <div class="activity-item" *ngFor="let activity of recentActivities">
+          <div class="activity-dot" [class]="activity.status.toLowerCase()"></div>
+          <div class="activity-content">
+            <p class="activity-desc">{{ activity.description }}</p>
+            <span class="activity-time">{{ activity.time }}</span>
+          </div>
+          <span class="activity-type" [class]="activity.status.toLowerCase()">{{ activity.type }}</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

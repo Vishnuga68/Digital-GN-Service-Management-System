@@ -1,0 +1,111 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>GN Transfer Requests</h1>
+      <p>Review and manage GN officer transfer applications.</p>
+    </div>
+  </header>
+
+  <div class="content-card">
+    <div class="table-controls">
+      <div class="search-box">
+        <img src="assets/icons/search.png" alt="Search">
+        <input type="text" placeholder="Search by officer name or ID...">
+      </div>
+      <div class="filter-box">
+        <select>
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Officer Name</th>
+            <th>Current Division</th>
+            <th>Requested Division</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of requests">
+            <td><span class="id-badge">{{ request.id }}</span></td>
+            <td><strong>{{ request.officerName }}</strong></td>
+            <td>{{ request.currentDivision }}</td>
+            <td>{{ request.requestedDivision }}</td>
+            <td>{{ request.date | date:'mediumDate' }}</td>
+            <td>
+              <span class="status-pill" [class]="getStatusClass(request.status)">
+                {{ request.status }}
+              </span>
+            </td>
+            <td>
+              <button class="btn-icon view" (click)="openViewModal(request)" title="View Details">
+                <img src="assets/icons/expand.png" alt="View">
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal-overlay" *ngIf="isViewModalOpen">
+  <div class="modal-content fade-in" *ngIf="selectedRequest">
+    <div class="modal-header">
+      <h2>Transfer Request Details</h2>
+      <button class="close-btn" (click)="closeViewModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Request ID</label>
+          <span>{{ selectedRequest.id }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Officer Name</label>
+          <span>{{ selectedRequest.officerName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Current Division</label>
+          <span>{{ selectedRequest.currentDivision }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Requested Division</label>
+          <span>{{ selectedRequest.requestedDivision }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Reason for Transfer</label>
+          <p class="reason-text">{{ selectedRequest.reason }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Submission Date</label>
+          <span>{{ selectedRequest.date | date:'longDate' }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Current Status</label>
+          <span class="status-pill" [class]="getStatusClass(selectedRequest.status)">
+            {{ selectedRequest.status }}
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" *ngIf="selectedRequest.status === 'Pending'">
+      <button class="btn-reject" (click)="rejectRequest(selectedRequest.id)">Reject Request</button>
+      <button class="btn-approve" (click)="approveRequest(selectedRequest.id)">Accept Request</button>
+    </div>
+    <div class="modal-footer" *ngIf="selectedRequest.status !== 'Pending'">
+      <button class="btn-secondary" (click)="closeViewModal()">Close</button>
+    </div>
+  </div>
+</div>

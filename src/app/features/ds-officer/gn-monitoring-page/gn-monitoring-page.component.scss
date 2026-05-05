@@ -1,0 +1,250 @@
+@import "../../../styles/variables";
+
+.page-container {
+  padding: 2rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  
+  .header-content {
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: $text-dark;
+      margin: 0 0 0.25rem 0;
+    }
+    p {
+      color: $text-muted;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+  }
+}
+
+.content-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid $border-color;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.table-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+  
+  .search-box input {
+    padding: 0.5rem 1rem;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    width: 300px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s;
+    
+    &:focus {
+      border-color: $blue;
+    }
+  }
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  th {
+    background-color: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid $border-color;
+    color: #64748b;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+    color: $text-dark;
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover {
+    background-color: #f8fafc;
+  }
+
+  .id-badge {
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
+  .btn-text {
+    background: transparent;
+    border: none;
+    color: $blue;
+    font-weight: 600;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: #eff6ff;
+    }
+  }
+
+  .officer-info {
+    display: flex;
+    flex-direction: column;
+    strong {
+      font-size: 0.9375rem;
+      color: $text-dark;
+    }
+    span {
+      font-size: 0.75rem;
+      color: $text-muted;
+    }
+  }
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 2000;
+}
+
+.modal-content {
+  background: white; border-radius: 12px; width: 100%; max-width: 600px;
+  box-shadow: $shadow-bold; overflow: hidden;
+}
+
+.modal-header {
+  padding: 1.25rem 1.5rem; border-bottom: 1px solid $border-color;
+  display: flex; justify-content: space-between; align-items: center;
+  .header-title-wrapper {
+    display: flex; align-items: center; gap: 0.75rem;
+    h2 { font-size: 1.125rem; margin: 0; color: $text-dark; }
+  }
+  .close-btn { background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: $text-muted; }
+}
+
+.modal-body {
+  padding: 1.5rem;
+
+  .profile-summary {
+    display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+    padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 1px solid #f1f5f9;
+
+    .avatar-circle {
+      width: 64px; height: 64px; background: $blue; color: white;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; font-weight: 700;
+    }
+
+    .summary-info {
+      h3 { margin: 0 0 0.25rem; font-size: 1.25rem; }
+      p { margin: 0 0 0.5rem; color: $text-muted; font-size: 0.9rem; }
+    }
+  }
+
+  .details-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+    .detail-item {
+      display: flex; flex-direction: column; gap: 0.35rem;
+      label { font-size: 0.7rem; color: $text-muted; font-weight: 700; text-transform: uppercase; }
+      span { font-size: 0.95rem; font-weight: 600; color: $text-dark; }
+      &.full-width { grid-column: span 2; }
+
+      .score-display {
+        display: flex; align-items: center; gap: 1rem;
+        .score-value { font-weight: 700; color: $blue; min-width: 40px; }
+        .score-bar { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; .score-fill { height: 100%; background: $blue; } }
+      }
+    }
+  }
+
+  .stats-section {
+    margin-top: 1rem; padding-top: 1.5rem; border-top: 1px dashed $border-color;
+    .stats-grid-mini {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 0.75rem;
+      .stat-mini {
+        background: #f8fafc; padding: 1rem; border-radius: 8px; text-align: center; border: 1px solid #f1f5f9;
+        .val { display: block; font-size: 1.25rem; font-weight: 700; color: $text-dark; }
+        .lab { font-size: 0.7rem; color: $text-muted; }
+      }
+    }
+  }
+}
+
+.modal-footer {
+  padding: 1.25rem 1.5rem; border-top: 1px solid $border-color;
+  display: flex; justify-content: flex-end; gap: 0.75rem; background: #fcfcfc;
+  button { padding: 0.6rem 1.25rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+  .btn-secondary { background: #f1f5f9; border: none; color: #475569; }
+  .btn-primary-small { background: $blue; color: white; border: none; }
+}
+
+.workload-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  
+  &.overloaded { background-color: #fef2f2; color: #b91c1c; }
+  &.optimal { background-color: #f0fdf4; color: #15803d; }
+  &.underutilized { background-color: #eff6ff; color: #1d4ed8; }
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  
+  &.active { background-color: #dcfce7; color: #166534; }
+  &.inactive { background-color: #f1f5f9; color: #475569; }
+}
+
+.time-text {
+  font-size: 0.75rem;
+  color: $text-muted;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

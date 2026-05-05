@@ -1,0 +1,186 @@
+<div class="service-requests-container fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-title">
+      <h1>My Service Requests</h1>
+      <p>View and manage all your service applications and inquiries.</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" routerLink="/citizen/service-requests/new">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M12 5v14M5 12h14"/></svg>
+        Add New Request
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Cards (Top Overview) -->
+  <!-- Skeleton Loading for Cards -->
+  <div class="summary-cards" *ngIf="isLoading">
+    <div class="summary-card skeleton" *ngFor="let i of [1,2,3,4,5]"></div>
+  </div>
+
+  <div class="summary-cards" *ngIf="!isLoading">
+    <!-- Total Requests -->
+    <div class="summary-card total" (click)="setStatusFilter('All')" [class.active]="selectedStatus === 'All'">
+      <div class="card-content">
+        <span class="count">{{ totalRequests }}</span>
+        <span class="label">Total Requests</span>
+      </div>
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      </div>
+    </div>
+    <!-- Pending -->
+    <div class="summary-card pending" (click)="setStatusFilter('Pending')" [class.active]="selectedStatus === 'Pending'">
+      <div class="card-content">
+        <span class="count">{{ pendingRequests }}</span>
+        <span class="label">Pending</span>
+      </div>
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      </div>
+    </div>
+    <!-- In Progress -->
+    <div class="summary-card in-progress" (click)="setStatusFilter('In Progress')" [class.active]="selectedStatus === 'In Progress'">
+      <div class="card-content">
+        <span class="count">{{ inProgressRequests }}</span>
+        <span class="label">In Progress</span>
+      </div>
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+      </div>
+    </div>
+    <!-- Approved -->
+    <div class="summary-card approved" (click)="setStatusFilter('Approved')" [class.active]="selectedStatus === 'Approved'">
+      <div class="card-content">
+        <span class="count">{{ approvedRequests }}</span>
+        <span class="label">Approved</span>
+      </div>
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+      </div>
+    </div>
+    <!-- Rejected -->
+    <div class="summary-card rejected" (click)="setStatusFilter('Rejected')" [class.active]="selectedStatus === 'Rejected'">
+      <div class="card-content">
+        <span class="count">{{ rejectedRequests }}</span>
+        <span class="label">Rejected</span>
+      </div>
+      <div class="icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters & Search Section -->
+  <div class="filter-section">
+    <div class="status-pills">
+      <button class="pill" [class.active]="selectedStatus === 'All'" (click)="setStatusFilter('All')">All</button>
+      <button class="pill pending" [class.active]="selectedStatus === 'Pending'" (click)="setStatusFilter('Pending')">Pending</button>
+      <button class="pill in-progress" [class.active]="selectedStatus === 'In Progress'" (click)="setStatusFilter('In Progress')">In Progress</button>
+      <button class="pill approved" [class.active]="selectedStatus === 'Approved'" (click)="setStatusFilter('Approved')">Approved</button>
+      <button class="pill rejected" [class.active]="selectedStatus === 'Rejected'" (click)="setStatusFilter('Rejected')">Rejected</button>
+    </div>
+
+    <div class="filter-controls">
+      <div class="filter-group">
+        <label>Category</label>
+        <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="form-control">
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>From Date</label>
+        <input type="date" [(ngModel)]="startDate" (change)="onFilterChange()" class="form-control" />
+      </div>
+      <div class="filter-group">
+        <label>To Date</label>
+        <input type="date" [(ngModel)]="endDate" (change)="onFilterChange()" class="form-control" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Table Container -->
+  <div class="table-container">
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Request ID</th>
+            <th>Service Type</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th>Submitted Date</th>
+            <th>Last Updated</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        
+        <!-- Skeleton Loading for Table -->
+        <tbody *ngIf="isLoading">
+          <tr *ngFor="let i of [1,2,3,4,5]">
+            <td><div class="skeleton skeleton-text short"></div></td>
+            <td><div class="skeleton skeleton-text medium"></div></td>
+            <td><div class="skeleton skeleton-text short"></div></td>
+            <td><div class="skeleton skeleton-badge"></div></td>
+            <td><div class="skeleton skeleton-text short"></div></td>
+            <td><div class="skeleton skeleton-text short"></div></td>
+            <td class="text-right"><div class="skeleton skeleton-btn"></div></td>
+          </tr>
+        </tbody>
+
+        <!-- Data Rows -->
+        <tbody *ngIf="!isLoading && paginatedRequests.length > 0">
+          <tr *ngFor="let req of paginatedRequests">
+            <td class="req-id">{{ req.id }}</td>
+            <td class="service-type">{{ req.serviceType }}</td>
+            <td class="category">{{ req.category }}</td>
+            <td>
+              <span class="status-badge" [ngClass]="{
+                'status-pending': req.status === 'Pending',
+                'status-in-progress': req.status === 'In Progress',
+                'status-approved': req.status === 'Approved',
+                'status-rejected': req.status === 'Rejected'
+              }">{{ req.status }}</span>
+            </td>
+            <td class="date-col">{{ req.submittedDate | date:'MMM d, y, h:mm a' }}</td>
+            <td class="date-col">{{ req.lastUpdated | date:'MMM d, y, h:mm a' }}</td>
+            <td class="action-col text-right">
+              <button class="btn-action" (click)="viewDetails(req.id)">
+                View Details <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!isLoading && paginatedRequests.length === 0">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+      </div>
+      <h3>No service requests found</h3>
+      <p>You haven't submitted any service requests that match this criteria.</p>
+      <button class="btn btn-outline" routerLink="/citizen/service-requests/new">Create Your First Request</button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="!isLoading && totalPages > 1">
+      <div class="pagination-info">
+        Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ min(currentPage * itemsPerPage, filteredRequests.length) }} of {{ filteredRequests.length }} requests
+      </div>
+      <div class="pagination-controls">
+        <button class="btn-page" [disabled]="currentPage === 1" (click)="prevPage()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+        <ng-container *ngFor="let p of getPagesArray()">
+          <button class="btn-page" [class.active]="p === currentPage" (click)="goToPage(p)">{{ p }}</button>
+        </ng-container>
+        <button class="btn-page" [disabled]="currentPage === totalPages" (click)="nextPage()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

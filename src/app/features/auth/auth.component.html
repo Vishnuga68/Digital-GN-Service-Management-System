@@ -1,0 +1,181 @@
+<ng-container *ngIf="translationService.translations$ | async as t">
+  <div class="auth-wrapper">
+    <div class="auth-card" [class.wide-card]="currentView === 'register'">
+      
+      <!-- Loading Overlay -->
+      <div class="loading-overlay" *ngIf="isLoading">
+        <div class="spinner"></div>
+      </div>
+
+      <!-- Top: small logo -->
+      <div class="card-header">
+        <img src="/assets/images/logo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">
+      </div>
+
+      <div class="card-body">
+        
+        <!-- LOGIN VIEW -->
+        <form *ngIf="currentView === 'login'" [formGroup]="loginForm" (ngSubmit)="onLogin()" class="auth-form fade-in">
+          <div class="form-group">
+            <label>{{ t.NIC || 'National Identity Card' }} <span class="req">*</span></label>
+            <input type="text" formControlName="nic" placeholder="e.g. 981234567V">
+          </div>
+          <div class="form-group">
+            <label>{{ t.PASSWORD || 'Password' }} <span class="req">*</span></label>
+            <input type="password" formControlName="password">
+          </div>
+          
+          <button type="submit" class="primary-btn">{{ t.LOGIN || 'Login' }}</button>
+
+          <!-- Links under Login Button -->
+          <div class="form-links">
+            <a href="javascript:void(0)" (click)="setView('register')">{{ t.REGISTER || 'Register' }}</a>
+            <a href="javascript:void(0)" (click)="setView('forgot')">{{ t.FORGOT_PASSWORD || 'Forgot Password?' }}</a>
+          </div>
+        </form>
+
+        <!-- REGISTER VIEW -->
+        <form *ngIf="currentView === 'register'" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form fade-in">
+          <div class="form-row">
+            <div class="form-group half">
+              <label>{{ t.NIC || 'NIC' }} <span class="req">*</span></label>
+              <input type="text" formControlName="nic" placeholder="ID Number">
+            </div>
+            <div class="form-group half">
+              <label>{{ t.FULL_NAME || 'Full Name' }} <span class="req">*</span></label>
+              <input type="text" formControlName="fullName" placeholder="John Doe">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>{{ t.EMAIL || 'Email Address' }} <span class="req">*</span></label>
+              <input type="email" formControlName="email" placeholder="john.doe@example.com">
+            </div>
+            <div class="form-group half">
+              <label>{{ t.TELEPHONE || 'Telephone' }} <span class="req">*</span></label>
+              <input type="tel" formControlName="telephone" placeholder="07XXXXXXXX">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group quarter">
+              <label>{{ t.PROVINCE || 'Province' }} <span class="req">*</span></label>
+              <select formControlName="province">
+                <option value="" disabled>{{ t.SELECT_PROVINCE || 'Select Province' }}</option>
+                <option value="Western">Western</option>
+                <option value="Central">Central</option>
+                <option value="Southern">Southern</option>
+                <option value="Northern">Northern</option>
+                <option value="Eastern">Eastern</option>
+                <option value="North Western">North Western</option>
+                <option value="North Central">North Central</option>
+                <option value="Uva">Uva</option>
+                <option value="Sabaragamuwa">Sabaragamuwa</option>
+              </select>
+            </div>
+            <div class="form-group quarter">
+              <label>{{ t.DISTRICT || 'District' }} <span class="req">*</span></label>
+              <select formControlName="district">
+                <option value="" disabled>{{ t.SELECT_DISTRICT || 'Select District' }}</option>
+                <option value="Colombo">Colombo</option>
+                <option value="Kandy">Kandy</option>
+                <option value="Galle">Galle</option>
+              </select>
+            </div>
+            <div class="form-group quarter">
+              <label>{{ t.DS_DIVISION || 'DS Division' }} <span class="req">*</span></label>
+              <select formControlName="dsDivision">
+                <option value="" disabled>{{ t.SELECT_DS || 'Select DS' }}</option>
+                <option value="DS01">DS01 - Colombo</option>
+                <option value="DS02">DS02 - Kandy</option>
+              </select>
+            </div>
+            <div class="form-group quarter">
+              <label>{{ t.GN_DIVISION || 'GN Division' }} <span class="req">*</span></label>
+              <select formControlName="gnDivision">
+                <option value="" disabled>{{ t.SELECT_GN || 'Select GN' }}</option>
+                <option value="GN01">GN01 - Colombo</option>
+                <option value="GN02">GN02 - Kandy</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group half">
+              <label>{{ t.PASSWORD || 'Password' }} <span class="req">*</span></label>
+              <input type="password" formControlName="password">
+            </div>
+            <div class="form-group half">
+              <label>{{ t.CONFIRM_PASSWORD || 'Confirm Password' }} <span class="req">*</span></label>
+              <input type="password" formControlName="confirmPassword">
+            </div>
+          </div>
+          
+          <div *ngIf="registerForm.hasError('mismatch')" class="error-msg">
+            Passwords do not match.
+          </div>
+          
+          <button type="submit" class="primary-btn">{{ t.REGISTER || 'Register' }}</button>
+          
+          <div class="form-links centered">
+            <a href="javascript:void(0)" (click)="setView('login')">Back to {{ t.LOGIN || 'Login' }}</a>
+          </div>
+        </form>
+
+        <!-- FORGOT PASSWORD VIEW -->
+        <form *ngIf="currentView === 'forgot'" [formGroup]="forgotForm" (ngSubmit)="onSendOtp()" class="auth-form fade-in">
+          <h2 class="sub-title">{{ t.FORGOT_PASSWORD || 'Forgot Password' }}</h2>
+          <p class="desc">{{ t.FORGOT_PASSWORD_DESC || 'Enter your NIC or Email to receive an OTP' }}</p>
+          <div class="form-group">
+            <label>{{ t.EMAIL_NIC || 'NIC or Email' }} <span class="req">*</span></label>
+            <input type="text" formControlName="emailNic">
+          </div>
+          
+          <button type="submit" class="primary-btn">{{ t.SEND_OTP || 'Send OTP' }}</button>
+
+          <div class="form-links centered">
+             <a href="javascript:void(0)" class="cancel-link" (click)="setView('login')">Cancel & Back to {{ t.LOGIN || 'Login' }}</a>
+          </div>
+        </form>
+
+        <!-- RESET PASSWORD VIEW -->
+        <form *ngIf="currentView === 'reset'" [formGroup]="resetForm" (ngSubmit)="onResetPassword()" class="auth-form fade-in">
+          <h2 class="sub-title">{{ t.RESET_PASSWORD || 'Reset Password' }}</h2>
+          <div class="form-group">
+            <label>{{ t.OTP || 'OTP' }} <span class="req">*</span></label>
+            <input type="text" formControlName="otp">
+          </div>
+          <div class="form-group">
+            <label>{{ t.NEW_PASSWORD || 'New Password' }} <span class="req">*</span></label>
+            <input type="password" formControlName="newPassword">
+          </div>
+          
+          <button type="submit" class="primary-btn">{{ t.RESET_PASSWORD || 'Confirm' }}</button>
+
+          <div class="form-links centered">
+             <a href="javascript:void(0)" class="cancel-link" (click)="setView('login')">Cancel & Back to Login</a>
+          </div>
+        </form>
+      </div> <!-- end card-body -->
+
+      <!-- Bottom Right language toggler -->
+      <div class="card-footer">
+        <div class="lang-switcher">
+          <select #langSelect [value]="translationService.currentLang" (change)="switchLanguage(langSelect.value)" class="lang-dropdown">
+            <option value="en">English (EN)</option>
+            <option value="si">සිංහල (SI)</option>
+            <option value="ta">தமிழ் (TA)</option>
+          </select>
+        </div>
+      </div>
+    
+    </div> <!-- end auth-card -->
+
+    <!-- Toast Alert -->
+    <div class="toast" [ngClass]="['toast-' + toastType, toastMessage ? 'show' : '']">
+      {{ toastMessage }}
+    </div>
+
+  </div> <!-- end auth-wrapper -->
+</ng-container>

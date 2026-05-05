@@ -1,0 +1,124 @@
+<div class="dashboard-body">
+      
+      <!-- Top Section: Welcome and Quick Actions -->
+      <div class="top-row-container">
+        <!-- Welcome Section -->
+        <div class="welcome-card">
+          <div class="welcome-content">
+            <h2>Welcome, {{ citizenName }} 👋</h2>
+            <p>Here’s a quick overview of your requests and pending activities.</p>
+          </div>
+          <img src="https://cdn-icons-png.flaticon.com/512/4149/4149660.png" alt="Welcome Illustration" class="welcome-illustration">
+        </div>
+
+        <!-- GN Division Info Card -->
+        <div class="gn-info-card" title="Your assigned Grama Niladhari Division and Officer">
+          <div class="gn-label">GN DIVISION</div>
+          <div class="gn-value">J/60</div>
+          <div class="gn-officer">Mr. Sivakumar</div>
+        </div>
+
+        <!-- Quick Actions Section (Now grouped into a single card) -->
+        <div class="quick-actions-section">
+          <div class="quick-actions-card">
+            <div class="action-card">
+              <div class="icon-circle qa-blue"><img src="/assets/icons/request_q.png" alt="request"></div>
+              <span class="action-text">New Request</span>
+              <a routerLink="/citizen/service-requests/new" class="expand-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+              </a>
+            </div>
+            <div class="action-card">
+              <div class="icon-circle qa-green"><img src="/assets/icons/status_q.png" alt="status"></div>
+              <span class="action-text">View Status</span>
+              <a routerLink="/citizen/service-requests" class="expand-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Layout Section (Charts & Overview) -->
+      <div class="main-layout-section">
+        
+        <!-- Left Section (Pie Chart) -->
+        <div class="left-section">
+          <div class="chart-card pie-chart-card">
+            <h4>Request Status Breakdown</h4>
+            <div class="chart-wrapper">
+              <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="pieChartType"></canvas>
+            </div>
+            
+            <div class="pie-chart-analysis">
+              <div class="analysis-item" *ngFor="let item of pieChartAnalysis">
+                <div class="item-left">
+                  <span class="indicator" [style.background]="item.color"></span>
+                  <span class="label">{{ item.label }}</span>
+                </div>
+                <div class="item-right">
+                  <span class="value">{{ item.value }}</span>
+                  <span class="percentage">({{ item.percentage }})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Section (Overview Cards & Bar Chart) -->
+        <div class="right-section">
+          
+          <div class="overview-cards-container">
+            <div class="overview-card info">
+              <div class="card-header">
+                <span class="indicator primary"></span>
+                <span class="card-title">New Messages</span>
+              </div>
+              <h3>{{ newMessages }}</h3>
+            </div>
+            
+            <div class="overview-card success">
+              <div class="card-header">
+                <span class="indicator success"></span>
+                <span class="card-title">Upcoming Meetings</span>
+              </div>
+              <h3>{{ upcomingMeetings }}</h3>
+            </div>
+            
+            <div class="overview-card warning">
+              <div class="card-header">
+                <span class="indicator warning"></span>
+                <span class="card-title">Account Status</span>
+              </div>
+              <h3>Active</h3>
+            </div>
+          </div>
+
+          <div class="chart-card bar-chart-card">
+            <h4>Recent Weekly Activity</h4>
+            <div class="chart-wrapper">
+              <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType"></canvas>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Recent Activity List/Cards -->
+      <div class="section-header">
+        <h3 class="section-title">Recent Activity</h3>
+      </div>
+      <div class="activity-section">
+        <div class="activity-list">
+          <div class="activity-card" *ngFor="let activity of recentActivities">
+            <div class="act-details">
+              <h4>{{ activity.action }}</h4>
+              <p>{{ activity.detail }}</p>
+            </div>
+            <div class="act-meta">
+              <span class="date">{{ activity.date }}</span>
+              <span class="status" [ngClass]="activity.status.toLowerCase()">{{ activity.status }}</span>
+            </div>
+          </div>
+        </div>
+      </div>

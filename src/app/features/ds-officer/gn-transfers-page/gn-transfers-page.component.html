@@ -1,0 +1,94 @@
+<div class="page-container fade-in">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>GN Transfer Management</h1>
+      <p>Review and process transfer requests from Grama Niladhari officers.</p>
+    </div>
+  </header>
+
+  <div class="content-card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Officer Name</th>
+            <th>Current Div</th>
+            <th>Requested Div</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let req of requests">
+            <td><span class="id-badge">{{ req.id }}</span></td>
+            <td><strong>{{ req.officerName }}</strong></td>
+            <td>{{ req.currentDivision }}</td>
+            <td>{{ req.requestedDivision }}</td>
+            <td>{{ req.date | date:'shortDate' }}</td>
+            <td>
+              <span class="status-pill" [class]="getStatusClass(req.status)">{{ req.status }}</span>
+            </td>
+            <td>
+              <button class="btn-text" (click)="openDetails(req)">View Details</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" *ngIf="isModalOpen">
+  <div class="modal-content fade-in" *ngIf="selectedRequest">
+    <div class="modal-header">
+      <h2>Transfer Request Details</h2>
+      <button class="close-btn" (click)="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Officer Name</label>
+          <span>{{ selectedRequest.officerName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Current Division</label>
+          <span>{{ selectedRequest.currentDivision }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Requested Division</label>
+          <span>{{ selectedRequest.requestedDivision }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Reason for Transfer</label>
+          <p class="reason-text">{{ selectedRequest.reason }}</p>
+        </div>
+        <div class="detail-item full-width" *ngIf="selectedRequest.documentUrl">
+          <label>Supporting Document</label>
+          <div class="document-preview-card">
+            <div class="doc-icon">
+              <img src="/assets/icons/downloads.png" alt="PDF">
+            </div>
+            <div class="doc-info">
+              <span class="doc-name">{{ selectedRequest.documentName }}</span>
+              <span class="doc-size">PDF Document</span>
+            </div>
+            <button class="btn-view-doc" (click)="viewDocument(selectedRequest.documentUrl)">
+              <span>View Document</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" *ngIf="selectedRequest.status === 'Pending'">
+      <button class="btn-reject" (click)="rejectRequest(selectedRequest.id)">Reject</button>
+      <button class="btn-approve" (click)="approveRequest(selectedRequest.id)">Approve Transfer</button>
+    </div>
+    <div class="modal-footer" *ngIf="selectedRequest.status !== 'Pending'">
+      <button class="btn-secondary" (click)="closeModal()">Close</button>
+    </div>
+  </div>
+</div>

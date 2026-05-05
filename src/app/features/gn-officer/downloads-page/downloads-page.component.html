@@ -1,0 +1,211 @@
+<div class="downloads-container fade-in">
+  <div class="content-wrapper">
+    <!-- Header Section (Officer Focused) -->
+    <header class="page-header">
+      <div class="header-titles">
+        <h1>Document Handling</h1>
+        <p>Manage official forms and documents accessible to citizens.</p>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn-action btn-outline" (click)="openCategoryModal()">
+          Categories +
+        </button>
+        <button class="btn-action btn-primary" (click)="openUploadModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload Document
+        </button>
+      </div>
+    </header>
+
+    <!-- Controls Bar -->
+    <div class="top-controls" *ngIf="!isLoading">
+      <div class="category-tabs custom-scroll">
+        <button class="tab-btn" [class.active]="activeCategory === 'All'" (click)="setCategory('All')">All Documents ({{documents.length}})</button>
+        <button *ngFor="let cat of categories" class="tab-btn" [class.active]="activeCategory === cat.name" (click)="setCategory(cat.name)">
+          {{cat.name}} ({{cat.count}})
+          <span class="delete-cat" title="Delete Category" (click)="openDeleteCategoryModal($event, cat.name)">×</span>
+        </button>
+      </div>
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()" placeholder="Search documents...">
+      </div>
+    </div>
+
+    <!-- Loading Area -->
+    <div class="loading-area" *ngIf="isLoading">
+       <div class="skeleton-card" *ngFor="let i of [1,2,3,4,5,6]"></div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="forms-main" *ngIf="!isLoading">
+      
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredDocuments.length === 0">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        </div>
+        <div class="empty-text">
+           <h2>No documents found</h2>
+           <p>Try different keywords or check other categories.</p>
+        </div>
+      </div>
+
+      <!-- Forms Grid (Compact Style) -->
+      <div class="forms-grid" *ngIf="filteredDocuments.length > 0">
+        <article class="form-card" *ngFor="let doc of filteredDocuments">
+          
+          <!-- Admin Actions -->
+          <div class="gn-actions">
+            <button class="btn-icon-sm" title="View"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+            <button class="btn-icon-sm delete" title="Delete" (click)="openDeleteDocumentModal(doc.id)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+          </div>
+
+          <!-- File Type Badge -->
+          <div class="file-type-badge" [ngClass]="doc.type">
+            {{ doc.type.toUpperCase() }}
+          </div>
+
+          <div class="card-content">
+            <div class="file-icon-wrapper">
+              <svg *ngIf="doc.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <svg *ngIf="doc.type === 'excel'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="12" y1="13" x2="12" y2="17"></line></svg>
+              <svg *ngIf="doc.type === 'word'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="9 13 11 17 13 13 15 17 17 13"></polyline></svg>
+              <svg *ngIf="doc.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" stroke="#8b5cf6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </div>
+            
+            <h3 class="form-title" [title]="doc.title">{{ doc.title }}</h3>
+            <p class="form-meta">{{ doc.size }} • {{ doc.category }}</p>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn-download-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download
+            </button>
+          </div>
+        </article>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Upload Modal (Redesigned to Match Citizen Form) -->
+  <div class="modal-overlay" *ngIf="isUploadModalOpen" (click)="closeUploadModal()">
+    <div class="modal-content form-modal fade-in-up" (click)="$event.stopPropagation()">
+       <div class="modal-header">
+          <div class="header-with-icon">
+            <div class="icon-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <h3>Upload Official Document</h3>
+          </div>
+          <button class="close-x" (click)="closeUploadModal()">&times;</button>
+       </div>
+       <div class="modal-body custom-scroll">
+          <!-- Document Details First -->
+          <div class="form-group">
+              <label>Document Title <span class="required">*</span></label>
+              <input type="text" class="gn-input" [(ngModel)]="newDocTitle" placeholder="E.g., Blank Complaint Form - GN Division 123A">
+          </div>
+          <div class="form-group" style="margin-top: 1.25rem;">
+              <label>Target Category <span class="required">*</span></label>
+              <select class="gn-input" [(ngModel)]="newDocCategory">
+                  <option value="" disabled>Select a category</option>
+                  <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
+              </select>
+              <p class="helper-text">Documents will be visible to citizens under this category.</p>
+          </div>
+
+          <!-- File Upload Next -->
+          <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Select Document File <span class="required">*</span></label>
+              <div class="upload-zone" (click)="filePicker.click()">
+                  <input type="file" #filePicker hidden (change)="handleFileInput($event)">
+                  <div class="upload-inner">
+                      <div class="upload-icon-circle">
+                          <img src="/assets/icons/downloads.png" alt="upload">
+                      </div>
+                      <div class="upload-labels">
+                          <h3>{{ newDocFile ? newDocFile.name : 'Click to Upload Document' }}</h3>
+                          <p>{{ newDocFile ? (newDocFile.size / 1024 / 1024 | number:'1.1-2') + ' MB' : 'PDF, Word, Excel, JPG, PNG (Max 10MB)' }}</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+       </div>
+       <div class="modal-footer">
+          <button class="btn-cancel-modern" (click)="closeUploadModal()">Discard</button>
+          <button class="btn-submit-modern" (click)="uploadDocument()" [disabled]="!newDocFile || !newDocTitle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Upload & Publish
+          </button>
+       </div>
+    </div>
+  </div>
+
+  <!-- Add Category Modal (Redesigned) -->
+  <div class="modal-overlay" *ngIf="isCategoryModalOpen" (click)="closeCategoryModal()">
+    <div class="modal-content form-modal fade-in-up" (click)="$event.stopPropagation()">
+       <div class="modal-header">
+          <div class="header-with-icon">
+            <div class="icon-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </div>
+            <h3>Create Document Category</h3>
+          </div>
+          <button class="close-x" (click)="closeCategoryModal()">&times;</button>
+       </div>
+       <div class="modal-body custom-scroll">
+          <div class="form-group">
+            <label>Category Label <span class="required">*</span></label>
+            <input type="text" class="gn-input" [(ngModel)]="newCategoryName" placeholder="E.g., Legal Templates" (keyup.enter)="addCategory()">
+            <p class="helper-text">Add a descriptive category name to organize citizen downloads.</p>
+          </div>
+       </div>
+       <div class="modal-footer">
+          <button class="btn-cancel-modern" (click)="closeCategoryModal()">Discard</button>
+          <button class="btn-submit-modern" (click)="addCategory()" [disabled]="!newCategoryName.trim()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Create Category
+          </button>
+       </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay alert-modal" *ngIf="isDeleteModalOpen" (click)="closeDeleteModal()">
+    <div class="modal-content fade-in-up" (click)="$event.stopPropagation()" style="max-width: 400px;">
+      <div class="modal-body" style="text-align: center; padding: 2.5rem 2rem;">
+        <div class="status-icon" style="color: #ef4444; margin-bottom: 1.25rem;">
+          <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem; font-weight: 700; color: #1e293b;">Confirm Deletion</h3>
+        <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">Are you sure you want to delete <strong>"{{ deleteEntityName }}"</strong>? This action cannot be undone and citizens will lose access to this {{ deleteEntityType }}.</p>
+      </div>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding: 0 2rem 2.5rem 2rem; gap: 1rem;">
+        <button class="btn-cancel-modern" style="flex: 1;" (click)="closeDeleteModal()">No, Keep it</button>
+        <button class="btn-submit-modern" style="flex: 1; background: #ef4444; border-color: #ef4444;" (click)="confirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Response Toasts / Alerts -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+    <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 380px;">
+      <div class="modal-body" style="text-align: center; padding-top: 2rem;">
+        <div class="status-icon" [style.color]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="margin-bottom: 1rem;">
+          <svg *ngIf="alertType === 'success'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <svg *ngIf="alertType === 'error'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 style="margin-bottom: 0.5rem;">{{ alertType === 'success' ? 'Task Completed' : 'Issue Occurred' }}</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">{{ alertMessage }}</p>
+      </div>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding-bottom: 2rem;">
+        <button [style.background]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="color:white; border:none; padding:0.625rem 2rem; border-radius:8px; cursor:pointer;" (click)="closeAlert()">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>

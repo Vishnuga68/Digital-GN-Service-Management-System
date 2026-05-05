@@ -1,0 +1,243 @@
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>GN Management Portal</h1>
+      <p>A unified interface for monitoring, transfers, and officer registrations.</p>
+    </div>
+  </header>
+
+  <div class="tabs-container">
+    <div class="tabs-header">
+      <button class="tab-btn" [class.active]="activeTab === 'monitoring'" (click)="setActiveTab('monitoring')">
+        Monitoring & Workload
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'transfers'" (click)="setActiveTab('transfers')">
+        Transfer Requests
+      </button>
+      <button class="tab-btn" [class.active]="activeTab === 'registration'" (click)="setActiveTab('registration')">
+        New Officer Registration
+      </button>
+    </div>
+
+    <!-- Monitoring Tab -->
+    <div class="tab-content fade-in" *ngIf="activeTab === 'monitoring'">
+      <div class="content-card">
+        <div class="table-controls">
+          <div class="search-box">
+            <img src="assets/icons/search.png" alt="Search">
+            <input type="text" placeholder="Search by officer name or division...">
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Officer ID</th>
+                <th>Name & Division</th>
+                <th>Workload</th>
+                <th>Citizens</th>
+                <th>Active Requests</th>
+                <th>Availability</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let officer of gnOfficers">
+                <td><span class="id-badge">{{ officer.id }}</span></td>
+                <td>
+                  <div class="officer-info">
+                    <strong>{{ officer.name }}</strong>
+                    <span>Div: {{ officer.division }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="workload-tag" [class]="getStatusClass(officer.workloadStatus)">
+                    {{ officer.workloadStatus }}
+                  </span>
+                </td>
+                <td><strong>{{ officer.citizenCount }}</strong></td>
+                <td>
+                  <div class="request-count" [class.high]="officer.activeRequests > 30">
+                    {{ officer.activeRequests }}
+                  </div>
+                </td>
+                <td>
+                  <div class="availability-info">
+                    <span class="status-pill" [class]="getStatusClass(officer.status)">{{ officer.status }}</span>
+                    <span class="last-seen">Last login: {{ officer.lastLogin }}</span>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-icon" (click)="openOfficerDetails(officer)" title="View Detailed Report">
+                    <img src="assets/icons/expand.png" alt="View">
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transfers Tab -->
+    <div class="tab-content fade-in" *ngIf="activeTab === 'transfers'">
+      <div class="content-card">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Officer</th>
+                <th>Current Div</th>
+                <th>Target Div</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let req of transferRequests">
+                <td><span class="id-badge">{{ req.id }}</span></td>
+                <td><strong>{{ req.officerName }}</strong></td>
+                <td>{{ req.currentDivision }}</td>
+                <td>{{ req.requestedDivision }}</td>
+                <td>{{ req.date | date:'shortDate' }}</td>
+                <td>
+                  <span class="status-pill" [class]="getStatusClass(req.status)">{{ req.status }}</span>
+                </td>
+                <td>
+                  <button class="btn-icon" (click)="openTransferDetails(req)">
+                    <img src="assets/icons/expand.png" alt="View">
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registration Tab -->
+    <div class="tab-content fade-in" *ngIf="activeTab === 'registration'">
+      <div class="content-card narrow">
+        <form (ngSubmit)="registerGN()" #gnForm="ngForm" class="registration-form">
+          <h3>Register New Officer</h3>
+          <p class="section-desc">Fill in the credentials to create a new GN officer account.</p>
+          
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Full Name</label>
+              <input type="text" [(ngModel)]="newGN.name" name="name" required placeholder="Enter full name">
+            </div>
+            <div class="form-group">
+              <label>NIC Number</label>
+              <input type="text" [(ngModel)]="newGN.nic" name="nic" required placeholder="Enter NIC">
+            </div>
+            <div class="form-group">
+              <label>GN Division</label>
+              <input type="text" [(ngModel)]="newGN.division" name="division" required placeholder="e.g. J/60">
+            </div>
+            <div class="form-group">
+              <label>Email Address</label>
+              <input type="email" [(ngModel)]="newGN.email" name="email" required placeholder="Enter email">
+            </div>
+            <div class="form-group">
+              <label>Phone Number</label>
+              <input type="tel" [(ngModel)]="newGN.phone" name="phone" required placeholder="+94 7X XXX XXXX">
+            </div>
+            <div class="form-group">
+              <label>Temporary Password</label>
+              <div class="password-display">
+                <code>{{ newGN.tempPassword }}</code>
+                <span class="helper-text">Officer must reset this on first login.</span>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary full-width" [disabled]="!gnForm.form.valid">Create GN Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Officer Details Modal -->
+<div class="modal-overlay" *ngIf="isOfficerDetailsOpen">
+  <div class="modal-content fade-in" *ngIf="selectedOfficer">
+    <div class="modal-header">
+      <h2>Officer Detailed Report</h2>
+      <button class="close-btn" (click)="closeOfficerDetails()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="officer-profile-header">
+        <div class="avatar-large">
+          <img src="/assets/images/default_profile.jpg" alt="Avatar">
+        </div>
+        <div class="profile-text">
+          <h3>{{ selectedOfficer.name }}</h3>
+          <p>{{ selectedOfficer.id }} | GN Division {{ selectedOfficer.division }}</p>
+        </div>
+        <span class="status-pill" [class]="getStatusClass(selectedOfficer.status)">{{ selectedOfficer.status }}</span>
+      </div>
+      <div class="details-grid mt-4">
+        <div class="detail-item">
+          <label>Workload Status</label>
+          <span class="workload-tag" [class]="getStatusClass(selectedOfficer.workloadStatus)">{{ selectedOfficer.workloadStatus }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Last Login Time</label>
+          <span>{{ selectedOfficer.lastLogin }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Assigned Citizens</label>
+          <span>{{ selectedOfficer.citizenCount }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Active Requests</label>
+          <span>{{ selectedOfficer.activeRequests }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeOfficerDetails()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Details Modal -->
+<div class="modal-overlay" *ngIf="isTransferDetailsOpen">
+  <div class="modal-content fade-in" *ngIf="selectedTransfer">
+    <div class="modal-header">
+      <h2>Transfer Request Details</h2>
+      <button class="close-btn" (click)="closeTransferDetails()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Officer Name</label>
+          <span>{{ selectedTransfer.officerName }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Current Division</label>
+          <span>{{ selectedTransfer.currentDivision }}</span>
+        </div>
+        <div class="detail-item">
+          <label>Requested Division</label>
+          <span>{{ selectedTransfer.requestedDivision }}</span>
+        </div>
+        <div class="detail-item full-width">
+          <label>Reason</label>
+          <p class="reason-text">{{ selectedTransfer.reason }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" *ngIf="selectedTransfer.status === 'Pending'">
+      <button class="btn-reject" (click)="rejectTransfer(selectedTransfer.id)">Reject</button>
+      <button class="btn-approve" (click)="approveTransfer(selectedTransfer.id)">Accept & Update Division</button>
+    </div>
+    <div class="modal-footer" *ngIf="selectedTransfer.status !== 'Pending'">
+      <button class="btn-secondary" (click)="closeTransferDetails()">Close</button>
+    </div>
+  </div>
+</div>

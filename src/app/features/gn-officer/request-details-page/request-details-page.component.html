@@ -1,0 +1,264 @@
+<div class="details-container fade-in">
+  
+  <!-- SKELETON LOADING -->
+  <div *ngIf="isLoading" class="skeleton-layout">
+    <div class="skeleton-header">
+      <div class="skeleton skeleton-text short"></div>
+      <div class="skeleton skeleton-badge max"></div>
+    </div>
+    <div class="skeleton-timeline">
+      <div class="skeleton skeleton-text medium"></div>
+      <div class="skeleton skeleton-text medium"></div>
+    </div>
+    <div class="skeleton-card large"></div>
+    <div class="skeleton-card medium"></div>
+  </div>
+
+  <!-- LOADED CONTENT -->
+  <div *ngIf="!isLoading && requestDetails" class="content-wrapper">
+    
+    <!-- Header Section -->
+    <header class="details-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="goBack()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Back to List
+        </button>
+        <h1>Request Details</h1>
+      </div>
+      <div class="header-right">
+        <span class="status-badge" [ngClass]="{
+          'status-pending': requestDetails.status === 'Pending',
+          'status-in-progress': requestDetails.status === 'In Progress',
+          'status-approved': requestDetails.status === 'Approved',
+          'status-rejected': requestDetails.status === 'Rejected'
+        }">{{ requestDetails.status }}</span>
+      </div>
+    </header>
+
+    <div class="grid-layout">
+      <!-- Main Content Column -->
+      <div class="main-column">
+        
+        <!-- Progress Timeline Section (NOW IN MAIN COLUMN) -->
+        <div class="section-container">
+          <h2 class="outside-header">Progress Status</h2>
+          <section class="card timeline-card">
+            <div class="timeline">
+              <div class="timeline-step" *ngFor="let step of requestDetails.timeline; let i = index" [class.completed]="step.completed" [class.active]="step.step === requestDetails.currentStep">
+                <div class="step-indicator">
+                  <div class="circle" [ngClass]="['step-' + step.step, 
+                    step.completed ? 'completed' : '', 
+                    step.step === requestDetails.currentStep ? 'active' : '', 
+                    !step.completed && step.step !== requestDetails.currentStep ? 'unreached' : '',
+                    requestDetails.status === 'Approved' ? 'is-approved' : '',
+                    requestDetails.status === 'Rejected' ? 'is-rejected' : '']">
+                    <!-- Submitted (Step 1) -->
+                    <svg *ngIf="step.step === 1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
+                    
+                    <!-- Under Review (Step 2) -->
+                    <svg *ngIf="step.step === 2" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+                    
+                    <!-- Verified (Step 3) -->
+                    <svg *ngIf="step.step === 3" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                    
+                    <!-- Decision (Step 4) -->
+                    <ng-container *ngIf="step.step === 4">
+                      <!-- Default pending decision -->
+                      <svg *ngIf="!step.completed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="m9 14 2 2 4-4"></path></svg>
+                      
+                      <!-- Approved -->
+                      <svg *ngIf="step.completed && requestDetails.status === 'Approved'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      
+                      <!-- Rejected -->
+                      <svg *ngIf="step.completed && requestDetails.status === 'Rejected'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </ng-container>
+                  </div>
+                  <div class="line" *ngIf="i < requestDetails.timeline.length - 1"></div>
+                </div>
+                <div class="step-content">
+                  <h4>{{ step.title }}</h4>
+                  <span class="timestamp" *ngIf="step.timestamp">{{ step.timestamp | date:'MMM d, y, h:mm a' }}</span>
+                  <span class="timestamp pending-text" *ngIf="!step.timestamp">Pending...</span>
+                  <div class="officer" *ngIf="step.officer">
+                     <span class="initials">{{ step.officer }}</span>
+                     Handled by Officer
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Request Information -->
+        <div class="section-container">
+          <h2 class="outside-header">Request Information</h2>
+          <section class="card info-card">
+            <div class="info-grid">
+              <div class="info-group">
+                <label>Request ID</label>
+                <p class="id-text">{{ requestDetails.id }}</p>
+              </div>
+              <div class="info-group">
+                <label>Service Type</label>
+                <p>{{ requestDetails.serviceType }}</p>
+              </div>
+              <div class="info-group">
+                <label>Category</label>
+                <p>{{ requestDetails.category }}</p>
+              </div>
+              <div class="info-group">
+                <label>Submitted Date</label>
+                <p>{{ requestDetails.submittedDate | date:'MMM d, y, h:mm a' }}</p>
+              </div>
+              <div class="info-group">
+                <label>Last Updated</label>
+                <p>{{ requestDetails.lastUpdated | date:'MMM d, y, h:mm a' }}</p>
+              </div>
+              <div class="info-group full-width">
+                <label>Description / Reason</label>
+                <p class="description">{{ requestDetails.description }}</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+
+        <!-- Document Section -->
+        <div class="section-container">
+          <h2 class="outside-header">Uploaded Documents</h2>
+          <section class="card documents-card">
+            <div class="doc-list">
+              <div class="doc-item" *ngFor="let doc of requestDetails.documents">
+                <div class="doc-icon">
+                  <svg *ngIf="doc.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  <svg *ngIf="doc.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+                <div class="doc-info">
+                  <h4>{{ doc.name }}</h4>
+                  <span>{{ doc.size }} &bull; Uploaded on {{ doc.date | date:'MMM d' }}</span>
+                </div>
+                <div class="doc-actions">
+                  <button class="btn-icon" title="Download"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <!-- Sidebar Column -->
+      <div class="side-column">
+        
+        <!-- Request Support CTA -->
+        <div class="section-container">
+          <section class="card support-card">
+            <div class="support-content">
+              <div class="support-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              </div>
+              <div class="support-text">
+                <h3>Need Assistance?</h3>
+                <p>Chat directly with the citizen regarding this request.</p>
+              </div>
+            </div>
+            <button class="btn btn-primary w-full" [routerLink]="['/gn-officer/messages']" [queryParams]="{ citizenNIC: requestDetails.citizenNIC, citizenName: requestDetails.citizenName, requestId: requestDetails.id }">
+              Chat with Citizen
+            </button>
+          </section>
+        </div>
+
+        <!-- Update Request Status -->
+        <div class="section-container">
+          <h2 class="outside-header">Update Status</h2>
+          <section class="card update-card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="form-group full-width" style="margin-bottom: 0;">
+               <label style="display: block; font-weight: 500; font-size: 0.875rem; color: #475569; margin-bottom: 8px;">Action & Status</label>
+               <select class="form-control" [(ngModel)]="updateStatusValue" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-family: inherit;">
+                  <option value="In Progress">In Progress</option>
+                  <option value="Verified">Verified</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+               </select>
+            </div>
+            <div class="form-group full-width" style="margin-bottom: 0;">
+               <label style="display: block; font-weight: 500; font-size: 0.875rem; color: #475569; margin-bottom: 8px;">Add Remark / Reason</label>
+               <textarea class="form-control" [(ngModel)]="newRemark" rows="3" placeholder="Add a public remark or rejection reason..." style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; resize: none;"></textarea>
+            </div>
+            <button class="btn btn-update w-full" (click)="updateRequestStatus()">
+              Update Request & Status
+            </button>
+          </section>
+        </div>
+        <!-- Applicant Details -->
+        <div class="section-container">
+          <h2 class="outside-header">Applicant Details</h2>
+          <section class="card citizen-card">
+             <div class="info-grid single-col">
+                <div class="info-group">
+                  <label>Full Name</label>
+                  <p>{{ requestDetails.citizenName }}</p>
+                </div>
+                <div class="info-group">
+                  <label>NIC Number</label>
+                  <p>{{ requestDetails.citizenNIC }}</p>
+                </div>
+                <div class="info-group">
+                  <label>Permanent Address</label>
+                  <p>{{ requestDetails.citizenAddress }}</p>
+                </div>
+             </div>
+          </section>
+        </div>
+        <!-- Result / Feedback Details -->
+        <div class="section-container" *ngIf="requestDetails.status === 'Rejected' || requestDetails.status === 'Approved'">
+          <h2 class="outside-header">Final Outcome</h2>
+          <section class="card result-card">
+             <div class="outcome-box rejected" *ngIf="requestDetails.status === 'Rejected'">
+                <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
+                <h3>Request Rejected</h3>
+                <p>{{ requestDetails.rejectionReason }}</p>
+             </div>
+
+             <div class="outcome-box approved" *ngIf="requestDetails.status === 'Approved'">
+                <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></span>
+                <h3>Request Approved</h3>
+                <p>The document has been successfully generated and is ready.</p>
+                <button class="btn btn-primary" (click)="requestDetails.finalDocumentUrl ? null : null">View Document</button>
+             </div>
+          </section>
+        </div>
+
+        <!-- Officer Remarks -->
+        <div class="section-container">
+          <h2 class="outside-header">Officer Remarks <span class="count">{{ requestDetails.remarks.length }}</span></h2>
+          <section class="card remarks-card">
+            <div class="remark-list">
+               <div class="remark-item" *ngFor="let remark of requestDetails.remarks">
+                  <div class="remark-header">
+                     <div class="remark-author">
+                        <div class="avatar">{{ remark.author.charAt(0) }}</div>
+                        <div>
+                          <strong>{{ remark.author }}</strong>
+                          <span class="role">{{ remark.role }}</span>
+                        </div>
+                     </div>
+                     <span class="date">{{ remark.date | date:'MMM d, h:mm a' }}</span>
+                  </div>
+                  <div class="remark-body">
+                     <p>{{ remark.text }}</p>
+                  </div>
+               </div>
+               
+               <div *ngIf="requestDetails.remarks.length === 0" class="no-remarks">
+                   <p>No remarks or comments yet.</p>
+               </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

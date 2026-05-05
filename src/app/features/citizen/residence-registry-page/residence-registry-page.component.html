@@ -1,0 +1,213 @@
+<div class="registry-container">
+  <div class="header">
+    <h1>My Registry</h1>
+    <p>Comprehensive overview of your personal and family records in the GN system.</p>
+  </div>
+
+  <div class="registry-grid">
+    <!-- PANEL A: My Details -->
+    <div class="registry-panel my-details">
+      <div class="panel-header">
+        <div class="title-with-icon">
+          <img src="/assets/icons/profile.png" alt="My Details">
+          <h3>My Details</h3>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        
+        <!-- Identity Section -->
+        <div class="info-section">
+          <div class="section-title">Identity & Personal Details</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Full Name</span>
+              <span class="value">{{ myData.fullName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">NIC Number</span>
+              <span class="value">{{ myData.nic }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Date of Birth</span>
+              <span class="value">{{ myData.dob | date:'longDate' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Gender</span>
+              <span class="value">{{ myData.gender }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Occupation</span>
+              <span class="value highlight">{{ myData.occupation }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Personal Email</span>
+              <span class="value">{{ myData.contact.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone Number</span>
+              <span class="value">{{ myData.contact.phone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="info-section">
+          <div class="section-title">Administrative & Location Details</div>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Province</span>
+              <span class="value">{{ myData.province }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">District</span>
+              <span class="value">{{ myData.district }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">DS Division</span>
+              <span class="value">{{ myData.dsDivision }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">GN Division</span>
+              <span class="value">{{ myData.gnDivision }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Current Family Card</span>
+              <span class="value highlight">{{ myData.familyCard }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Eligibility Section -->
+        <div class="info-section">
+          <div class="section-title">Eligibility Status</div>
+          
+          <div class="eligibility-box">
+            <div class="elig-info">
+              <h4>Voter Eligibility</h4>
+              <p>Based on electoral roll criteria (Age ≥ 18)</p>
+            </div>
+            <div class="status-pill" [class.eligible]="isVoterEligible(myData.dob)">
+              <span class="symbol">{{ isVoterEligible(myData.dob) ? '✓' : '✕' }}</span>
+              <span>{{ isVoterEligible(myData.dob) ? 'Eligible' : 'Not Eligible' }}</span>
+            </div>
+          </div>
+
+          <div class="special-status-grid">
+            <div class="status-card" [class.active]="myData.specialStatus.isNalanpuri">
+              <div class="card-icon">
+                <img src="/assets/icons/nalanpuri.png" alt="nalanpuri" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Nalanpuri Recipient</span>
+                <span class="status-value">{{ myData.specialStatus.isNalanpuri ? 'Verified' : 'Not Enrolled' }}</span>
+              </div>
+            </div>
+            <div class="status-card" [class.active]="isElderly(myData.dob)">
+              <div class="card-icon">
+                <img src="/assets/icons/elder.png" alt="elder" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Elderly Status</span>
+                <span class="status-value">{{ isElderly(myData.dob) ? 'Verified (60+)' : 'Standard' }}</span>
+              </div>
+            </div>
+            <div class="status-card" [class.active]="myData.specialStatus.hasKidneyDisease">
+              <div class="card-icon">
+                <img src="/assets/icons/kidney.png" alt="kidney" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Medical Assistant (Kidney)</span>
+                <span class="status-value">{{ myData.specialStatus.hasKidneyDisease ? 'Recipient' : 'None' }}</span>
+              </div>
+            </div>
+            <div class="status-card" [class.active]="myData.specialStatus.hasCancer">
+              <div class="card-icon">
+                <img src="/assets/icons/cancer.png" alt="cancer" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Medical Assistant (Cancer)</span>
+                <span class="status-value">{{ myData.specialStatus.hasCancer ? 'Recipient' : 'None' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-actions">
+          <button class="btn-secondary">
+            <span>View Linked Family Card History</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL B: My Family -->
+    <div class="registry-panel my-family">
+      <div class="panel-header">
+        <div class="title-with-icon">
+          <img src="/assets/icons/family.png" alt="My Family">
+          <h3>My Family</h3>
+        </div>
+      </div>
+
+      <div class="panel-body">
+        <div class="family-summary">
+          <div class="summary-item">
+            <span class="label">Family Head</span>
+            <span class="value">{{ familyData.head }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Family Card ID</span>
+            <span class="value">{{ familyData.cardNumber }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Registered Division</span>
+            <span class="value">{{ familyData.gn }}</span>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="members-table">
+            <thead>
+              <tr>
+                <th>Member Name</th>
+                <th>Relationship</th>
+                <th>DOB</th>
+                <th>Voter Status</th>
+                <th>Special Category</th>
+                <th>Status</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let member of familyData.members" [class.self-row]="member.relationship === 'Self'">
+                <td class="name-cell">{{ member.name }}</td>
+                <td>
+                  <span class="rel-tag">{{ member.relationship }}</span>
+                </td>
+                <td>{{ member.dob | date:'mediumDate' }}</td>
+                <td>
+                  <span class="icon-circle" [class.success]="isVoterEligible(member.dob)">
+                    <span class="symbol">{{ isVoterEligible(member.dob) ? '✓' : '✕' }}</span>
+                  </span>
+                </td>
+                <td>
+                  <span class="special-badge" *ngIf="member.special !== 'None'" [class.nalanpuri]="member.special === 'Nalanpuri'">
+                    {{ member.special }}
+                  </span>
+                  <span class="special-badge none" *ngIf="member.special === 'None'">—</span>
+                </td>
+                <td>
+                  <span class="state-pill" [class.active]="member.status === 'Active'">{{ member.status }}</span>
+                </td>
+                <td>
+                  <button class="btn-view">Details</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
