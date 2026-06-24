@@ -162,9 +162,9 @@
                 <p>Chat directly with the citizen regarding this request.</p>
               </div>
             </div>
-            <button class="btn btn-primary w-full" [routerLink]="['/gn-officer/messages']" [queryParams]="{ citizenNIC: requestDetails.citizenNIC, citizenName: requestDetails.citizenName, requestId: requestDetails.id }">
+            <a class="btn btn-primary w-full text-center block" [routerLink]="['/gn-officer/messages']" [queryParams]="{ citizenNIC: requestDetails.citizenNIC, citizenName: requestDetails.citizenName, requestId: requestDetails.id }">
               Chat with Citizen
-            </button>
+            </a>
           </section>
         </div>
 

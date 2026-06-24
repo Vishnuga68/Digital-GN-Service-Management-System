@@ -1,0 +1,108 @@
+<div class="appointments-container">
+  <!-- Minimalistic Back Button -->
+  <div style="margin-bottom: 1rem;">
+    <button class="btn-icon" routerLink="/gn-officer/appointments" style="background: transparent; border: none; cursor: pointer; color: #64748b; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 0.9rem; padding: 0; transition: color 0.2s;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Appointments
+    </button>
+  </div>
+
+  <header class="page-header">
+    <div class="header-title">
+      <h1>Set My Availability</h1>
+      <p>Manage your daily working hours and field visits.</p>
+    </div>
+  </header>
+
+  <div class="main-grid">
+    <!-- Calendar Section -->
+    <div class="calendar-section">
+      <div class="calendar-card">
+        <full-calendar #calendar [options]="calendarOptions"></full-calendar>
+      </div>
+      
+    </div>
+
+    <!-- Right Section: Edit Availability -->
+    <div class="detail-panel">
+
+
+      <div class="card-section">
+        <h3>
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Availability Details
+        </h3>
+        <p class="section-desc" style="font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem;">
+          {{ selectedDate | date:'EEEE, MMM d, y' }}
+        </p>
+
+        <div *ngIf="isFormHidden" class="no-slots-msg" style="padding: 10px; font-size: 0.9rem; color: #6b7280; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          {{ restrictionMessage }}
+        </div>
+
+        <form *ngIf="!isFormHidden" (ngSubmit)="saveAvailability()" #availabilityForm="ngForm">
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="formStatus" (ngModelChange)="onStatusChange()" name="status" [disabled]="isFormDisabled" required class="form-control">
+              <option value="" disabled>Select Status</option>
+              <option value="GN_OFFICE">GN Office (Bookable)</option>
+              <option value="DIVISIONAL_OFFICE">Divisional Office</option>
+              <option value="FIELD_VISIT">Field Duty</option>
+              <option value="LEAVE">Leave</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="time" [(ngModel)]="formStartTime" name="startTime" [disabled]="isFormDisabled || formStatus === 'LEAVE'" required class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>End Time</label>
+            <input type="time" [(ngModel)]="formEndTime" name="endTime" [disabled]="isFormDisabled || formStatus === 'LEAVE'" required class="form-control">
+          </div>
+
+          <div class="form-group">
+            <label>Notes (Optional)</label>
+            <textarea [(ngModel)]="formNotes" name="notes" [disabled]="isFormDisabled" class="form-control" rows="3" placeholder="Add any specific notes..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 15px;" [disabled]="isFormDisabled || !formStatus">
+            Save Availability
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert Modal -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+    <div class="modal-content" (click)="$event.stopPropagation()" [class.error]="alertType === 'error'">
+      <div class="modal-header">
+        <div class="status-icon" [class.success]="alertType === 'success'" [class.error]="alertType === 'error'">
+          <svg *ngIf="alertType === 'success'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          <svg *ngIf="alertType === 'error'" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3>{{ alertType === 'success' ? 'Success' : 'Error' }}</h3>
+        <p>{{ alertMessage }}</p>
+      </div>
+      <div class="modal-actions">
+        <button [class]="alertType === 'success' ? 'btn-primary' : 'btn-danger'" (click)="closeAlert()">Dismiss</button>
+      </div>
+    </div>
+  </div>
+  <div class="calendar-popover" 
+       *ngIf="showPopover" 
+       [style.top]="popoverPosition.top" 
+       [style.left]="popoverPosition.left"
+       [class]="popoverType"
+       (click)="closePopover()">
+    <div class="popover-arrow"></div>
+    <div class="popover-content">
+      <span class="popover-label">{{ popoverLabel }}</span>
+      <h4 class="popover-title">{{ popoverContent }}</h4>
+      <p class="popover-hint">Click to dismiss</p>
+    </div>
+  </div>
+</div>

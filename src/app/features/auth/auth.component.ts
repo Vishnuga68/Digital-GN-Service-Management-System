@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TranslationService } from '../../core/services/translation.service';
 
-type AuthView = 'login' | 'register' | 'forgot' | 'reset';
+type AuthView = 'login' | 'forgot' | 'reset';
 
 @Component({
   selector: 'app-auth',
@@ -24,7 +24,7 @@ export class AuthComponent implements OnInit {
   translations: any = {};
   
   loginForm!: FormGroup;
-  registerForm!: FormGroup;
+
   forgotForm!: FormGroup;
   resetForm!: FormGroup;
 
@@ -43,21 +43,11 @@ export class AuthComponent implements OnInit {
   initForms() {
     this.loginForm = this.fb.group({
       nic: ['', Validators.required],
-      password: ['', Validators.required]
+      password: ['', Validators.required],
+      role: ['', Validators.required]
     });
 
-    this.registerForm = this.fb.group({
-      nic: ['', [Validators.required, Validators.pattern(/^[0-9]{9}[vVxX]|[0-9]{12}$/)]],
-      fullName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      telephone: ['', Validators.required],
-      province: ['', Validators.required],
-      district: ['', Validators.required],
-      dsDivision: ['', Validators.required],
-      gnDivision: ['', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(4)]],
-      confirmPassword: ['', Validators.required]
-    }, { validators: this.passwordMatchValidator });
+
 
     this.forgotForm = this.fb.group({
       emailNic: ['', Validators.required]
@@ -98,8 +88,8 @@ export class AuthComponent implements OnInit {
       return;
     }
     this.isLoading = true;
-    const { nic, password } = this.loginForm.value;
-    this.authService.login(nic, password).subscribe(res => {
+    const { nic, password, role } = this.loginForm.value;
+    this.authService.login(nic, password, role).subscribe(res => {
       this.isLoading = false;
       if (res.success) {
         this.showToast(this.translations.SUCCESS_LOGIN + ' Role: ' + res.role, 'success');
@@ -116,21 +106,7 @@ export class AuthComponent implements OnInit {
     });
   }
 
-  onRegister() {
-    if (this.registerForm.invalid) {
-      this.showToast(this.translations.ERROR_INVALID, 'error');
-      return;
-    }
-    this.isLoading = true;
-    this.authService.register(this.registerForm.value).subscribe(res => {
-      this.isLoading = false;
-      if (res.success) {
-        this.showToast(this.translations.SUCCESS_REGISTER, 'success');
-        this.setView('login');
-        this.registerForm.reset();
-      }
-    });
-  }
+
 
   onSendOtp() {
     if (this.forgotForm.invalid) return;

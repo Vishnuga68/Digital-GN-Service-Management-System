@@ -1,136 +1,66 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { AppointmentService, TimeSlot, Holiday } from '../../../core/services/appointment.service';
+import { AppointmentService } from '../../../core/services/appointment.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
-import { CalendarOptions } from '@fullcalendar/core';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-appointments-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FullCalendarModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './appointments-page.component.html',
   styleUrl: './appointments-page.component.scss'
 })
 export class AppointmentsPageComponent implements OnInit, OnDestroy {
-  @ViewChild('calendar') calendarComponent!: FullCalendarComponent;
-
-  selectedDate: Date = new Date();
-  
-  // GN Specific Data
   allAppointments: any[] = [];
-  selectedDayAppointments: any[] = [];
-  userAppointments: any[] = []; // Current GN appointments list
+  gnOfficerNic: string = '';
+  filterStatus: string = 'ALL';
   
-  isHoliday: boolean = false;
-  holidayDetail: Holiday | undefined;
-  
-  // Alert Modal State
+  // Alert Modal
   showAlertModal: boolean = false;
   alertMessage: string = '';
   alertType: 'success' | 'error' = 'success';
-  
-  // Custom Confirmation Modal
+
+  // Cancel Modal
   showCancelModal: boolean = false;
-  appointmentIdToCancel: string | null = null;
+  appointmentIdToCancel: number | null = null;
+  cancelReasonType: string = '';
+  cancellationReason: string = '';
 
-  // Popover State
-  showPopover: boolean = false;
-  popoverContent: string = '';
-  popoverLabel: string = '';
-  popoverType: 'holiday' | 'appointment' | 'leave' = 'holiday';
-  popoverPosition = { top: '0px', left: '0px' };
+  // View Cancelled Modal
+  showViewModal: boolean = false;
+  selectedAppointment: any = null;
 
-  calendarOptions: CalendarOptions = {
-    initialView: 'dayGridMonth',
-    plugins: [dayGridPlugin, interactionPlugin],
-    headerToolbar: {
-      left: 'prev',
-      center: 'title',
-      right: 'next'
-    },
-    height: 'auto',
-    contentHeight: 'auto',
-    fixedWeekCount: false,
-    themeSystem: 'standard',
-    selectable: true,
-    unselectAuto: false,
-    selectMirror: true,
-    events: [],
-    
-    dayCellClassNames: (arg: any) => {
-      const classes = [];
-      const date = arg.date;
-
-      const holiday = this.appointmentService.isHoliday(date);
-      if (holiday) {
-        if (holiday.type === 'leave') {
-          classes.push('fc-leave-cell');
-        } else {
-          classes.push('fc-holiday-cell');
-        }
-      }
-      
-      if (this.selectedDate && date.toDateString() === this.selectedDate.toDateString()) {
-        classes.push('fc-day-selected');
-      }
-
-      const hasAppointment = this.allAppointments.some(app => {
-        const appDate = new Date(app.date);
-        return appDate.toDateString() === date.toDateString();
-      });
-      if (hasAppointment) {
-        classes.push('fc-day-appointment');
-      }
-      
-      return classes;
-    },
-
-    dayCellContent: (arg: any) => {
-      return { html: `<div class="fc-daygrid-day-number">${arg.dayNumberText}</div>` };
-    },
-
-    dateClick: (arg: any) => {
-      const date = arg.date;
-      this.onDateSelect(date);
-    }
-  };
-
+  // Reschedule Modal
+  showRescheduleModal: boolean = false;
+  appointmentIdToReschedule: number | null = null;
+  rescheduleDate: string = '';
+  rescheduleStartTime: string = '';
+  rescheduleEndTime: string = '';
+  availableSlots: any[] = [];
+  selectedSlotId: string | null = null;
+  todayDate: string = '';
+  maxDate: string = '';
+  noSlotsReasonMsg: string = '';
+  
   private destroy$ = new Subject<void>();
 
   constructor(private appointmentService: AppointmentService) {}
 
   ngOnInit(): void {
-    this.appointmentService.currentAppointments$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(apps => {
-        this.allAppointments = apps;
-        this.userAppointments = apps; // Match naming for consistency or use allAppointments
-        this.loadSelectedDayAppointments();
-        this.calendarOptions = { ...this.calendarOptions };
-      });
+    this.gnOfficerNic = sessionStorage.getItem('userNic') || '';
+    const today = new Date();
+    this.todayDate = today.toISOString().split('T')[0];
+    
+    // Calculate max date (exactly 1 month from today)
+    const max = new Date();
+    max.setMonth(max.getMonth() + 1);
+    this.maxDate = max.toISOString().split('T')[0];
 
-    this.appointmentService.selectedDate$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(date => {
-        this.selectedDate = date;
-        this.checkHoliday();
-        this.loadSelectedDayAppointments();
-        this.calendarOptions = { ...this.calendarOptions };
-      });
-
-    this.appointmentService.holidays$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.checkHoliday();
-        this.calendarOptions = { ...this.calendarOptions };
-      });
+    this.loadAppointments();
   }
 
   ngOnDestroy(): void {
@@ -138,74 +68,209 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onDateSelect(date: Date) {
-    this.appointmentService.setSelectedDate(date);
+  loadAppointments() {
+    // Load a broad range for list
+    const start = new Date();
+    start.setMonth(start.getMonth() - 1); // 1 month ago
+    const end = new Date();
+    end.setMonth(end.getMonth() + 3); // next 3 months
+
+    this.appointmentService.getGnAppointments(this.gnOfficerNic, start, end)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(apps => {
+        this.allAppointments = apps.map(app => ({
+          ...app,
+          id: app.appointmentId || app.id,
+          time: `${app.startTime} - ${app.endTime}`,
+          service: app.serviceType || app.service,
+          citizenName: app.citizenName, // Now accurately populated from backend
+          citizenNic: app.citizenNic,
+          date: app.appointmentDate || app.date
+        }));
+      });
   }
 
-  checkHoliday() {
-    this.holidayDetail = this.appointmentService.isHoliday(this.selectedDate);
-    this.isHoliday = !!this.holidayDetail;
+  get filteredAppointments() {
+    if (this.filterStatus === 'ALL') {
+      return this.allAppointments;
+    }
+    if (this.filterStatus === 'CANCELLED') {
+      return this.allAppointments.filter(app => app.status === 'CANCELLED_BY_CITIZEN' || app.status === 'CANCELLED_BY_GN');
+    }
+    return this.allAppointments.filter(app => app.status === this.filterStatus);
   }
 
-  loadSelectedDayAppointments() {
-     this.selectedDayAppointments = this.allAppointments.filter(app => {
-        return new Date(app.date).toDateString() === this.selectedDate.toDateString();
-     });
+  setFilter(status: string) {
+    this.filterStatus = status;
   }
 
-  closePopover() {
-    this.showPopover = false;
+  markAsFinished(id: number) {
+    this.appointmentService.updateGnAppointmentStatus(id, 'COMPLETED').subscribe({
+      next: () => {
+        this.triggerAlert('Appointment marked as COMPLETED.', 'success');
+        this.loadAppointments();
+      },
+      error: (err) => {
+        this.triggerAlert(err.error?.Message || 'Failed to complete appointment.', 'error');
+      }
+    });
   }
 
+  // --- Modals ---
   triggerAlert(message: string, type: 'success' | 'error' = 'success') {
     this.alertMessage = message;
     this.alertType = type;
     this.showAlertModal = true;
   }
+  closeAlert() { this.showAlertModal = false; }
 
-  closeAlert() {
-    this.showAlertModal = false;
-  }
-
-  markLeave() {
-     if(!this.isHoliday) {
-        this.appointmentService.markLeave(this.selectedDate);
-        this.triggerAlert('Leave marked successfully for ' + this.selectedDate.toDateString(), 'success');
-     }
-  }
-
-  removeLeave() {
-     if(this.isHoliday) {
-        if(this.holidayDetail?.type === 'leave') {
-            this.appointmentService.removeLeave(this.selectedDate);
-            this.triggerAlert('Leave removed successfully.', 'success');
-        } else {
-            this.triggerAlert('Cannot remove official government holidays.', 'error');
-        }
-     }
-  }
-
-  confirmCancel(id: string) {
+  // Cancel Logic
+  openCancelModal(id: number) {
     this.appointmentIdToCancel = id;
+    this.cancelReasonType = '';
+    this.cancellationReason = '';
     this.showCancelModal = true;
   }
-
-  closeModal() {
+  closeCancelModal() {
     this.showCancelModal = false;
     this.appointmentIdToCancel = null;
+    this.cancelReasonType = '';
+    this.cancellationReason = '';
   }
-
-  confirmCancellation() {
-    if (this.appointmentIdToCancel) {
-      this.appointmentService.cancelAppointment(this.appointmentIdToCancel).subscribe(() => {
-        this.triggerAlert('Appointment cancelled.', 'success');
-        this.closeModal();
+  confirmCancel() {
+    let finalReason = this.cancelReasonType;
+    if (this.cancelReasonType === 'Other') {
+      finalReason = this.cancellationReason.trim();
+    }
+    
+    if (this.appointmentIdToCancel && finalReason) {
+      this.appointmentService.cancelGnAppointment(this.appointmentIdToCancel, finalReason).subscribe({
+        next: () => {
+          this.triggerAlert('Appointment cancelled.', 'success');
+          this.loadAppointments();
+          this.closeCancelModal();
+        },
+        error: (err) => {
+          this.triggerAlert(err.error?.Message || 'Failed to cancel.', 'error');
+        }
       });
+    } else {
+       this.triggerAlert('Cancellation reason is required.', 'error');
     }
   }
 
-  reschedule(id: string) {
-    this.triggerAlert('Reschedule feature coming soon. Please contact the citizen directly for now.', 'success');
+  // Reschedule Logic
+  openRescheduleModal(id: number) {
+    this.appointmentIdToReschedule = id;
+    this.rescheduleDate = '';
+    this.rescheduleStartTime = '';
+    this.rescheduleEndTime = '';
+    this.availableSlots = [];
+    this.selectedSlotId = null;
+    this.showRescheduleModal = true;
+  }
+  
+  onRescheduleDateChange() {
+    this.availableSlots = [];
+    this.selectedSlotId = null;
+    this.rescheduleStartTime = '';
+    this.rescheduleEndTime = '';
+    this.noSlotsReasonMsg = '';
+    
+    if (this.rescheduleDate && this.gnOfficerNic) {
+      const dateObj = new Date(this.rescheduleDate);
+      
+      // 1. Check ICS Holidays first
+      const isHoliday = this.appointmentService.isHoliday(dateObj);
+      if (isHoliday) {
+        this.noSlotsReasonMsg = 'This is a government holiday';
+        return; 
+      }
+
+      // 2. Check Weekends
+      const dayOfWeek = dateObj.getDay();
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+         this.noSlotsReasonMsg = 'Weekend holiday, no appointments available';
+         return;
+      }
+
+      // Check availability status for reason messages
+      this.appointmentService.getGnAvailabilityDay(this.gnOfficerNic, dateObj).subscribe({
+        next: (avails) => {
+          let reasonFound = false;
+          if (avails && avails.length > 0) {
+            const status = avails[0].status || avails[0].Status;
+            if (status === 'DIVISIONAL_OFFICE') this.noSlotsReasonMsg = 'You are on duty at DS Office on this date';
+            else if (status === 'LEAVE') this.noSlotsReasonMsg = 'GN is on leave on this date';
+            else if (status === 'FIELD_VISIT') this.noSlotsReasonMsg = 'GN is on a field visit on this date';
+            else if (status === 'HOLIDAY') this.noSlotsReasonMsg = 'This is a government holiday';
+            else if (status === 'WEEKEND_HOLIDAY') this.noSlotsReasonMsg = 'Weekend holiday, no appointments available';
+            
+            if (status && status !== 'GN_OFFICE') reasonFound = true;
+          }
+          
+          this.appointmentService.getAvailableSlots(this.gnOfficerNic, dateObj).subscribe({
+            next: (slots: any[]) => {
+              this.availableSlots = slots.map(s => {
+                const st = (s.startTime || '').substring(0, 5);
+                const et = (s.endTime || '').substring(0, 5);
+                return {
+                    id: s.startTime,
+                    startTime: st,
+                    endTime: et,
+                    status: s.isBooked ? 'booked' : 'available'
+                };
+              });
+              
+              if (this.availableSlots.length === 0 && !reasonFound) {
+                 this.noSlotsReasonMsg = 'All slots are fully booked for this date';
+              } else if (this.availableSlots.length > 0) {
+                 this.noSlotsReasonMsg = ''; // clear if slots actually available
+              }
+            },
+            error: () => {
+              this.triggerAlert('Failed to load slots for selected date.', 'error');
+            }
+          });
+        }
+      });
+    }
+  }
+  
+  selectSlot(slot: any) {
+    if (slot.status === 'available') {
+      this.selectedSlotId = slot.id;
+      this.rescheduleStartTime = slot.startTime;
+      this.rescheduleEndTime = slot.endTime;
+    }
+  }
+
+  closeRescheduleModal() {
+    this.showRescheduleModal = false;
+    this.appointmentIdToReschedule = null;
+    this.availableSlots = [];
+    this.selectedSlotId = null;
+  }
+  confirmReschedule() {
+    if (this.appointmentIdToReschedule && this.rescheduleDate && this.rescheduleStartTime && this.rescheduleEndTime) {
+      const dateObj = new Date(this.rescheduleDate);
+      this.appointmentService.rescheduleGnAppointment(
+        this.appointmentIdToReschedule, 
+        dateObj, 
+        this.rescheduleStartTime, 
+        this.rescheduleEndTime
+      ).subscribe({
+        next: () => {
+          this.triggerAlert('Appointment rescheduled.', 'success');
+          this.loadAppointments();
+          this.closeRescheduleModal();
+        },
+        error: (err) => {
+          this.triggerAlert(err.error?.Message || 'Failed to reschedule.', 'error');
+        }
+      });
+    } else {
+       this.triggerAlert('All fields are required.', 'error');
+    }
   }
 }
-

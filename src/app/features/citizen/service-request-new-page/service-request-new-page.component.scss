@@ -697,3 +697,30 @@
     .btn-icon { width: 20px; height: 20px; }
 }
 
+.input-with-button {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+
+    .gn-input {
+        flex: 1;
+    }
+}
+
+.btn-nic-lookup {
+    background: #edf2f7;
+    color: #2d3748;
+    border: 1.5px solid #e2e8f0;
+    padding: 0.5rem 1rem;
+    border-radius: 7px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 38px; /* Match input height */
+
+    &:hover {
+        background: #e2e8f0;
+        color: #1a202c;
+    }
+}

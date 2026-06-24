@@ -1,0 +1,340 @@
+<div class="new-request-container fade-in">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-left">
+      <button class="back-link" (click)="goBack()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Main Page
+      </button>
+      <h1>New Service Request</h1>
+      <p>Submit your digital request directly to the Grama Niladhari division.</p>
+    </div>
+    <div class="header-right">
+      <div class="minimal-help">
+        <div class="help-icon-box-small">
+          <img src="/assets/icons/question.png" alt="query">
+        </div>
+        <div class="help-text-small">
+          <h4>Have a Question?</h4>
+          <a routerLink="/citizen/help" class="minimal-link">Open Documentation →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="request-grid form-layout">
+    <!-- Main Column -->
+    <div class="main-column">
+      
+      <!-- Step 2 & 3: Application Form -->
+      <div class="panel-card form-panel fade-in-up" *ngIf="selectedService">
+        <div class="panel-header">
+            <div class="title-with-icon">
+                <button class="btn-icon-back" (click)="goBack()" title="Change Service">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <div class="header-titles">
+                    <h3>{{ selectedService.serviceName }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
+          <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
+            
+            <!-- MANDATORY TOP FORM FIELD FOR CATEGORY SELECTION -->
+            <div class="info-section top-request-type" *ngIf="selectedService.categories.length > 1">
+              <div class="form-group-full">
+                <label>Request Type <span class="required">*</span></label>
+                <select formControlName="categoryId" class="gn-input large-select">
+                  <option value="" disabled selected>Select Request Type</option>
+                  <option *ngFor="let cat of selectedService.categories" [value]="cat.categoryId">
+                    {{ cat.categoryName }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Applicant Type (Conditional based on DB schema field) -->
+            <div class="info-section no-border" *ngIf="showApplicantType && selectedCategory">
+              <div class="section-title">Whom is this request for?</div>
+              <div class="radio-group-modern">
+                <label class="radio-option">
+                  <input type="radio" name="applicantType" value="myself" [checked]="applicantType === 'myself'" (change)="setApplicantType('myself')">
+                  <span class="radio-circle"></span>
+                  <span class="label-text">Myself</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="applicantType" value="child" [checked]="applicantType === 'child'" (change)="setApplicantType('child')">
+                  <span class="radio-circle"></span>
+                  <span class="label-text">Child under 18</span>
+                </label>
+              </div>
+              
+            </div>
+
+            <!-- STATIC SECTION: Personal Information -->
+            <div class="info-section">
+              <div class="section-title">1. Personal Information</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Full Name</label>
+                  <input type="text" formControlName="fullName" placeholder="Enter full name" class="gn-input disabled-input" readonly>
+                </div>
+                <div class="form-group">
+                  <label>NIC Number <span class="required">*</span></label>
+                  <input type="text" formControlName="nic" placeholder="Enter NIC" class="gn-input disabled-input" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Mobile Number <span class="required">*</span></label>
+                  <input type="text" formControlName="phone" placeholder="Contact number" class="gn-input disabled-input" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Address</label>
+                  <input type="text" formControlName="address" placeholder="Address" class="gn-input disabled-input" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Family Card Number</label>
+                  <input type="text" formControlName="familyCardNumber" placeholder="Family Card Number" class="gn-input disabled-input" readonly>
+                </div>
+              </div>
+            </div>
+
+            <!-- DYNAMIC CHILD DETAILS IN SAME AREA -->
+            <div class="info-section" *ngIf="applicantType === 'child'">
+              <ng-container *ngFor="let group of groupedFormSchema">
+                <ng-container *ngIf="group.sectionTitle === 'Personal Information'">
+                  <div class="section-title">Child Details</div>
+                  <div class="form-grid" formGroupName="dynamicData">
+                    <ng-container *ngFor="let field of group.fields">
+                      <!-- Skip applicant-type as it's rendered above statically via radio buttons if present in schema -->
+                      <div class="form-group gn-field-wrapper" [hidden]="!field.isVisible" [style.gridColumn]="(field.fieldType === 'file' || field.fieldType === 'checkbox' || field.fieldType === 'textarea') ? '1 / -1' : ''" *ngIf="field.fieldType !== 'applicant-type' && field.isVisible">
+                        
+                        <label>{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
+                        
+                        <ng-container [ngSwitch]="field.fieldType">
+                          
+                          <ng-container *ngSwitchCase="'nic_lookup'">
+                            <div class="input-with-button">
+                              <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
+                              <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
+                            </div>
+                          </ng-container>
+
+                          <ng-container *ngSwitchCase="'text'">
+                            <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
+                              <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
+                              <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
+                            </div>
+                            <ng-template #defaultTextInput>
+                              <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                            </ng-template>
+                          </ng-container>
+                          
+                          <!-- Number Input -->
+                          <input *ngSwitchCase="'number'" type="number" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                          
+                          <!-- Date Input -->
+                          <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                          
+                          <!-- Dropdown -->
+                          <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                            <option value="" disabled selected>Select {{ field.fieldLabel }}</option>
+                            <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                          
+                          <!-- Radio Buttons -->
+                          <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;">
+                            <label *ngFor="let opt of field.parsedOptions" class="radio-option">
+                              <input type="radio" [formControlName]="field.fieldName" [value]="opt.value">
+                              <span class="radio-circle"></span>
+                              <span class="label-text">{{ opt.label }}</span>
+                            </label>
+                          </div>
+
+                          <!-- Checkboxes -->
+                          <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                            <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                              <input type="checkbox" [value]="opt.value" (change)="$event.stopPropagation();"> 
+                              <span class="label-text">{{ opt.label }}</span>
+                            </label>
+                          </div>
+
+                          <!-- File Upload -->
+                          <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;">
+                              <input type="file" #filePicker hidden (change)="onFileChange($event)" multiple>
+                              <div class="upload-inner">
+                                  <div class="upload-icon-circle">
+                                      <img src="/assets/icons/downloads.png" alt="upload">
+                                  </div>
+                                  <div class="upload-labels">
+                                      <h3>Upload Scanned Documents</h3>
+                                      <p>Drag and drop or click to browse (Max 5MB)</p>
+                                      <span class="file-types">Supported: PDF, JPG, PNG</span>
+                                  </div>
+                              </div>
+                              <div class="upload-progress-overlay" *ngIf="isUploading"></div>
+                              
+                              <!-- File preview tags -->
+                              <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
+                                  <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
+                                      <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                      <span class="file-name-text">{{ f }}</span>
+                                      <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
+                                  </div>
+                              </div>
+                          </div>
+
+                          <!-- Textarea -->
+                          <textarea *ngSwitchCase="'textarea'" [formControlName]="field.fieldName" rows="3" class="gn-input gn-textarea" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid"></textarea>
+                          
+                          <!-- Default Fallback -->
+                          <input *ngSwitchDefault type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                          
+                        </ng-container>
+
+                      </div>
+                    </ng-container>
+                  </div>
+                </ng-container>
+              </ng-container>
+            </div>
+
+            <!-- DYNAMIC SECTIONS: Grouped by FormSection -->
+            <ng-container *ngFor="let group of groupedFormSchema; let idx = index">
+              <div class="info-section" *ngIf="selectedCategory && group.fields.length > 0 && group.sectionTitle !== 'Personal Information'">
+                <div class="section-title">{{ idx + 2 }}. {{ group.sectionTitle }}</div>
+                
+                <!-- Map FormSchema to dynamic controls -->
+                <div class="form-grid" formGroupName="dynamicData">
+                  <ng-container *ngFor="let field of group.fields">
+                    <!-- Skip applicant-type as it's rendered above statically via radio buttons if present in schema -->
+                  <div class="form-group gn-field-wrapper" [hidden]="!field.isVisible" [style.gridColumn]="(field.fieldType === 'file' || field.fieldType === 'checkbox' || field.fieldType === 'textarea') ? '1 / -1' : ''" *ngIf="field.fieldType !== 'applicant-type' && field.isVisible">
+                    
+                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
+                    
+                    <ng-container [ngSwitch]="field.fieldType">
+                      
+                      <ng-container *ngSwitchCase="'nic_lookup'">
+                        <div class="input-with-button">
+                          <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
+                          <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
+                        </div>
+                      </ng-container>
+
+                      <ng-container *ngSwitchCase="'text'">
+                        <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
+                          <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
+                          <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
+                        </div>
+                        <ng-template #defaultTextInput>
+                          <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                        </ng-template>
+                      </ng-container>
+                      
+                      <!-- Number Input -->
+                      <input *ngSwitchCase="'number'" type="number" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                      
+                      <!-- Date Input -->
+                      <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                      
+                      <!-- Dropdown -->
+                      <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                        <option value="" disabled selected>Select {{ field.fieldLabel }}</option>
+                        <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
+                      </select>
+                      
+                      <!-- Radio Buttons -->
+                      <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;">
+                        <label *ngFor="let opt of field.parsedOptions" class="radio-option">
+                          <input type="radio" [formControlName]="field.fieldName" [value]="opt.value">
+                          <span class="radio-circle"></span>
+                          <span class="label-text">{{ opt.label }}</span>
+                        </label>
+                      </div>
+
+                      <!-- Checkboxes -->
+                      <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                        <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                          <input type="checkbox" [value]="opt.value" (change)="$event.stopPropagation();"> 
+                          <span class="label-text">{{ opt.label }}</span>
+                        </label>
+                      </div>
+
+                      <!-- File Upload -->
+                      <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;">
+                          <input type="file" #filePicker hidden (change)="onFileChange($event)" multiple>
+                          <div class="upload-inner">
+                              <div class="upload-icon-circle">
+                                  <img src="/assets/icons/downloads.png" alt="upload">
+                              </div>
+                              <div class="upload-labels">
+                                  <h3>Upload Scanned Documents</h3>
+                                  <p>Drag and drop or click to browse (Max 5MB)</p>
+                                  <span class="file-types">Supported: PDF, JPG, PNG</span>
+                              </div>
+                          </div>
+                          <div class="upload-progress-overlay" *ngIf="isUploading"></div>
+                          
+                          <!-- File preview tags -->
+                          <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
+                              <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
+                                  <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                  <span class="file-name-text">{{ f }}</span>
+                                  <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Textarea -->
+                      <textarea *ngSwitchCase="'textarea'" [formControlName]="field.fieldName" rows="3" class="gn-input gn-textarea" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid"></textarea>
+                      
+                      <!-- Default Fallback -->
+                      <input *ngSwitchDefault type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                      
+                    </ng-container>
+
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+            </ng-container>
+
+            <div class="form-actions-area" *ngIf="selectedCategory">
+                <button type="button" class="btn-cancel-modern" (click)="goBack()">Discard</button>
+                <button type="submit" class="btn-submit-modern">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="btn-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    Submit Request
+                </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side Column (Guidelines) -->
+    <div class="side-column" *ngIf="selectedService && selectedCategory">
+        <div class="instruction-card fade-in">
+            <div class="card-header">
+                <img src="/assets/icons/status_q.png" alt="guidelines">
+                <h4>Submission Guidelines</h4>
+            </div>
+            <div class="card-body">
+                <p>Please ensure all provided information matches your official documents.</p>
+                <ul class="guideline-list">
+                    <li>Double-check NIC and Phone numbers.</li>
+                    <li>Supporting documents must be clear and legible.</li>
+                    <li>Standard processing: 2-3 working days.</li>
+                    
+                    <!-- DYNAMIC CATEGORY GUIDELINES -->
+                    <li *ngIf="selectedCategory.guidelineText">{{ selectedCategory.guidelineText }}</li>
+                </ul>
+                <div class="tip-box">
+                    <img src="/assets/icons/help.png" alt="tip">
+                    <span>Incomplete requests may be rejected by the GN office.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>

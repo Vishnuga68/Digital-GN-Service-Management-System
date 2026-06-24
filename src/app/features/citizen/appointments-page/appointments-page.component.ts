@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { AppointmentService, TimeSlot, Holiday } from '../../../core/services/appointment.service';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
 import { CalendarOptions, EventInput } from '@fullcalendar/core';
@@ -26,6 +27,7 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
   userAppointments: any[] = [];
   selectedSlotId: string | null = null;
   selectedService: string = '';
+  selectedSlotTime: string = '';
   
   isHoliday: boolean = false;
   holidayDetail: Holiday | undefined;
@@ -38,14 +40,7 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
   alertMessage: string = '';
   alertType: 'success' | 'error' = 'success';
   
-  services: string[] = [
-    'Residence Verification',
-    'Income Certificate',
-    'Character Certificate',
-    'Land Verification',
-    'Elderly Allowance Application',
-    'Other Inquiries'
-  ];
+  services: any[] = [];
 
   // Popover State
   showPopover: boolean = false;
@@ -53,6 +48,9 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
   popoverLabel: string = '';
   popoverType: 'holiday' | 'appointment' = 'holiday';
   popoverPosition = { top: '0px', left: '0px' };
+
+  private citizenNic: string = '';
+  private gnOfficerNic: string = '';
 
   calendarOptions: CalendarOptions = {
     initialView: 'dayGridMonth',
@@ -69,34 +67,30 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
     selectable: true,
     unselectAuto: false,
     selectMirror: true,
-    events: [], // Initially empty
+    events: [],
     
-    // Custom day styling instead of hard validRange to keep dates visible
     dayCellClassNames: (arg: any) => {
       const classes = [];
       const date = arg.date;
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const twoMonthsLater = new Date();
-      twoMonthsLater.setMonth(today.getMonth() + 2);
+      const oneMonthLater = new Date();
+      oneMonthLater.setMonth(today.getMonth() + 1);
 
       const isHoliday = this.appointmentService.isHoliday(date);
       if (isHoliday) classes.push('fc-holiday-cell');
       
-      // Mark dates outside range
-      if (date < today || date > twoMonthsLater) {
+      if (date < today || date > oneMonthLater || date.getDay() === 0) {
         classes.push('fc-date-restricted');
       }
 
-      // Highlight selected date
       if (this.selectedDate && date.toDateString() === this.selectedDate.toDateString()) {
         classes.push('fc-day-selected');
       }
 
-      // Check for user appointments to apply blue indicator
       const hasAppointment = this.userAppointments.some(app => {
-        const appDate = new Date(app.date);
+        const appDate = new Date(app.appointmentDate);
         return appDate.toDateString() === date.toDateString();
       });
       if (hasAppointment) {
@@ -106,33 +100,27 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
       return classes;
     },
 
-    // Customize the content of the day cell
     dayCellContent: (arg: any) => {
       return { html: `<div class="fc-daygrid-day-number">${arg.dayNumberText}</div>` };
     },
 
-    // Prevent selection on holidays and outside 2-month range
     selectAllow: (selectInfo: any) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const twoMonthsLater = new Date();
-      twoMonthsLater.setMonth(today.getMonth() + 2);
+      const oneMonthLater = new Date();
+      oneMonthLater.setMonth(today.getMonth() + 1);
       
-      const isOutRange = selectInfo.start < today || selectInfo.start > twoMonthsLater;
-      return !this.appointmentService.isHoliday(selectInfo.start) && !isOutRange;
+      const isOutRange = selectInfo.start < today || selectInfo.start > oneMonthLater;
+      return !this.appointmentService.isHoliday(selectInfo.start) && !isOutRange && selectInfo.start.getDay() !== 0;
     },
 
-    // Combined Date Click and Selection for Details/Booking
     dateClick: (arg: any) => {
       const date = arg.date;
       const holiday = this.appointmentService.isHoliday(date);
-      const app = this.userAppointments.find(a => new Date(a.date).toDateString() === date.toDateString());
+      const app = this.userAppointments.find(a => new Date(a.appointmentDate).toDateString() === date.toDateString());
       
-      // Select the date for booking slots (even if it's an appointment or just a day)
-      // Note: selectAllow already prevents holiday selections if we need that
-      if (!holiday) {
-        this.onDateSelect(date);
-      }
+      // Allow selecting any date so the right panel shows the correct restriction message
+      this.onDateSelect(date);
       
       if (holiday || app) {
         const rect = arg.dayEl.getBoundingClientRect();
@@ -148,7 +136,7 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
         } else if (app) {
           this.popoverType = 'appointment';
           this.popoverLabel = 'Scheduled Appointment';
-          this.popoverContent = app.service;
+          this.popoverContent = app.serviceType;
         }
         this.showPopover = true;
       } else {
@@ -159,56 +147,149 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private appointmentService: AppointmentService) {}
+  constructor(private appointmentService: AppointmentService, private http: HttpClient) {}
 
   ngOnInit(): void {
-    // Subscribe to selected date changes
+    this.http.get<any[]>('http://localhost:5058/api/services/active').subscribe({
+        next: (svcs) => {
+            this.services = svcs;
+        }
+    });
+
+    this.citizenNic = sessionStorage.getItem('userNic') || '';
+    const userProfileStr = sessionStorage.getItem('userProfile');
+    
+    if (userProfileStr) {
+        const userProfile = JSON.parse(userProfileStr);
+        const gnDivisionId = userProfile.gnDivisionId || userProfile.GnDivisionId;
+        
+        // Fetch GN Officer for this division
+        if (gnDivisionId) {
+            this.http.get<any[]>('http://localhost:5058/api/GnOfficer').subscribe({
+                next: (officers) => {
+                    const officer = officers.find(o => (o.gnDivisionId || o.GnDivisionId) === gnDivisionId);
+                    if (officer) {
+                        this.gnOfficerNic = officer.nic || officer.Nic;
+                        this.loadCitizenAppointments();
+                        if (!this.isDateRestricted) {
+                            this.loadSlotsForDate(this.selectedDate);
+                        }
+                    } else {
+                        this.loadCitizenAppointments();
+                    }
+                },
+                error: () => this.loadCitizenAppointments()
+            });
+        } else {
+            this.loadCitizenAppointments();
+        }
+    } else {
+        this.loadCitizenAppointments();
+    }
+
     this.appointmentService.selectedDate$
       .pipe(takeUntil(this.destroy$))
       .subscribe(date => {
         this.selectedDate = date;
-        this.checkHoliday();
+        this.checkDateRestrictions(date);
+        if (!this.isDateRestricted && this.gnOfficerNic) {
+            this.loadSlotsForDate(date);
+        } else {
+            this.slots = [];
+        }
       });
 
-    // Subscribe to holiday changes to refresh calendar data
     this.appointmentService.holidays$
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        // Just trigger change detection for the calendar
         this.calendarOptions = { ...this.calendarOptions };
-      });
-
-    // Subscribe to slots changes
-    this.appointmentService.slots$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(slots => {
-        this.slots = slots;
-      });
-
-    this.appointmentService.currentAppointments$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(apps => {
-        this.userAppointments = apps;
       });
   }
 
-  // updateCalendarEvents() removed - no longer reflecting appointments on calendar
+  loadCitizenAppointments() {
+      if (!this.citizenNic) return;
+      this.appointmentService.getCitizenAppointments(this.citizenNic).subscribe({
+          next: (apps) => {
+              this.userAppointments = apps;
+              this.calendarOptions = { ...this.calendarOptions };
+          }
+      });
+  }
 
+  gnStatus: string = '';
+
+  loadSlotsForDate(date: Date) {
+      if (!this.gnOfficerNic) return;
+      
+      // Fetch availability status first
+      this.appointmentService.getGnAvailabilityDay(this.gnOfficerNic, date).subscribe(avail => {
+          if (avail && avail.length > 0) {
+              this.gnStatus = avail[0].status || avail[0].Status;
+          } else {
+              this.gnStatus = 'NONE';
+          }
+          
+          this.appointmentService.getAvailableSlots(this.gnOfficerNic, date).subscribe({
+              next: (slots: any[]) => {
+                  this.slots = slots.map(s => {
+                      const st = (s.startTime || '').substring(0, 5);
+                      const et = (s.endTime || '').substring(0, 5);
+                      return {
+                          id: s.startTime,
+                          startTime: st,
+                          endTime: et,
+                          status: s.isBooked ? 'booked' : 'available'
+                      };
+                  });
+              }
+          });
+      });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
+  isPastDate: boolean = false;
+  isOutRange: boolean = false;
+  isLeaveDay: boolean = false;
+
+  get isDateRestricted(): boolean {
+      return this.isHoliday || this.isPastDate || this.isOutRange;
+  }
+
+  get restrictionMessage(): string {
+      if (this.isPastDate) return 'Selected date is in the past.';
+      if (this.isOutRange) return 'Cannot book appointments more than 1 month in advance.';
+      if (this.isHoliday) return 'Selected date is an official holiday.';
+      
+      if (this.gnStatus === 'FIELD_VISIT') return 'GN Officer is on a field visit today.';
+      if (this.gnStatus === 'DIVISIONAL_OFFICE') return 'GN Officer is at the Divisional Secretariat today.';
+      if (this.gnStatus === 'LEAVE') return 'GN Officer is on leave today.';
+      if (this.gnStatus === 'WEEKEND_HOLIDAY') return 'GN Officer is unavailable due to a weekend holiday.';
+      
+      return 'No slots available'; // fallback
+  }
+
   onDateSelect(date: Date) {
     this.appointmentService.setSelectedDate(date);
     this.selectedSlotId = null;
-    this.checkHoliday();
+    this.selectedSlotTime = '';
+    this.checkDateRestrictions(date);
   }
 
-  checkHoliday() {
-    this.holidayDetail = this.appointmentService.isHoliday(this.selectedDate);
+  checkDateRestrictions(date: Date = this.selectedDate) {
+    this.holidayDetail = this.appointmentService.isHoliday(date);
     this.isHoliday = !!this.holidayDetail;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.isPastDate = date < today;
+
+    const oneMonthLater = new Date();
+    oneMonthLater.setMonth(today.getMonth() + 1);
+    this.isOutRange = date > oneMonthLater;
   }
 
   closePopover() {
@@ -217,20 +298,36 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
 
   selectSlot(slot: TimeSlot) {
     if (slot.status === 'available') {
-      this.selectedSlotId = slot.id;
+      this.selectedSlotId = slot.id || null;
+      this.selectedSlotTime = `${slot.startTime} - ${slot.endTime}`;
     }
   }
 
   onBook() {
-    if (this.selectedSlotId && this.selectedService) {
-      this.appointmentService.bookSlot(this.selectedSlotId, this.selectedService).subscribe(success => {
-        if (success) {
-          this.triggerAlert('Appointment booked successfully!', 'success');
-          this.selectedSlotId = null;
-        } else {
-          this.triggerAlert('This slot might have been just booked by someone else.', 'error');
-        }
-      });
+    if (this.selectedSlotId && this.selectedService && this.gnOfficerNic) {
+      const slot = this.slots.find(s => s.id === this.selectedSlotId);
+      if (slot) {
+          this.appointmentService.bookAppointment(
+              this.citizenNic,
+              this.gnOfficerNic,
+              this.selectedDate,
+              slot.startTime,
+              slot.endTime,
+              this.selectedService
+          ).subscribe({
+            next: (success) => {
+              this.triggerAlert('Appointment booked successfully!', 'success');
+              this.selectedSlotId = null;
+              this.selectedService = '';
+              this.selectedSlotTime = '';
+              this.loadSlotsForDate(this.selectedDate);
+              this.loadCitizenAppointments();
+            },
+            error: (err) => {
+              this.triggerAlert(err.error?.message || 'This slot might have been just booked by someone else.', 'error');
+            }
+          });
+      }
     }
   }
 
@@ -244,8 +341,6 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
     this.showAlertModal = false;
   }
 
-
-
   confirmCancel(id: string) {
     this.appointmentIdToCancel = id;
     this.showCancelModal = true;
@@ -258,9 +353,17 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
 
   confirmCancellation() {
     if (this.appointmentIdToCancel) {
-      this.appointmentService.cancelAppointment(this.appointmentIdToCancel).subscribe(() => {
-        this.triggerAlert('Appointment cancelled.', 'success');
-        this.closeModal();
+      this.appointmentService.cancelCitizenAppointment(Number(this.appointmentIdToCancel), this.citizenNic, 'Cancelled by citizen').subscribe({
+        next: () => {
+          this.triggerAlert('Appointment cancelled.', 'success');
+          this.loadCitizenAppointments();
+          this.loadSlotsForDate(this.selectedDate);
+          this.closeModal();
+        },
+        error: (err) => {
+            this.triggerAlert(err.error?.message || 'Failed to cancel appointment', 'error');
+            this.closeModal();
+        }
       });
     }
   }
@@ -270,7 +373,6 @@ export class AppointmentsPageComponent implements OnInit, OnDestroy {
   }
 
   getSelectedSlotTime(): string {
-    const slot = this.slots.find(s => s.id === this.selectedSlotId);
-    return slot ? `${slot.startTime} - ${slot.endTime}` : 'Not selected';
+    return this.selectedSlotTime || 'Not selected';
   }
 }

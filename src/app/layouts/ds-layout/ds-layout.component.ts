@@ -4,6 +4,8 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs/operators';
 import { TranslationService } from '../../core/services/translation.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-ds-layout',
@@ -16,18 +18,20 @@ export class DsLayoutComponent implements OnInit {
   translationService = inject(TranslationService);
   router = inject(Router);
   el = inject(ElementRef);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
-  officerName = 'Aruna Jayawardena';
+  officerName = 'DS Officer';
   isDashboard = true;
   searchPlaceholder = 'Search...';
   userImageUrl = ''; 
 
   // DS Profile Data
-  officerNIC = '197012345678';
-  officerAddress = 'DS Division Colombo';
-  officerEmail = 'aruna.ds@example.com';
-  officerPhone = '+94 77 987 6543';
-  officerPassword = 'password123'; 
+  officerNIC = '';
+  officerAddress = '';
+  officerEmail = '';
+  officerPhone = '';
+  officerPassword = '••••••••'; 
 
   isSidebarExpanded = true;
   isProfileModalOpen = false;
@@ -74,6 +78,31 @@ export class DsLayoutComponent implements OnInit {
       this.isProfileModalOpen = false;
       this.isNotificationModalOpen = false;
     });
+
+    // Fetch dynamic DS dashboard data from DB
+    const token = sessionStorage.getItem('token');
+    const nic = sessionStorage.getItem('userNic') || 'ds1';
+    if (token) {
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      this.http.get<any>(`http://localhost:5058/api/Dashboard/ds/${nic}`, { headers }).subscribe(res => {
+        if (res.success && res.data) {
+          const profile = res.data.profile;
+          this.officerName = profile.FullName || profile.fullName || 'DS Officer';
+          this.officerNIC = profile.Nic || profile.nic || nic;
+          this.officerAddress = `DS Division: ${profile.DsDivisionName || profile.dsDivisionName}`;
+          this.officerEmail = profile.Email || profile.email || 'No Email';
+          this.officerPhone = profile.Phone || profile.phone || 'No Phone';
+          
+          sessionStorage.setItem('userProfile', JSON.stringify(profile));
+          sessionStorage.setItem('userStats', JSON.stringify(res.data.stats));
+
+          this.authService.setProfile(profile);
+          this.authService.setStats(res.data.stats);
+        }
+      }, err => {
+        console.error('[DS Dashboard Error]', err);
+      });
+    }
   }
 
   @HostListener('document:click', ['$event'])

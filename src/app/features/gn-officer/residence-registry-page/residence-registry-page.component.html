@@ -9,7 +9,7 @@
   <div class="header-actions" *ngIf="!selectedCitizen">
     <button class="btn-add" (click)="openAddModal()">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      Add New Citizen
+      Add Citizen to eGN
     </button>
   </div>
 
@@ -23,11 +23,11 @@
     </div>
   </header>
 
-  <!-- SKELETON LOADING (Full Width Matching Dashboard) -->
+  <!-- SKELETON LOADING -->
   <div *ngIf="isLoading" class="skeleton-layout">
      <div class="skeleton-header"></div>
      <div class="skeleton-grid">
-        <div class="skeleton-card" *ngFor="let i of [1,2,3,4]"></div>
+        <div class="skeleton-card" *ngFor="let i of [1,2]"></div>
      </div>
      <div class="skeleton-main"></div>
   </div>
@@ -54,31 +54,13 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
            </div>
         </div>
-        <div class="summary-card welfare">
-           <div class="card-content">
-              <span class="count">{{ analytics.welfareEligible }}</span>
-              <span class="label">Welfare Eligible</span>
-           </div>
-           <div class="icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-           </div>
-        </div>
-        <div class="summary-card senior">
-           <div class="card-content">
-              <span class="count">{{ analytics.seniorCitizens }}</span>
-              <span class="label">Senior Citizens</span>
-           </div>
-           <div class="icon-wrapper">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-           </div>
-        </div>
      </div>
 
      <!-- Filters & Search Section -->
      <div class="filter-section">
         <div class="status-pills">
            <button class="pill" [class.active]="selectedFilter === 'All'" (click)="selectedFilter = 'All'; filterCitizens()">All Citizens</button>
-           <button class="pill welfare" [class.active]="selectedFilter === 'Welfare'" (click)="selectedFilter = 'Welfare'; filterCitizens()">Welfare Eligible</button>
+           <button class="pill welfare" [class.active]="selectedFilter === 'Welfare'" (click)="selectedFilter = 'Welfare'; filterCitizens()">eGN Registered</button>
         </div>
 
         <div class="filter-controls">
@@ -97,24 +79,24 @@
            <table class="modern-table">
               <thead>
                  <tr>
-                    <th>Citizen ID</th>
-                    <th>Citizen Name</th>
                     <th>NIC Number</th>
-                    <th>Contact Info</th>
+                    <th>Full Name</th>
                     <th>Address</th>
-                    <th>Welfare</th>
+                    <th>Gender</th>
+                    <th>eGN Registration Status</th>
                     <th style="text-align: right;">Action</th>
                  </tr>
               </thead>
               <tbody>
                  <tr *ngFor="let c of filteredCitizens">
-                    <td class="citizen-id">{{ c.id }}</td>
-                    <td class="citizen-name">{{ c.fullName }}</td>
                     <td class="nic-cell">{{ c.nic }}</td>
-                    <td class="contact-cell">{{ c.contact }}</td>
-                    <td class="address-cell">{{ c.address }}</td>
+                    <td class="citizen-name">{{ c.fullName }}</td>
+                    <td class="address-cell">{{ c.address || 'No Address Registered' }}</td>
+                    <td class="gender-cell">{{ c.gender }}</td>
                     <td>
-                        <span class="status-badge" [class.status-approved]="c.welfareDetails !== 'None'">{{ c.welfareDetails !== 'None' ? 'Eligible' : 'Standard' }}</span>
+                        <span class="status-badge" [class.status-approved]="c.hasEgnAccount" [class.status-rejected]="!c.hasEgnAccount">
+                          {{ c.hasEgnAccount ? 'Active' : 'Not Registered' }}
+                        </span>
                     </td>
                     <td style="text-align: right;">
                        <button class="btn-action" (click)="viewDetails(c)">
@@ -131,26 +113,30 @@
      </div>
   </ng-container>
 
-  <!-- INDIVIDUAL PROFILE VIEW (Citizen Style) -->
+  <!-- INDIVIDUAL PROFILE VIEW -->
   <div class="profile-view-container" *ngIf="!isLoading && selectedCitizen">
      
     <!-- Details Panel -->
+    <div class="registry-grid">
+
+    <!-- PANEL A: My Details -->
     <div class="registry-panel my-details">
       <div class="panel-header">
         <div class="title-with-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          <h3>Personal Profile Records</h3>
+          <img src="/assets/icons/profile.png" alt="My Details">
+          <h3>{{ selectedCitizen.fullName }} Details</h3>
         </div>
       </div>
 
       <div class="panel-body">
+        
         <!-- Identity Section -->
         <div class="info-section">
           <div class="section-title">Identity & Personal Details</div>
           <div class="info-grid">
             <div class="info-item">
               <span class="label">Full Name</span>
-              <span class="value highlight">{{ selectedCitizen.fullName }}</span>
+              <span class="value">{{ selectedCitizen.fullName }}</span>
             </div>
             <div class="info-item">
               <span class="label">NIC Number</span>
@@ -158,228 +144,371 @@
             </div>
             <div class="info-item">
               <span class="label">Date of Birth</span>
-              <span class="value">{{ selectedCitizen.dob }}</span>
+              <span class="value">{{ selectedCitizen.dob | date:'longDate' }}</span>
             </div>
             <div class="info-item">
               <span class="label">Gender</span>
               <span class="value">{{ selectedCitizen.gender }}</span>
             </div>
             <div class="info-item">
-              <span class="label">Marital Status</span>
-              <span class="value">{{ selectedCitizen.maritalStatus }}</span>
-            </div>
-            <div class="info-item">
               <span class="label">Occupation</span>
               <span class="value highlight">{{ selectedCitizen.occupation }}</span>
             </div>
             <div class="info-item">
-              <span class="label">e-GN Service Account Access</span>
-              <span class="status-pill egn-access" [class.yes]="selectedCitizen.hasEgnAccount" [class.no]="!selectedCitizen.hasEgnAccount">
-                {{ selectedCitizen.hasEgnAccount ? 'Yes' : 'No' }}
-              </span>
+              <span class="label">Personal Email</span>
+              <span class="value">{{ selectedCitizen.contact.email }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Phone Number</span>
+              <span class="value">{{ selectedCitizen.contact.phone }}</span>
             </div>
           </div>
         </div>
 
         <!-- Location Section -->
         <div class="info-section">
-          <div class="section-title">Residential Records</div>
+          <div class="section-title">Administrative & Location Details</div>
           <div class="info-grid">
-            <div class="info-item full-width">
-              <span class="label">Current Residential Address</span>
-              <span class="value">{{ selectedCitizen.address }}</span>
+            <div class="info-item">
+              <span class="label">Province</span>
+              <span class="value">{{ selectedCitizen.province }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">District</span>
+              <span class="value">{{ selectedCitizen.district }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">DS Division</span>
+              <span class="value">{{ selectedCitizen.dsDivision }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">GN Division</span>
+              <span class="value">{{ selectedCitizen.gnDivision }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Current Family Card</span>
+              <span class="value highlight">{{ selectedCitizen.familyCard }}</span>
             </div>
           </div>
         </div>
 
         <!-- Eligibility Section -->
         <div class="info-section">
-          <div class="section-title">Eligibility & Social Status</div>
+          <div class="section-title">Eligibility Status</div>
           
           <div class="eligibility-box">
             <div class="elig-info">
               <h4>Voter Eligibility</h4>
-              <p>Based on electoral roll records for this division</p>
+              <p>Based on electoral roll criteria (Age ≥ 18)</p>
             </div>
-            <div class="status-pill eligible">
-              <span class="symbol">✓</span>
-              <span>Verified Eligible</span>
+            <div class="status-pill" [class.eligible]="isVoterEligible(selectedCitizen.dob, selectedCitizen.specialStatus.lifeStatus)">
+              <span class="symbol">{{ isVoterEligible(selectedCitizen.dob, selectedCitizen.specialStatus.lifeStatus) ? '✓' : '✕' }}</span>
+              <span>{{ isVoterEligible(selectedCitizen.dob, selectedCitizen.specialStatus.lifeStatus) ? 'Eligible' : 'Not Eligible' }}</span>
             </div>
           </div>
 
           <div class="special-status-grid">
-            <div class="status-card" [class.active]="selectedCitizen.welfareDetails !== 'None'">
+            <div class="status-card" *ngIf="selectedCitizen.specialStatus.hasVoterId" [class.active]="selectedCitizen.specialStatus.hasVoterId">
               <div class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                <img src="/assets/icons/family.png" alt="voter" class="status-ic">
               </div>
               <div class="card-info">
-                <span class="status-title">Welfare Recipient</span>
-                <span class="status-value">{{ selectedCitizen.welfareDetails !== 'None' ? 'Verified' : 'Not Enrolled' }}</span>
+                <span class="status-title">Registered Voter</span>
+                <span class="status-value">{{ selectedCitizen.specialStatus.hasVoterId ? 'Verified ID' : 'No ID Registered' }}</span>
               </div>
             </div>
-            
-            <div class="status-card">
+            <div class="status-card" *ngIf="selectedCitizen.specialStatus.isNalanpuri" [class.active]="selectedCitizen.specialStatus.isNalanpuri">
               <div class="card-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <img src="/assets/icons/nalanpuri.png" alt="nalanpuri" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Nalanpuri Recipient</span>
+                <span class="status-value">{{ selectedCitizen.specialStatus.isNalanpuri ? 'Verified' : 'Not Enrolled' }}</span>
+              </div>
+            </div>
+            <div class="status-card" *ngIf="selectedCitizen.specialStatus.hasElderlyEligible" [class.active]="selectedCitizen.specialStatus.hasElderlyEligible">
+              <div class="card-icon">
+                <img src="/assets/icons/elder.png" alt="elder" class="status-ic">
               </div>
               <div class="card-info">
                 <span class="status-title">Elderly Status</span>
-                <span class="status-value">Standard</span>
+                <span class="status-value">{{ selectedCitizen.specialStatus.hasElderlyEligible ? 'Verified (60+)' : 'Standard' }}</span>
+              </div>
+            </div>
+            <div class="status-card" *ngIf="selectedCitizen.specialStatus.hasKidneyDisease" [class.active]="selectedCitizen.specialStatus.hasKidneyDisease">
+              <div class="card-icon">
+                <img src="/assets/icons/kidney.png" alt="kidney" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Medical Assistant (Kidney)</span>
+                <span class="status-value">{{ selectedCitizen.specialStatus.hasKidneyDisease ? 'Recipient' : 'None' }}</span>
+              </div>
+            </div>
+            <div class="status-card" *ngIf="selectedCitizen.specialStatus.hasCancer" [class.active]="selectedCitizen.specialStatus.hasCancer">
+              <div class="card-icon">
+                <img src="/assets/icons/cancer.png" alt="cancer" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Medical Assistant (Cancer)</span>
+                <span class="status-value">{{ selectedCitizen.specialStatus.hasCancer ? 'Recipient' : 'None' }}</span>
               </div>
             </div>
           </div>
         </div>
+
+        <div class="footer-actions">
+        </div>
       </div>
     </div>
 
-    <!-- Family Background Panel -->
+    <!-- PANEL B: Family Details -->
     <div class="registry-panel my-family">
       <div class="panel-header">
         <div class="title-with-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-          <h3>Linked Family Records</h3>
+          <img src="/assets/icons/family.png" alt="Family Details">
+          <h3>Family Details</h3>
         </div>
       </div>
 
       <div class="panel-body">
+        <div class="family-summary" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Family Head</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ selectedFamilyData.head }}</span>
+          </div>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Family Card ID</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ selectedFamilyData.cardNumber }}</span>
+          </div>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Card Status</span>
+            <span class="status-indicator" [class.not-active]="selectedFamilyData.status !== 'Active'" style="font-size: 0.9rem; font-weight: 600;">
+              {{ selectedFamilyData.status }}
+            </span>
+          </div>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Registered Division</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ selectedFamilyData.gn }}</span>
+          </div>
+        </div>
+
         <div class="table-container">
           <table class="members-table">
             <thead>
               <tr>
-                <th>Member Full Name</th>
+                <th>Member Name</th>
                 <th>Relationship</th>
-                <th>NIC Number</th>
-                <th>Occupation</th>
-                <th style="text-align: right;">Action</th>
+                <th>DOB</th>
+                <th>Voter Status</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let member of selectedCitizen.familyMembers">
+              <tr *ngFor="let member of selectedFamilyData.members" [class.self-row]="member.relationship === 'Self'">
                 <td class="name-cell">{{ member.name }}</td>
                 <td>
-                  <span [class]="getRelationshipClass(member.relationship || member.relation)">{{ member.relationship || member.relation }}</span>
+                  <span class="rel-tag">{{ member.relationship }}</span>
                 </td>
-                <td style="font-family: monospace;">{{ member.nic }}</td>
-                <td>{{ member.occupation }}</td>
-                <td style="text-align: right;">
-                   <button class="btn-action">View Member <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
+                <td>{{ member.dob | date:'mediumDate' }}</td>
+                <td>
+                  <span class="icon-circle" [class.success]="isVoterEligible(member.dob, member.status)">
+                    <span class="symbol">{{ isVoterEligible(member.dob, member.status) ? '✓' : '✕' }}</span>
+                  </span>
                 </td>
-              </tr>
-              <tr *ngIf="selectedCitizen.familyMembers.length === 0">
-                 <td colspan="5" style="padding: 3rem; text-align: center; color: #94a3b8;">No family members linked to this record.</td>
+
+                <td>
+                  <span class="state-pill" [class.active]="member.status === 'Active' || member.status === 'Alive'">{{ member.status }}</span>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
+
+        <div class="footer-actions" style="margin-top: 20px;">
+          <button class="btn-secondary" (click)="viewPastFamilyHistory()" *ngIf="selectedCitizen?.pastFamilyCard && !selectedFamilyData.showHistory">
+            <span>View Linked Family Card History</span>
+          </button>
+        </div>
+
+        <!-- History Section -->
+        <div *ngIf="selectedFamilyData.showHistory" class="history-section" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+          <div class="section-title">Past Family Card History ({{ selectedCitizen.pastFamilyCard }})</div>
+          
+          <div *ngIf="selectedFamilyData.pastHistoryNotFound" style="padding: 20px; text-align: center; color: #64748b; font-weight: 500; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 15px; background: #f8fafc;">
+            Past family card not found
+          </div>
+
+          <div *ngIf="!selectedFamilyData.pastHistoryNotFound" class="table-container" style="margin-top: 15px;">
+            <table class="members-table">
+              <thead>
+                <tr>
+                  <th>Member Name</th>
+                  <th>Relationship</th>
+                  <th>DOB</th>
+                  <th>Voter Status</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let member of selectedFamilyData.historyMembers" [class.self-row]="member.relationship === 'Self'">
+                  <td class="name-cell">{{ member.name }}</td>
+                  <td>
+                    <span class="rel-tag">{{ member.relationship }}</span>
+                  </td>
+                  <td>{{ member.dob | date:'mediumDate' }}</td>
+                  <td>
+                    <span class="icon-circle" [class.success]="isVoterEligible(member.dob, member.status)">
+                      <span class="symbol">{{ isVoterEligible(member.dob, member.status) ? '✓' : '✕' }}</span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="state-pill" [class.active]="member.status === 'Active' || member.status === 'Alive'">{{ member.status }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
+  
+    </div>
+
+
   </div>
 
-  <!-- ADD CITIZEN MODAL -->
+  <!-- ADD CITIZEN TO eGN MODAL -->
   <div class="modal-overlay" *ngIf="showAddModal" (click)="closeAddModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h2>Add New Citizen Record</h2>
+        <h2>Add Citizen to eGN</h2>
         <button class="btn-close" (click)="closeAddModal()">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
       
       <div class="modal-body">
-        <form class="form-grid">
-          <div class="form-group full-width">
-            <label>Full Name</label>
-            <input type="text" [(ngModel)]="newCitizen.fullName" name="fullName" placeholder="Enter full name as per birth certificate">
-          </div>
+        <form #egnForm="ngForm" class="form-grid">
           
+          <!-- 1. NIC Number (Top, with Loading spinner) -->
           <div class="form-group">
             <label>NIC Number</label>
-            <input type="text" [(ngModel)]="newCitizen.nic" name="nic" placeholder="e.g. 199512345678">
+            <div class="input-with-spinner">
+              <input type="text" [(ngModel)]="newCitizen.nic" name="nic" (ngModelChange)="onNicChange()" required placeholder="Enter NIC" [disabled]="isSubmitting" class="nic-input-field">
+              <span class="inline-spinner" *ngIf="isNicValidating"></span>
+            </div>
           </div>
-          
+
+          <!-- 2. Full Name (Disabled, Auto-filled) -->
           <div class="form-group">
-            <label>Gender</label>
-            <select [(ngModel)]="newCitizen.gender" name="gender">
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
+            <label>Full Name</label>
+            <input type="text" [(ngModel)]="newCitizen.fullName" name="fullName" required placeholder="Auto-filled from Citizen Master" [disabled]="true" class="disabled-name-field">
           </div>
-          
-          <div class="form-group">
-            <label>Date of Birth</label>
-            <input type="date" [(ngModel)]="newCitizen.dob" name="dob">
-          </div>
-          
-          <div class="form-group">
-            <label>Marital Status</label>
-            <select [(ngModel)]="newCitizen.maritalStatus" name="maritalStatus">
-              <option value="Single">Single</option>
-              <option value="Married">Married</option>
-              <option value="Widowed">Widowed</option>
-              <option value="Divorced">Divorced</option>
-            </select>
-          </div>
-          
+
+          <!-- 3. Residential Address (Disabled, Auto-filled) -->
           <div class="form-group full-width">
             <label>Residential Address</label>
-            <textarea [(ngModel)]="newCitizen.address" name="address" rows="2" placeholder="Enter current permanent address"></textarea>
+            <textarea [(ngModel)]="newCitizen.address" name="address" rows="2" placeholder="Auto-filled address" [disabled]="true" class="disabled-name-field"></textarea>
+          </div>
+
+          <!-- 4. Email Address (Editable) -->
+          <div class="form-group">
+            <label>Email Address</label>
+            <input type="email" [(ngModel)]="newCitizen.email" name="email" required placeholder="Enter email" [disabled]="isSubmitting || !isNicValid">
           </div>
           
+          <!-- 5. Contact Number (Editable) -->
           <div class="form-group">
             <label>Contact Number</label>
-            <input type="text" [(ngModel)]="newCitizen.contact" name="contact" placeholder="e.g. 0771234567">
-          </div>
-          
-          <div class="form-group">
-            <label>Occupation</label>
-            <input type="text" [(ngModel)]="newCitizen.occupation" name="occupation" placeholder="Current profession">
+            <input type="text" [(ngModel)]="newCitizen.contact" name="contact" required placeholder="e.g. 0771234567" [disabled]="isSubmitting || !isNicValid">
           </div>
         </form>
+      </div>
 
-        <!-- e-GN Registration Section -->
-        <div class="egn-registration-box">
-          <label class="egn-toggle">
-            <input type="checkbox" [(ngModel)]="isEgnSelected" name="isEgnSelected">
-            <div class="toggle-info">
-              <h4>Register for e-GN Service</h4>
-              <p>Create a digital portal account for this citizen to access services online.</p>
+      <div class="modal-footer">
+        <button class="btn-cancel" (click)="closeAddModal()" [disabled]="isSubmitting">Cancel</button>
+        <button class="btn-save" (click)="submitEgnCitizen()" [disabled]="!egnForm.form.valid || isSubmitting || isNicValidating || !isNicValid">
+          <span *ngIf="!isSubmitting">Register eGN Access</span>
+          <span *ngIf="isSubmitting" class="spinner">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Premium Alert Modal overlay -->
+  <div class="modal-overlay alert-modal" *ngIf="isAlertModalOpen" (click)="closeAlertModal()">
+    <div class="modal-card" [ngClass]="alertModalType" (click)="$event.stopPropagation()">
+      <div class="modal-icon-wrapper">
+        <svg *ngIf="alertModalType === 'success'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <svg *ngIf="alertModalType === 'warning'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+        <svg *ngIf="alertModalType === 'error'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="icon-svg"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      </div>
+      
+      <div class="modal-content">
+        <h3>{{ alertModalTitle }}</h3>
+        <p *ngIf="alertModalType !== 'success'">{{ alertModalMessage }}</p>
+        
+        <!-- Detailed Credentials Display Card for successful registration -->
+        <div class="credentials-card" *ngIf="alertModalType === 'success' && registeredCitizen && !registeredCitizen.isExisting">
+          <div class="cred-card-title">{{ alertModalMessage }}</div>
+          
+          <div class="cred-card-grid">
+            <div class="cred-card-row">
+              <span class="label">Name</span>
+              <span class="value">{{ registeredCitizen.name }}</span>
             </div>
-          </label>
-
-          <div class="egn-form-section" *ngIf="isEgnSelected">
-            <div class="create-account-prompt" *ngIf="!isAccountCreated">
-              <p>Click the button below to generate a secure username and temporary password for this citizen.</p>
-              <button class="btn-create" (click)="generateCredentials()" [disabled]="!newCitizen.nic">
-                Create e-GN Account
-              </button>
-              <small *ngIf="!newCitizen.nic" style="color: #ef4444; display: block; margin-top: 0.5rem;">Please enter NIC number first.</small>
+            <div class="cred-card-row">
+              <span class="label">NIC Number</span>
+              <span class="value">{{ registeredCitizen.nic }}</span>
             </div>
+            <div class="cred-card-row">
+              <span class="label">Username</span>
+              <span class="value">{{ registeredCitizen.username }}</span>
+            </div>
+            <div class="cred-card-row highlighted" *ngIf="registeredCitizen.tempPassword">
+              <span class="label">Temporary Password</span>
+              <span class="value-highlight">{{ registeredCitizen.tempPassword }}</span>
+            </div>
+          </div>
+          
+          <p class="warning-footer" *ngIf="registeredCitizen.tempPassword">* Please note down the password before closing this dialog.</p>
+        </div>
 
-            <div class="credentials-display" *ngIf="isAccountCreated">
-              <div class="success-header">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                Account Created Successfully
-              </div>
-              <div class="cred-row">
-                <span class="label">Generated Username</span>
-                <span class="value">{{ generatedCredentials.username }}</span>
-              </div>
-              <div class="cred-row">
-                <span class="label">Temporary Password</span>
-                <span class="value">{{ generatedCredentials.password }}</span>
-              </div>
-              <span class="warning-text">* Please provide these credentials to the citizen. They will be required to change the password on first login.</span>
+        <!-- Display for Existing Account Added Access -->
+        <div class="credentials-card existing-account-card" *ngIf="alertModalType === 'warning' && registeredCitizen && registeredCitizen.isExisting" style="background: rgba(249, 250, 251, 0.9); border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-top: 15px;">
+          <div class="cred-card-title" style="color: #ea580c; font-weight: 600; font-size: 1.05rem; line-height: 1.5; margin-bottom: 16px; display: flex; align-items: flex-start; gap: 8px;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span>{{ registeredCitizen.existingAccountMessage }}</span>
+          </div>
+          
+          <div class="cred-card-grid" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="cred-card-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span class="label" style="font-weight: 500; color: #64748b;">NIC Number</span>
+              <span class="value font-mono" style="font-weight: 600; color: #1e293b;">{{ registeredCitizen.nic }}</span>
+            </div>
+            <div class="cred-card-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px; align-items: center;">
+              <span class="label" style="font-weight: 500; color: #64748b;">Existing Roles</span>
+              <span class="value" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span *ngFor="let role of registeredCitizen.existingRoles" class="badge-role-item" style="background: #eff6ff; color: #1e40af; font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid #bfdbfe;">{{ role }}</span>
+              </span>
+            </div>
+            <div class="cred-card-row" style="display: flex; justify-content: space-between; border-bottom: 1px dashed #e2e8f0; padding-bottom: 8px;">
+              <span class="label" style="font-weight: 500; color: #64748b;">Username / Email</span>
+              <span class="value" style="font-weight: 600; color: #1e293b;">{{ registeredCitizen.usernameOrEmail }}</span>
+            </div>
+            <div class="cred-card-row highlighted-blue" style="display: flex; justify-content: space-between; padding-top: 4px; align-items: center;">
+              <span class="label" style="font-weight: 500; color: #64748b;">Action Performed</span>
+              <span class="value-highlight" style="color: #2563eb; font-weight: 700; font-size: 0.9rem; background: #e0f2fe; padding: 4px 10px; border-radius: 6px; border: 1px solid #bae6fd;">{{ registeredCitizen.action }}</span>
             </div>
           </div>
         </div>
       </div>
-
-      <div class="modal-footer">
-        <button class="btn-cancel" (click)="closeAddModal()">Cancel</button>
-        <button class="btn-save" (click)="saveCitizen()" [disabled]="!newCitizen.fullName || !newCitizen.nic">Save Record</button>
+      
+      <div class="modal-actions-bar">
+        <button class="btn-modal btn-close" (click)="closeAlertModal()">Close</button>
       </div>
     </div>
   </div>
 
 </div>
+

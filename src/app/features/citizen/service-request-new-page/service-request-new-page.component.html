@@ -22,13 +22,12 @@
     </div>
   </div>
 
-  <div class="request-grid" [class.form-layout]="selectedService">
+  <div class="request-grid">
     <!-- Main Column -->
     <div class="main-column">
       
-      <!-- Step 1: Service Selection Grid (Full width when active) -->
-      <div class="panel-card service-selection-panel" *ngIf="!selectedService">
-        <!-- ... content remains same ... -->
+      <!-- Step 1: Service Selection Grid -->
+      <div class="panel-card service-selection-panel">
         <div class="panel-header">
           <div class="title-with-icon">
             <img src="/assets/icons/request_new.png" alt="Service Selection">
@@ -36,20 +35,20 @@
           </div>
         </div>
         <div class="panel-body">
-          <div *ngFor="let cat of serviceCategories" class="category-block">
+          <div *ngFor="let heading of headings" class="category-block">
             <h4 class="category-title">
-              <img [src]="cat.icon" alt="category icon" class="cat-icon-small">
-              {{ cat.name }}
+              <img [src]="heading.icon" alt="category icon" class="cat-icon-small">
+              {{ heading.parentHeadingName }}
             </h4>
             <div class="services-modern-grid">
-              <div *ngFor="let s of cat.services" 
+              <div *ngFor="let s of heading.services" 
                    class="service-card-modern"
                    (click)="selectService(s)">
                 <div class="service-icon-wrapper">
                     <img [src]="s.icon" alt="service">
                 </div>
                 <div class="service-info">
-                  <span class="service-name">{{ s.title }}</span>
+                  <span class="service-name">{{ s.serviceName }}</span>
                   <span class="service-desc-short">{{ s.description | slice:0:55 }}...</span>
                 </div>
                 <div class="select-indicator">
@@ -60,311 +59,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Step 2 & 3: Application Form -->
-      <div class="panel-card form-panel fade-in-up" *ngIf="selectedService">
-        <div class="panel-header">
-            <div class="title-with-icon">
-                <button class="btn-icon-back" (click)="deselectService()" title="Change Service">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-                <div class="header-titles">
-                    <h3>{{ selectedService.title }}</h3>
-                </div>
-            </div>
-        </div>
-        <div class="panel-body">
-          <form [formGroup]="requestForm" (ngSubmit)="submitRequest()">
-            
-            <!-- Applicant Type (Conditional) -->
-            <div class="info-section no-border" *ngIf="showApplicantType">
-              <div class="section-title">Whom is this request for?</div>
-              <div class="radio-group-modern">
-                <label class="radio-option">
-                  <input type="radio" name="applicantType" value="myself" [checked]="applicantType === 'myself'" (change)="setApplicantType('myself')">
-                  <span class="radio-circle"></span>
-                  <span class="label-text">Myself</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="applicantType" value="child" [checked]="applicantType === 'child'" (change)="setApplicantType('child')">
-                  <span class="radio-circle"></span>
-                  <span class="label-text">Child under 18</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="applicantType" value="elderly" [checked]="applicantType === 'elderly'" (change)="setApplicantType('elderly')">
-                  <span class="radio-circle"></span>
-                  <span class="label-text">Elderly Person</span>
-                </label>
-              </div>
-            </div>
-
-            <div class="info-section">
-              <div class="section-title">1. Personal Information</div>
-              <div class="form-grid">
-                <div class="form-group">
-                  <label>Full Name</label>
-                  <input type="text" formControlName="fullName" placeholder="Enter full name" class="gn-input"
-                         [class.error]="requestForm.get('fullName')?.touched && requestForm.get('fullName')?.invalid">
-                </div>
-                <div class="form-group">
-                  <label>NIC Number <span class="required">*</span></label>
-                  <input type="text" formControlName="nic" placeholder="Enter NIC" class="gn-input"
-                         [class.error]="requestForm.get('nic')?.touched && requestForm.get('nic')?.invalid">
-                </div>
-                <div class="form-group">
-                  <label>Phone No <span class="required">*</span></label>
-                  <input type="text" formControlName="phone" placeholder="Contact number" class="gn-input"
-                         [class.error]="requestForm.get('phone')?.touched && requestForm.get('phone')?.invalid">
-                </div>
-                <div class="form-group">
-                  <label>Email Address</label>
-                  <input type="email" formControlName="email" placeholder="Email" class="gn-input">
-                </div>
-              </div>
-
-              <!-- Conditional fields -->
-              <div class="nested-form-box fade-in" *ngIf="applicantType === 'child'">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Child's Full Name</label>
-                    <input type="text" formControlName="childName" placeholder="Enter child's full name" class="gn-input">
-                  </div>
-                  <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" formControlName="childAge" placeholder="Enter age" class="gn-input">
-                  </div>
-                </div>
-              </div>
-
-              <div class="nested-form-box fade-in" *ngIf="applicantType === 'elderly'">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Elderly Full Name</label>
-                    <input type="text" formControlName="elderlyName" placeholder="Elderly Full Name" class="gn-input">
-                  </div>
-                  <div class="form-group">
-                    <label>Elderly NIC</label>
-                    <input type="text" formControlName="elderlyNic" placeholder="NIC Number" class="gn-input">
-                  </div>
-                  <div class="form-group">
-                    <label>Relationship to Applicant</label>
-                    <select formControlName="relationship" class="gn-input">
-                        <option value="" disabled selected>Select Relationship</option>
-                        <option value="parent">Parent</option>
-                        <option value="grandparent">Grandparent</option>
-                        <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <!-- Birth Registration specific -->
-              <div class="nested-form-box fade-in" *ngIf="selectedService.id === 'birth'">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Relationship to Child</label>
-                    <select formControlName="birthRelationship" class="gn-input">
-                      <option value="" disabled selected>Select Relationship</option>
-                      <option value="father">Father</option>
-                      <option value="mother">Mother</option>
-                      <option value="guardian">Guardian</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Death Registration specific -->
-              <div class="nested-form-box fade-in" *ngIf="selectedService.id === 'death'">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Relationship to Deceased</label>
-                    <select formControlName="deathRelationship" class="gn-input">
-                      <option value="" disabled selected>Select Relationship</option>
-                      <option value="spouse">Spouse</option>
-                      <option value="child">Child</option>
-                      <option value="parent">Parent</option>
-                      <option value="relative">Relative</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Marriage Registration specific -->
-              <div class="nested-form-box fade-in" *ngIf="selectedService.id === 'marriage'">
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Who is Applying?</label>
-                    <select formControlName="applyingAs" class="gn-input">
-                      <option value="" disabled selected>Select Option</option>
-                      <option value="husband">Husband</option>
-                      <option value="wife">Wife</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div class="sub-section-title" style="margin-top: 1.5rem; color: #4b6cb7; font-weight: 600; font-size: 0.95rem; margin-bottom: 1.5rem;">Spouse Details</div>
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Spouse Full Name <span class="required">*</span></label>
-                    <input type="text" formControlName="spouseFullName" placeholder="Enter spouse full name" class="gn-input"
-                           [class.error]="requestForm.get('spouseFullName')?.touched && requestForm.get('spouseFullName')?.invalid">
-                  </div>
-                  <div class="form-group">
-                    <label>Spouse NIC / ID Number</label>
-                    <input type="text" formControlName="spouseNic" placeholder="NIC Number (Optional)" class="gn-input">
-                  </div>
-                  <div class="form-group">
-                    <label>Spouse Date of Birth</label>
-                    <input type="date" formControlName="spouseDob" class="gn-input">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Generic Request Details -->
-            <div class="info-section" *ngIf="selectedService.id !== 'complaint'">
-                <div class="section-title">2. Request Details</div>
-                
-                <div class="form-group" style="margin-bottom: 1.25rem;" *ngIf="['doc-request', 'doc-verification'].includes(selectedService.id)">
-                    <label>Document Type <span class="required">*</span></label>
-                    <select formControlName="documentType" class="gn-input"
-                            [class.error]="requestForm.get('documentType')?.touched && requestForm.get('documentType')?.invalid">
-                        <option value="" disabled selected>Select Document Type</option>
-                        <option value="birth">Birth Certificate</option>
-                        <option value="death">Death Certificate</option>
-                        <option value="marriage">Marriage Certificate</option>
-                        <option value="family-card">Family Card</option>
-                        <option value="voter-id">Voter ID</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group-full">
-                    <label>Brief Subject <span class="required">*</span></label>
-                    <input type="text" formControlName="subject" placeholder="Subject of request" class="gn-input"
-                           [class.error]="requestForm.get('subject')?.touched && requestForm.get('subject')?.invalid">
-                </div>
-                <div class="form-group-full" style="margin-top: 1.25rem;">
-                    <label>Detailed Description <span class="required">*</span></label>
-                    <textarea formControlName="description" rows="4" placeholder="Explain your request in detail..." class="gn-input gn-textarea"
-                              [class.error]="requestForm.get('description')?.touched && requestForm.get('description')?.invalid"></textarea>
-                </div>
-            </div>
-
-            <!-- Specific Complaint Details -->
-            <div class="info-section" *ngIf="selectedService.id === 'complaint'">
-                <div class="section-title">2. Complaint Details</div>
-                <div class="form-grid">
-                    <div class="form-group-full">
-                        <label>Complaint Title <span class="required">*</span></label>
-                        <input type="text" formControlName="subject" placeholder="Enter complaint title" class="gn-input"
-                               [class.error]="requestForm.get('subject')?.touched && requestForm.get('subject')?.invalid">
-                    </div>
-                    <div class="form-group">
-                        <label>Complaint Category <span class="required">*</span></label>
-                        <select formControlName="complaintCategory" class="gn-input"
-                                [class.error]="requestForm.get('complaintCategory')?.touched && requestForm.get('complaintCategory')?.invalid">
-                            <option value="" disabled selected>Select Category</option>
-                            <option value="public-service">Public Service</option>
-                            <option value="infrastructure">Infrastructure</option>
-                            <option value="environment">Environment</option>
-                            <option value="social-issue">Social Issue</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Priority Level</label>
-                        <select formControlName="priorityLevel" class="gn-input">
-                            <option value="low">Low</option>
-                            <option value="medium">Medium</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date of Incident</label>
-                        <input type="date" formControlName="incidentDate" class="gn-input">
-                    </div>
-                    <div class="form-group">
-                        <label>Location <span class="required">*</span></label>
-                        <input type="text" formControlName="incidentLocation" placeholder="Enter incident location" class="gn-input">
-                    </div>
-                    <div class="form-group-full" style="margin-top: 1.25rem;">
-                        <label>Complaint Description <span class="required">*</span></label>
-                        <textarea formControlName="description" rows="5" placeholder="Provide clear and accurate details about the issue..." class="gn-input gn-textarea"></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <div class="info-section">
-                <div class="section-title">3. Supporting Documents</div>
-                <div class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading">
-                    <input type="file" #filePicker hidden (change)="onFileChange($event)" multiple>
-                    <div class="upload-inner">
-                        <div class="upload-icon-circle">
-                            <img src="/assets/icons/downloads.png" alt="upload">
-                        </div>
-                        <div class="upload-labels">
-                            <h3>Upload Scanned Documents</h3>
-                            <p>Drag and drop or click to browse (Max 5MB)</p>
-                            <span class="file-types">Supported: PDF, JPG, PNG</span>
-                        </div>
-                    </div>
-                    <div class="upload-progress-overlay" *ngIf="isUploading"></div>
-                </div>
-
-                <!-- File preview tags -->
-                <div class="file-preview-area" *ngIf="uploadedFiles.length > 0">
-                    <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
-                        <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                        <span class="file-name-text">{{ f }}</span>
-                        <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-actions-area">
-                <button type="button" class="btn-cancel-modern" (click)="goBack()">Discard</button>
-                <button type="submit" class="btn-submit-modern">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="btn-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    Submit Request
-                </button>
-            </div>
-
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Side Column (Guidelines) -->
-    <div class="side-column" *ngIf="selectedService">
-        <div class="instruction-card fade-in">
-            <div class="card-header">
-                <img src="/assets/icons/status_q.png" alt="guidelines">
-                <h4>Submission Guidelines</h4>
-            </div>
-            <div class="card-body">
-                <p>Please ensure all provided information matches your official documents.</p>
-                <ul class="guideline-list">
-                    <li>Double-check NIC and Phone numbers.</li>
-                    <li>Supporting documents must be clear and legible.</li>
-                    <li>Standard processing: 2-3 working days.</li>
-                    <li>All certificates must be valid and recently issued.</li>
-                    <li *ngIf="selectedService.id === 'birth'">A valid birth certificate is required for this request.</li>
-                    <li *ngIf="selectedService.id === 'death'">A valid death certificate is required for this request.</li>
-                    <li *ngIf="selectedService.id === 'marriage'">Upload a valid Marriage Certificate (clear scanned copy or photo).</li>
-                    <ng-container *ngIf="selectedService.id === 'complaint'">
-                        <li>Provide clear and accurate details about the issue.</li>
-                        <li>Attach supporting documents or images if available.</li>
-                        <li>Ensure contact details are correct for follow-up.</li>
-                    </ng-container>
-                </ul>
-                <div class="tip-box">
-                    <img src="/assets/icons/help.png" alt="tip">
-                    <span>Incomplete requests may be rejected by the GN office.</span>
-                </div>
-            </div>
-        </div>
     </div>
   </div>
 </div>

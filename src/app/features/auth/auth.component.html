@@ -1,6 +1,6 @@
 <ng-container *ngIf="translationService.translations$ | async as t">
   <div class="auth-wrapper">
-    <div class="auth-card" [class.wide-card]="currentView === 'register'">
+    <div class="auth-card">
       
       <!-- Loading Overlay -->
       <div class="loading-overlay" *ngIf="isLoading">
@@ -25,103 +25,25 @@
             <input type="password" formControlName="password">
           </div>
           
+          <div class="form-group">
+            <label>{{ t.ROLE || 'Select Role' }} <span class="req">*</span></label>
+            <select formControlName="role" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; background: #fff;">
+              <option value="" disabled selected>{{ t.SELECT_ROLE || 'Choose your role' }}</option>
+              <option value="Citizen">Citizen</option>
+              <option value="GN Officer">GN Officer</option>
+              <option value="DS Officer">DS Officer</option>
+            </select>
+          </div>
+          
           <button type="submit" class="primary-btn">{{ t.LOGIN || 'Login' }}</button>
 
           <!-- Links under Login Button -->
-          <div class="form-links">
-            <a href="javascript:void(0)" (click)="setView('register')">{{ t.REGISTER || 'Register' }}</a>
+          <div class="form-links centered">
             <a href="javascript:void(0)" (click)="setView('forgot')">{{ t.FORGOT_PASSWORD || 'Forgot Password?' }}</a>
           </div>
         </form>
 
-        <!-- REGISTER VIEW -->
-        <form *ngIf="currentView === 'register'" [formGroup]="registerForm" (ngSubmit)="onRegister()" class="auth-form fade-in">
-          <div class="form-row">
-            <div class="form-group half">
-              <label>{{ t.NIC || 'NIC' }} <span class="req">*</span></label>
-              <input type="text" formControlName="nic" placeholder="ID Number">
-            </div>
-            <div class="form-group half">
-              <label>{{ t.FULL_NAME || 'Full Name' }} <span class="req">*</span></label>
-              <input type="text" formControlName="fullName" placeholder="John Doe">
-            </div>
-          </div>
 
-          <div class="form-row">
-            <div class="form-group half">
-              <label>{{ t.EMAIL || 'Email Address' }} <span class="req">*</span></label>
-              <input type="email" formControlName="email" placeholder="john.doe@example.com">
-            </div>
-            <div class="form-group half">
-              <label>{{ t.TELEPHONE || 'Telephone' }} <span class="req">*</span></label>
-              <input type="tel" formControlName="telephone" placeholder="07XXXXXXXX">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group quarter">
-              <label>{{ t.PROVINCE || 'Province' }} <span class="req">*</span></label>
-              <select formControlName="province">
-                <option value="" disabled>{{ t.SELECT_PROVINCE || 'Select Province' }}</option>
-                <option value="Western">Western</option>
-                <option value="Central">Central</option>
-                <option value="Southern">Southern</option>
-                <option value="Northern">Northern</option>
-                <option value="Eastern">Eastern</option>
-                <option value="North Western">North Western</option>
-                <option value="North Central">North Central</option>
-                <option value="Uva">Uva</option>
-                <option value="Sabaragamuwa">Sabaragamuwa</option>
-              </select>
-            </div>
-            <div class="form-group quarter">
-              <label>{{ t.DISTRICT || 'District' }} <span class="req">*</span></label>
-              <select formControlName="district">
-                <option value="" disabled>{{ t.SELECT_DISTRICT || 'Select District' }}</option>
-                <option value="Colombo">Colombo</option>
-                <option value="Kandy">Kandy</option>
-                <option value="Galle">Galle</option>
-              </select>
-            </div>
-            <div class="form-group quarter">
-              <label>{{ t.DS_DIVISION || 'DS Division' }} <span class="req">*</span></label>
-              <select formControlName="dsDivision">
-                <option value="" disabled>{{ t.SELECT_DS || 'Select DS' }}</option>
-                <option value="DS01">DS01 - Colombo</option>
-                <option value="DS02">DS02 - Kandy</option>
-              </select>
-            </div>
-            <div class="form-group quarter">
-              <label>{{ t.GN_DIVISION || 'GN Division' }} <span class="req">*</span></label>
-              <select formControlName="gnDivision">
-                <option value="" disabled>{{ t.SELECT_GN || 'Select GN' }}</option>
-                <option value="GN01">GN01 - Colombo</option>
-                <option value="GN02">GN02 - Kandy</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group half">
-              <label>{{ t.PASSWORD || 'Password' }} <span class="req">*</span></label>
-              <input type="password" formControlName="password">
-            </div>
-            <div class="form-group half">
-              <label>{{ t.CONFIRM_PASSWORD || 'Confirm Password' }} <span class="req">*</span></label>
-              <input type="password" formControlName="confirmPassword">
-            </div>
-          </div>
-          
-          <div *ngIf="registerForm.hasError('mismatch')" class="error-msg">
-            Passwords do not match.
-          </div>
-          
-          <button type="submit" class="primary-btn">{{ t.REGISTER || 'Register' }}</button>
-          
-          <div class="form-links centered">
-            <a href="javascript:void(0)" (click)="setView('login')">Back to {{ t.LOGIN || 'Login' }}</a>
-          </div>
-        </form>
 
         <!-- FORGOT PASSWORD VIEW -->
         <form *ngIf="currentView === 'forgot'" [formGroup]="forgotForm" (ngSubmit)="onSendOtp()" class="auth-form fade-in">

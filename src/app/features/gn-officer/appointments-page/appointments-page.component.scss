@@ -1,15 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "../../../styles/variables";
 
-$primary: #2563eb;
+$primary: $primary-blue;
 $primary-light: #eff6ff;
 $text-dark: #1f2937;
 $text-gray: #6b7280;
-$booked: #e5e7eb;
-$holiday: #fee2e2;
-$holiday-text: #ef4444;
-$bg-light: #f9fafb;
+$bg-light: #f8fafc;
 $white: #ffffff;
-$shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
 .appointments-container {
   padding: 2rem;
@@ -18,587 +18,423 @@ $shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)
   min-height: 100vh;
   color: $text-dark;
 
-  .header {
-    margin-bottom: 2rem;
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: $text-dark;
-      margin: 0 0 0.25rem 0;
+  /* Header */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+
+    .header-title {
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: $text-dark;
+        margin: 0 0 0.25rem 0;
+      }
+      p {
+        color: $text-gray;
+        font-size: 0.875rem;
+        margin: 0;
+      }
     }
-    p {
-      color: $text-gray;
-      font-size: 0.875rem;
-      margin: 0;
+
+    @media (max-width: 600px) {
+      text-align: center;
+      h1 { font-size: 1.5rem; }
     }
   }
 
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 400px;
-    gap: 2rem;
-    align-items: start;
+  /* Tabs Container */
+  .tabs-container {
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    
+    &::-webkit-scrollbar { display: none; }
 
-    @media (max-width: 1024px) {
-      grid-template-columns: 1fr;
-    }
-
-    .calendar-section {
+    .tab-list {
       display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+      gap: 2.5rem;
+      padding: 0 0.5rem;
+      border-bottom: 1px solid #eef2f6;
+      width: 100%;
 
-      .calendar-card {
-        background: $white;
-        border-radius: 1.5rem;
-        padding: 1.5rem;
-        box-shadow: $shadow;
-        border: 1px solid rgba($primary, 0.05);
+      .tab-btn {
+        position: relative;
+        background: transparent;
+        border: none;
+        padding: 0.75rem 0;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #718096;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: inherit;
 
-        ::ng-deep {
-          .fc {
-            --fc-button-bg-color: transparent;
-            --fc-button-border-color: #e2e8f0;
-            --fc-button-hover-bg-color: #f1f5f9;
-            --fc-button-hover-border-color: #cbd5e1;
-            --fc-button-active-bg-color: #f1f5f9;
-            --fc-button-text-color: #475569;
-            --fc-today-bg-color: transparent;
-            --fc-border-color: #f1f5f9;
-            font-family: 'Poppins', sans-serif;
-
-            .fc-toolbar {
-              margin-bottom: 2rem;
-              padding: 0 0.5rem;
-            }
-
-            .fc-toolbar-title {
-              font-size: 1.15rem;
-              font-weight: 600;
-              color: $text-dark;
-            }
-
-            .fc-button {
-              padding: 0.5rem;
-              border-radius: 0.75rem;
-              transition: all 0.2s;
-              box-shadow: none !important;
-              
-              &.fc-prev-button, &.fc-next-button {
-                background: $white;
-                border: 1px solid #e2e8f0;
-                color: $text-gray;
-                &:hover { background: #f8fafc; border-color: $primary; color: $primary; }
-              }
-            }
-
-            /* Main Calendar Grid */
-            .fc-view-harness {
-              background: transparent;
-            }
-
-            table {
-              border-collapse: separate;
-              border-spacing: 0;
-            }
-
-            .fc-col-header-cell {
-              padding: 1rem 0;
-              font-weight: 500;
-              color: $text-gray;
-              font-size: 0.75rem;
-              text-transform: uppercase;
-              letter-spacing: 0.05em;
-              border: none !important;
-              background: transparent;
-            }
-
-            .fc-daygrid-day {
-              border: none !important;
-              transition: all 0.2s;
-              
-              &:hover:not(.fc-date-restricted):not(.fc-holiday-cell) {
-                background: $primary-light;
-                border-radius: 1rem;
-              }
-            }
-
-            .fc-daygrid-day-frame {
-              min-height: 80px;
-              padding: 0.5rem;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: flex-start;
-            }
-
-            .fc-daygrid-day-number {
-              width: 32px;
-              height: 32px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-radius: 50%;
-              font-size: 0.9rem;
-              color: $text-dark;
-              margin: 0;
-              font-weight: 400;
-              transition: all 0.2s;
-            }
-
-            /* Today Highlight */
-            .fc-day-today {
-              .fc-daygrid-day-number {
-                background: rgba($primary, 0.1);
-                color: $primary;
-                font-weight: 600;
-              }
-            }
-
-            /* Selected Date Highlight */
-            .fc-day-selected {
-              .fc-daygrid-day-number {
-                background: $primary !important;
-                color: white !important;
-                font-weight: 600;
-                box-shadow: 0 4px 10px rgba($primary, 0.3);
-              }
-            }
-
-            /* Restricted/Disabled Dates */
-            .fc-day-disabled, .fc-date-restricted {
-              opacity: 0.3;
-              cursor: not-allowed !important;
-              pointer-events: none !important;
-              .fc-daygrid-day-number { color: #94a3b8 !important; }
-            }
-
-            /* Holiday Cell */
-            .fc-daygrid-day.fc-holiday-cell {
-              .fc-daygrid-day-number {
-                color: $holiday-text !important;
-                font-weight: 700;
-              }
-            }
-
-            /* Custom Leave Cell */
-            .fc-daygrid-day.fc-leave-cell {
-              background: rgba($primary, 0.05);
-              .fc-daygrid-day-number {
-                color: $primary !important;
-                font-weight: 600;
-                border: 1px solid rgba($primary, 0.2);
-              }
-            }
-
-            /* Appointment Cell */
-            .fc-daygrid-day.fc-day-appointment:not(.fc-holiday-cell):not(.fc-leave-cell) {
-              background: rgba(#10b981, 0.05);
-              transition: background 0.2s;
-              
-              .fc-daygrid-day-number {
-                color: #059669 !important;
-                font-weight: 700;
-              }
-            }
-
-            /* Remove default month view event blocks completely */
-            .fc-daygrid-event-harness, .fc-daygrid-day-events {
-              display: none !important;
-            }
-
-            .fc-scroller {
-              overflow: hidden !important;
-            }
-          }
+        &:hover {
+          color: $primary;
         }
-      }
 
-      .current-appointments {
-        background: $white;
-        border-radius: 1.25rem;
-        padding: 1.5rem;
-        box-shadow: $shadow;
-        border: 1px solid rgba($primary, 0.05);
-
-        h3 {
-          margin: 0 0 1.25rem 0;
-          font-size: 1.15rem;
+        &.active {
+          color: $primary;
           font-weight: 600;
-          display: flex;
-          align-items: center;
-          color: $text-dark;
-          svg { margin-right: 0.75rem; color: $primary; width: 22px; height: 22px; }
-        }
-
-        .appointment-card {
-          display: flex;
-          justify-content: space-between;
-          padding: 1.25rem;
-          background: $white;
-          border-radius: 1rem;
-          margin-bottom: 1rem;
-          align-items: center;
-          border: 1px solid #e5e7eb;
-          transition: all 0.2s ease;
           
-          &:hover { 
-            border-color: $primary;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          }
-
-          .app-info {
-             .app-service { 
-               font-weight: 600; 
-               font-size: 0.95rem; 
-               display: block; 
-               color: $text-dark;
-               margin-bottom: 0.25rem;
-             }
-             .app-time { 
-               font-size: 0.85rem; 
-               color: $text-gray; 
-               display: flex;
-               align-items: center;
-               gap: 0.5rem;
-             }
-          }
-
-          .app-actions {
-            display: flex;
-            gap: 0.75rem;
-
-            button {
-              padding: 0.5rem 1rem;
-              border-radius: 0.6rem;
-              font-size: 0.8rem;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-            }
-
-            .reschedule-btn {
-              background: $primary-light;
-              color: $primary;
-              border: 1px solid rgba($primary, 0.2);
-              &:hover { background: $primary; color: $white; }
-            }
-
-            .cancel-btn {
-              background: $white;
-              color: #ef4444;
-              border: 1px solid rgba(#ef4444, 0.2);
-              &:hover { background: #ef4444; color: $white; }
-            }
+          &::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: $primary;
+            border-radius: 2px;
           }
         }
       }
     }
 
-    .detail-panel {
+    @media (max-width: 600px) {
+      margin-bottom: 1.5rem;
+      .tab-list {
+        gap: 1.25rem;
+        .tab-btn { font-size: 0.8rem; }
+      }
+    }
+  }
+
+  .list-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .appointment-card {
+      background: $white;
+      border-radius: 1rem;
+      padding: 1.5rem;
       display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: $shadow-sm;
+      border: 1px solid rgba(0,0,0,0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-      .card-section {
-        background: $white;
-        border-radius: 1.25rem;
-        padding: 1.5rem;
-        box-shadow: $shadow;
-        border: 1px solid rgba($primary, 0.05);
-        
-        h3 {
-          margin: 0 0 1rem 0;
-          font-size: 1.1rem;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          color: $text-dark;
-          svg { margin-right: 0.75rem; color: $primary; width: 20px; height: 20px; }
-        }
-
-        .section-desc {
-          font-size: 0.85rem;
-          color: $text-gray;
-          margin-bottom: 1.25rem;
-        }
+      &:hover {
+        box-shadow: $shadow-md;
+        border-color: rgba($primary, 0.3);
+        transform: translateY(-2px);
       }
 
-      .holiday-panel {
-        background: #fff1f2;
-        color: #be123c;
-        padding: 1.5rem;
-        border-radius: 1.25rem;
-        border: 1px solid #fda4af;
+      .app-info {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        position: relative;
-        overflow: hidden;
+        gap: 0.4rem;
 
-        &.custom-leave {
-          background: #eff6ff;
-          color: #1e40af;
-          border: 1px solid #bfdbfe;
-          
-          &::before { background: $primary; }
-        }
-
-        &::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0;
-          bottom: 0;
-          width: 4px;
-          background: #ef4444;
-        }
-
-        .icon { font-size: 2rem; }
-        
-        .info {
-          h4 { margin: 0; font-weight: 700; font-size: 1.1rem; }
-          p { margin: 0.5rem 0; font-size: 0.9rem; line-height: 1.5; }
-          
-          .remove-leave-btn {
-            margin-top: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            background: $white;
-            border: 1.5px solid currentColor;
-            color: inherit;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            &:hover { background: currentColor; color: $white; }
-          }
-
-          .restricted-badge {
-            display: inline-block;
-            margin-top: 0.5rem;
-            padding: 0.35rem 0.75rem;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 2rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-          }
-        }
-      }
-
-      .mark-leave-card {
-        text-align: center;
-        
-        .mark-leave-btn {
-          width: 100%;
-          padding: 1rem;
-          background: $primary;
-          color: $white;
-          border: none;
-          border-radius: 0.85rem;
+        .citizen-name {
+          margin: 0;
+          font-size: 1.1rem;
           font-weight: 600;
-          font-size: 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.75rem;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 4px 12px rgba($primary, 0.2);
-
-          &:hover {
-            background: #1e40af;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba($primary, 0.3);
-          }
-
-          &:active { transform: translateY(0); }
+          color: $text-dark;
         }
 
-        .hint {
-          margin-top: 1rem;
-          font-size: 0.75rem;
+        .app-service {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: $primary;
+          background: $primary-light;
+          padding: 0.2rem 0.6rem;
+          border-radius: 0.5rem;
+          width: fit-content;
+        }
+
+        .app-time {
+          font-size: 0.85rem;
           color: $text-gray;
-          font-style: italic;
-        }
-      }
-
-      .day-appointments {
-        .compact-app-card {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          padding: 0.85rem 0;
-          border-bottom: 1px solid #f1f5f9;
-          
-          &:last-child { border-bottom: none; }
+          gap: 0.5rem;
+        }
 
-          .compact-info {
-            .citizen { font-weight: 600; font-size: 0.9rem; color: $text-dark; display: block; }
-            .time-service { font-size: 0.75rem; color: $text-gray; }
-          }
+        .app-status {
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 0.25rem 0.75rem;
+          border-radius: 2rem;
+          width: fit-content;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
 
-          .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 2rem;
-            font-size: 0.7rem;
-            font-weight: 600;
-            
-            &.status-pending { background: #fef3c7; color: #92400e; }
-            &.status-approved { background: #dcfce7; color: #166534; }
-          }
+          &.status-pending { background: #f3f4f6; color: #374151; }
+          &.status-confirmed { background: #fef3c7; color: #92400e; }
+          &.status-completed { background: #dcfce7; color: #166534; }
+          &.status-cancelled { background: #fee2e2; color: #dc2626; }
+          &.status-rescheduled { background: #dbeafe; color: #1e40af; }
         }
       }
 
-      .empty-state {
-        .empty-content {
-          text-align: center;
-          padding: 2rem 0;
-          color: #94a3b8;
-          
-          svg { width: 48px; height: 48px; margin-bottom: 1rem; opacity: 0.5; }
-          p { font-size: 0.9rem; }
+      .app-actions {
+        display: flex;
+        gap: 0.75rem;
+
+        button {
+          padding: 0.6rem 1.25rem;
+          border-radius: 0.75rem;
+          font-size: 0.85rem;
+          font-weight: 600;
+          cursor: pointer;
+          border: none;
+          transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+          background: $primary-light;
+          color: $primary;
+          &:hover {
+            background: $primary;
+            color: $white;
+            box-shadow: 0 4px 10px rgba($primary, 0.2);
+          }
+        }
+
+        .btn-success {
+          background: #dcfce7;
+          color: #166534;
+          &:hover {
+            background: #166534;
+            color: $white;
+            box-shadow: 0 4px 10px rgba(22, 101, 52, 0.2);
+          }
+        }
+
+        .btn-danger {
+          background: #fff1f2;
+          color: #e11d48;
+          &:hover {
+            background: #e11d48;
+            color: $white;
+            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2);
+          }
         }
       }
     }
-  }
-}
 
-/* Calendar Details Popover */
-.calendar-popover {
-  position: absolute;
-  z-index: 2000;
-  transform: translate(-50%, -100%);
-  background: $white;
-  padding: 0.75rem 1rem;
-  border-radius: 0.85rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  min-width: 160px;
-  max-width: 240px;
-  cursor: pointer;
-  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-
-  &.holiday {
-    border-left: 4px solid #ef4444;
-    .popover-label { color: #ef4444; }
-  }
-
-  &.appointment {
-    border-left: 4px solid #10b981;
-    .popover-label { color: #10b981; }
-  }
-
-  .popover-arrow {
-    position: absolute;
-    bottom: -6px;
-    left: 50%;
-    transform: translateX(-50%) rotate(45deg);
-    width: 12px;
-    height: 12px;
-    background: $white;
-    border-right: 1px solid rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  }
-
-  .popover-content {
-    .popover-label {
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: block;
-      margin-bottom: 0.25rem;
-    }
-    .popover-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: $text-dark;
-      margin: 0;
-      line-height: 1.3;
-    }
-    .popover-hint {
-      font-size: 0.65rem;
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: $white;
+      border-radius: 1rem;
+      border: 1px dashed #cbd5e1;
       color: $text-gray;
-      margin-top: 0.4rem;
-      margin-bottom: 0;
-      font-style: italic;
+      
+      p { font-size: 1rem; margin: 0; }
     }
   }
 }
 
-@keyframes popIn {
-  from { opacity: 0; transform: translate(-50%, -90%) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, -100%) scale(1); }
-}
-
-/* Modal Styling */
+/* Modals */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s ease;
 
   .modal-content {
     background: $white;
     width: 90%;
-    max-width: 450px;
+    max-width: 480px;
     border-radius: 1.5rem;
     padding: 2rem;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
     .modal-header {
-      text-align: center;
-      margin-bottom: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: $text-dark;
+        margin: 0;
+      }
+      
+      .close-btn {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: $text-gray;
+        cursor: pointer;
+        transition: color 0.2s;
+        &:hover { color: $text-dark; }
+      }
+
       .warning-icon {
-        width: 60px; height: 60px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;
+        width: 64px; height: 64px;
+        background: #fee2e2; color: #ef4444;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem auto;
         svg { width: 32px; height: 32px; }
       }
-      h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: $text-dark; }
-      p { color: $text-gray; line-height: 1.5; font-size: 1rem; }
+    }
+
+    .modal-body {
+      margin-bottom: 2rem;
+
+      .form-group {
+        margin-bottom: 1rem;
+        label {
+          display: block;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: $text-gray;
+          margin-bottom: 0.5rem;
+        }
+        .form-control {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border-radius: 0.75rem;
+          border: 1px solid #cbd5e1;
+          font-family: inherit;
+          font-size: 0.95rem;
+          transition: all 0.2s;
+          box-sizing: border-box;
+
+          &:focus {
+            outline: none;
+            border-color: $primary;
+            box-shadow: 0 0 0 3px rgba($primary, 0.1);
+          }
+        }
+      }
+
+      .slots-grid {
+        display: grid; 
+        grid-template-columns: repeat(2, 1fr); 
+        gap: 0.75rem; 
+        max-height: 250px; 
+        overflow-y: auto;
+        margin-top: 0.5rem;
+
+        .slot-card {
+          padding: 0.75rem; 
+          border-radius: 0.75rem; 
+          border: 1px solid #e5e7eb; 
+          text-align: center; 
+          cursor: pointer; 
+          transition: all 0.2s;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          .time { font-weight: 600; font-size: 0.9rem; color: $text-dark; }
+          .status-icon { font-size: 0.75rem; color: #166534; font-weight: 500; }
+          .status-icon.booked { color: #dc2626; }
+
+          &.available:hover { 
+            border-color: $primary; 
+            background: $primary-light; 
+          }
+          &.selected { 
+            border-color: $primary; 
+            background: $primary; 
+            color: $white; 
+            .time, .status-icon { color: $white; }
+          }
+          &.booked { 
+            background: #f9fafb; 
+            color: #9ca3af; 
+            cursor: not-allowed; 
+            .time { color: #9ca3af; }
+          }
+        }
+      }
+
+      .selected-time-summary {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f0fdf4;
+        border: 1px dashed #22c55e;
+        border-radius: 0.75rem;
+        p { margin: 0; color: #166534; font-size: 0.9rem; }
+      }
+
+      .no-slots-msg {
+        text-align: center;
+        padding: 1rem;
+        color: $text-gray;
+        font-size: 0.9rem;
+        background: #f8fafc;
+        border-radius: 0.5rem;
+        border: 1px dashed #cbd5e1;
+      }
+      
+      p { text-align: center; color: $text-gray; font-size: 0.95rem; margin-bottom: 1.5rem; }
     }
 
     .modal-actions {
       display: flex;
       gap: 1rem;
-      button { flex: 1; padding: 0.875rem; border-radius: 0.75rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; }
-      .btn-secondary { background: #f3f4f6; color: #4b5563; &:hover { background: #e5e7eb; } }
-      .btn-danger { background: #ef4444; color: white; &:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); } }
-      .btn-primary { background: $primary; color: white; &:hover { background: darken($primary, 10%); box-shadow: 0 4px 12px rgba($primary, 0.3); } }
+      
+      button {
+        flex: 1;
+        padding: 0.85rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+      }
+
+      .btn-secondary {
+        background: #f1f5f9; color: #475569;
+        &:hover { background: #e2e8f0; }
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, $primary, darken($primary, 10%));
+        color: $white;
+        &:hover { box-shadow: 0 4px 12px rgba($primary, 0.3); transform: translateY(-1px); }
+      }
+
+      .btn-danger {
+        background: #ef4444; color: $white;
+        &:hover { background: #dc2626; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); transform: translateY(-1px); }
+      }
     }
   }
 
   &.alert-modal {
     .modal-content {
       max-width: 400px;
-      
+      text-align: center;
+
+      .modal-header {
+        flex-direction: column;
+      }
+
       .status-icon {
-        width: 64px;
-        height: 64px;
+        width: 72px; height: 72px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         margin: 0 auto 1.5rem;
         
         &.success { background: #dcfce7; color: #16a34a; }
         &.error { background: #fee2e2; color: #dc2626; }
         
-        svg { width: 32px; height: 32px; }
+        svg { width: 36px; height: 36px; }
       }
-      
-      &.error { border-top: 5px solid #ef4444; }
     }
   }
 }

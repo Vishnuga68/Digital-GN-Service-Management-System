@@ -1,6 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { catchError, map } from 'rxjs/operators';
+import { of, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-residence-registry-page',
@@ -10,14 +13,17 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./residence-registry-page.component.scss']
 })
 export class ResidenceRegistryPageComponent implements OnInit {
+  private http = inject(HttpClient);
+
   isLoading = true;
+  gnDivisionId = '';
+  gnDivisionName = '';
+  dsDivisionName = '';
 
   // GN Level Analytics
   analytics = {
-    totalCitizens: 1245,
-    families: 342,
-    welfareEligible: 120,
-    seniorCitizens: 185
+    totalCitizens: 0,
+    families: 0
   };
 
   // Search and Filter
@@ -29,109 +35,133 @@ export class ResidenceRegistryPageComponent implements OnInit {
 
   // Selected Citizen for Details View
   selectedCitizen: any = null;
+  selectedFamilyData: any = {
+    head: '',
+    cardNumber: '',
+    status: '',
+    gn: '',
+    members: [],
+    historyMembers: [],
+    showHistory: false
+  };
 
   // Add Citizen Modal
   showAddModal = false;
-  isEgnSelected = false;
-  isAccountCreated = false;
-  generatedCredentials = {
-    username: '',
-    password: ''
-  };
+  isNicValidating = false;
+  isNicValid = false;
+  isSubmitting = false;
 
   newCitizen = {
-    fullName: '',
     nic: '',
-    gender: 'Male',
-    dob: '',
-    maritalStatus: 'Single',
-    occupation: '',
+    fullName: '',
     address: '',
-    contact: '',
-    welfareDetails: 'None',
-    hasEgnAccount: false
+    email: '',
+    contact: ''
   };
 
+  // Premium Alert Modal States
+  isAlertModalOpen = false;
+  alertModalTitle = '';
+  alertModalMessage = '';
+  alertModalType: 'success' | 'warning' | 'error' = 'success';
+  registeredCitizen: any = null;
+  private debounceTimeout: any = null;
+
   ngOnInit(): void {
-    setTimeout(() => {
-      this.loadMockData();
-      this.filterCitizens();
-      this.isLoading = false;
-    }, 1000);
+    this.loadOfficerProfile();
   }
 
-  loadMockData() {
-    this.citizens = [
-      {
-         id: 'C001',
-         fullName: 'Saman Kumara',
-         nic: '198512345678',
-         gender: 'Male',
-         dob: '1985-05-10',
-         maritalStatus: 'Married',
-         religion: 'Buddhism',
-         occupation: 'Teacher',
-         address: 'No 45, Temple Road, Colombo.',
-         gsDivision: 'GN-01',
-         dsDivision: 'Colombo 03',
-         district: 'Colombo',
-         province: 'Western',
-         contact: '0771234567',
-         welfareDetails: 'Eligible for Samurdhi',
-         hasEgnAccount: true,
-         familyMembers: [
-            { name: 'Nimali Perera', relation: 'Spouse', nic: '198712345678', occupation: 'Housewife' },
-            { name: 'Kasun Kumara', relation: 'Child', nic: '201012345678', occupation: 'Student' }
-         ]
+  loadOfficerProfile() {
+    const token = sessionStorage.getItem('token');
+    const nic = sessionStorage.getItem('userNic') || '';
+    
+    if (token && nic) {
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      this.http.get<any>(`http://localhost:5058/api/Dashboard/gn/${nic}`, { headers }).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+            const profile = res.data.profile;
+            this.gnDivisionId = profile.GnDivisionId || profile.gnDivisionId || '';
+            this.loadDivisionData();
+          } else {
+            this.isLoading = false;
+          }
+        },
+        error: (err) => {
+          console.error('[ResidenceRegistry] Error fetching officer profile:', err);
+          this.isLoading = false;
+        }
+      });
+    } else {
+      this.isLoading = false;
+    }
+  }
+
+  loadDivisionData() {
+    if (!this.gnDivisionId) {
+      this.isLoading = false;
+      return;
+    }
+
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    this.isLoading = true;
+
+    // Fetch Stats in real-time
+    this.http.get<any>(`http://localhost:5058/api/CitizenMaster/division/stats?divisionId=${encodeURIComponent(this.gnDivisionId)}`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.analytics.totalCitizens = res.data.totalCitizens;
+          this.analytics.families = res.data.totalFamilies;
+        }
       },
-      {
-         id: 'C002',
-         fullName: 'Kamala Silva',
-         nic: '196012345678',
-         gender: 'Female',
-         dob: '1960-08-22',
-         maritalStatus: 'Widowed',
-         religion: 'Christianity',
-         occupation: 'Retired',
-         address: 'No 12, Church Street, Colombo.',
-         gsDivision: 'GN-01',
-         dsDivision: 'Colombo 03',
-         district: 'Colombo',
-         province: 'Western',
-         contact: '0712345678',
-         welfareDetails: 'Elderly Allowance Recipient',
-         hasEgnAccount: false,
-         familyMembers: []
+      error: (err) => console.error('[ResidenceRegistry] Error loading stats:', err)
+    });
+
+    // Fetch Citizens directly from CitizenMaster table
+    this.http.get<any>(`http://localhost:5058/api/CitizenMaster/division?divisionId=${encodeURIComponent(this.gnDivisionId)}`, { headers }).subscribe({
+      next: (res) => {
+        this.isLoading = false;
+        if (res.success && res.data) {
+          this.citizens = res.data.map((c: any) => ({
+            ...c,
+            dob: this.parseDate(c.dob)
+          }));
+          this.filterCitizens();
+        }
       },
-      {
-         id: 'C003',
-         fullName: 'Ruwan Jayawardena',
-         nic: '199512345678',
-         gender: 'Male',
-         dob: '1995-12-01',
-         maritalStatus: 'Single',
-         religion: 'Buddhism',
-         occupation: 'Software Engineer',
-         address: 'No 78, Galle Road, Colombo.',
-         gsDivision: 'GN-01',
-         dsDivision: 'Colombo 03',
-         district: 'Colombo',
-         province: 'Western',
-         contact: '0751234567',
-         welfareDetails: 'None',
-         hasEgnAccount: true,
-         familyMembers: [
-            { name: 'Sunil Jayawardena', relation: 'Father', nic: '196512345678', occupation: 'Farmer' }
-         ]
+      error: (err) => {
+        this.isLoading = false;
+        console.error('[ResidenceRegistry] Error loading citizens:', err);
       }
-    ];
+    });
+
+    // Fetch GN Division and DS Division details
+    this.http.get<any>(`http://localhost:5058/api/GnDivision/${encodeURIComponent(this.gnDivisionId)}`, { headers }).subscribe({
+      next: (gnRes) => {
+        if (gnRes && gnRes.name) {
+          this.gnDivisionName = gnRes.name;
+          if (gnRes.dsDivisionId) {
+            this.http.get<any>(`http://localhost:5058/api/DsDivision/${encodeURIComponent(gnRes.dsDivisionId)}`, { headers }).subscribe({
+              next: (dsRes) => {
+                if (dsRes && dsRes.name) {
+                  this.dsDivisionName = dsRes.name;
+                }
+              }
+            });
+          }
+        }
+      }
+    });
   }
 
   filterCitizens() {
     let filtered = this.citizens;
 
     if (this.selectedFilter === 'Welfare') {
-       filtered = filtered.filter(c => c.welfareDetails !== 'None');
+       filtered = filtered.filter(c => c.hasEgnAccount === true);
     }
 
     if (this.searchQuery.trim()) {
@@ -139,14 +169,226 @@ export class ResidenceRegistryPageComponent implements OnInit {
        filtered = filtered.filter(c => 
           c.fullName.toLowerCase().includes(q) || 
           c.nic.includes(q) ||
-          c.address.toLowerCase().includes(q)
+          (c.address && c.address.toLowerCase().includes(q))
        );
     }
     this.filteredCitizens = filtered;
   }
 
   viewDetails(citizen: any) {
-    this.selectedCitizen = citizen;
+    this.isLoading = true;
+
+    // Parse dob just in case
+    const parsedDob = this.parseDate(citizen.dob);
+
+    const tempCitizen = {
+      ...citizen,
+      dob: parsedDob,
+      contact: {
+        email: citizen.email || 'Not Provided',
+        phone: citizen.phone || 'Not Provided'
+      },
+      province: 'Northern',
+      district: 'Jaffna',
+      dsDivision: this.dsDivisionName || 'N/A',
+      gnDivision: this.gnDivisionName || this.gnDivisionId,
+      familyCard: citizen.familyCardNumber || 'N/A',
+      pastFamilyCard: citizen.pastFamilyCardNumber || '',
+      familyCardStatus: citizen.familyCardStatus || 'Active',
+      specialStatus: {
+        lifeStatus: citizen.lifeStatus || 'Alive',
+        isNalanpuri: false,
+        hasKidneyDisease: false,
+        hasCancer: false,
+        hasElderlyEligible: false,
+        hasVoterId: false
+      }
+    };
+
+    const tempFamilyData = {
+      head: 'Unknown',
+      cardNumber: citizen.familyCardNumber || 'N/A',
+      status: citizen.familyCardStatus || 'Active',
+      gn: this.gnDivisionId,
+      members: [] as any[],
+      historyMembers: [] as any[],
+      showHistory: false
+    };
+    
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      this.isLoading = false;
+      return;
+    }
+    
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const requests: any = {};
+
+    if (citizen.familyCardNumber && citizen.familyCardNumber !== 'N/A') {
+      requests.family = this.http.get<any>(`http://localhost:5058/api/FamilyCard/${citizen.familyCardNumber}/members`, { headers }).pipe(
+        catchError(() => of(null))
+      );
+    } else {
+      requests.family = of(null);
+    }
+
+    requests.specialStatus = this.http.get<any>(`http://localhost:5058/api/CitizenSpecialStatus/${citizen.nic}`, { headers }).pipe(
+      catchError(() => of(null))
+    );
+
+    forkJoin(requests).subscribe((results: any) => {
+      // Process Family Members
+      if (results.family && results.family.success) {
+        const members = results.family.data;
+        const headMember = members.find((m: any) => m.relationshipToHead === 'Head' || m.relationshipToHead === 'Self');
+        tempFamilyData.head = headMember ? headMember.fullName : 'Unknown';
+        
+        tempFamilyData.members = members.map((m: any) => ({
+          nic: m.nic,
+          name: m.fullName,
+          relationship: m.relationshipToHead,
+          dob: this.parseDate(m.dob),
+          status: m.lifeStatus
+        }));
+      }
+
+      // Process Special Status
+      if (results.specialStatus) {
+        const statusData = results.specialStatus.data || results.specialStatus;
+        if (statusData) {
+          const isAlive = tempCitizen.specialStatus.lifeStatus === 'Alive';
+          tempCitizen.specialStatus = {
+            ...tempCitizen.specialStatus,
+            isNalanpuri: isAlive ? !!(statusData.isNalanpuri || statusData.IsNalanpuri) : false,
+            hasKidneyDisease: isAlive ? !!(statusData.hasKidneyDisease || statusData.HasKidneyDisease) : false,
+            hasCancer: isAlive ? !!(statusData.hasCancer || statusData.HasCancer) : false,
+            hasElderlyEligible: isAlive ? !!(statusData.hasElderlyEligible || statusData.HasElderlyEligible) : false,
+            hasVoterId: isAlive ? !!(statusData.hasVoterId || statusData.HasVoterId) : false
+          };
+        }
+      }
+
+      this.selectedCitizen = tempCitizen;
+      this.selectedFamilyData = tempFamilyData;
+      this.isLoading = false;
+      setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 10);
+    });
+  }
+
+  parseDate(dateString: any): Date | string | null {
+    if (!dateString) return null;
+    if (dateString instanceof Date) return dateString;
+    const ds = String(dateString);
+    const parts = ds.split(' ');
+    if (parts.length > 0 && parts[0].includes('/')) {
+      const dateParts = parts[0].split('/');
+      if (dateParts.length === 3) {
+        return new Date(+dateParts[2], +dateParts[1] - 1, +dateParts[0]);
+      }
+    }
+    return ds;
+  }
+
+  calculateAge(dob: any): number {
+    if (!dob) return 0;
+    const parsed = this.parseDate(dob);
+    const birthDate = parsed instanceof Date ? parsed : new Date(parsed as string);
+    if (isNaN(birthDate.getTime())) return 0;
+    
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
+  isVoterEligible(dob: string, lifeStatus?: string): boolean {
+    if (lifeStatus && lifeStatus !== 'Alive') return false;
+    return this.calculateAge(dob) >= 18;
+  }
+
+  viewFamilyMemberDetails(member: any) {
+    if (!member || !member.nic) return;
+    
+    // Clear currently selected to show loading skeleton
+    this.selectedCitizen = null;
+    this.isLoading = true;
+
+    let fullCitizen = this.citizens.find(c => c.nic === member.nic);
+    
+    if (fullCitizen) {
+      this.viewDetails(fullCitizen);
+    } else {
+      const token = sessionStorage.getItem('token');
+      if (!token) return;
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      
+      this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${member.nic}`, { headers }).subscribe({
+        next: (res) => {
+          if (res.success && res.data) {
+             const data = res.data;
+             data.dob = this.parseDate(data.dob);
+             this.viewDetails(data);
+          } else {
+             this.isLoading = false;
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching member details', err);
+          this.isLoading = false;
+        }
+      });
+    }
+  }
+
+  isElderly(dob: string, lifeStatus?: string): boolean {
+    if (lifeStatus && lifeStatus !== 'Alive') return false;
+    return this.calculateAge(dob) >= 60;
+  }
+
+  viewPastFamilyHistory() {
+    this.selectedFamilyData.showHistory = true;
+    
+    if (!this.selectedCitizen?.pastFamilyCard) {
+      this.selectedFamilyData.historyMembers = [];
+      this.selectedFamilyData.pastHistoryNotFound = true;
+      return;
+    }
+    
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    
+    let url = `http://localhost:5058/api/FamilyCard/history/members?pastCard=${this.selectedCitizen.pastFamilyCard}`;
+
+    this.http.get<any>(url, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          if (res.data.length === 0) {
+            this.selectedFamilyData.historyMembers = [];
+            this.selectedFamilyData.pastHistoryNotFound = true;
+            return;
+          }
+          this.selectedFamilyData.pastHistoryNotFound = false;
+          this.selectedFamilyData.historyMembers = res.data.map((m: any) => ({
+            nic: m.nic,
+            name: m.fullName,
+            relationship: m.relationshipToHead,
+            dob: this.parseDate(m.dob),
+            status: m.lifeStatus,
+            currentCard: m.familyCardNumber,
+            pastCard: m.pastFamilyCardNumber
+          }));
+          this.selectedFamilyData.showHistory = true;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching family history:', err);
+        alert('Failed to load family card history.');
+      }
+    });
   }
 
   backToList() {
@@ -173,49 +415,178 @@ export class ResidenceRegistryPageComponent implements OnInit {
 
   resetForm() {
     this.newCitizen = {
-      fullName: '',
       nic: '',
-      gender: 'Male',
-      dob: '',
-      maritalStatus: 'Single',
-      occupation: '',
+      fullName: '',
       address: '',
-      contact: '',
-      welfareDetails: 'None',
-      hasEgnAccount: false
+      email: '',
+      contact: ''
     };
-    this.isEgnSelected = false;
-    this.isAccountCreated = false;
-    this.generatedCredentials = { username: '', password: '' };
-  }
-
-  generateCredentials() {
-    if (!this.newCitizen.nic) return;
-    
-    // Generate username from NIC + random string
-    const randomStr = Math.random().toString(36).substring(2, 5);
-    this.generatedCredentials.username = `egn_${this.newCitizen.nic}_${randomStr}`;
-    
-    // Generate temporary password
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$';
-    let password = '';
-    for (let i = 0; i < 8; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    this.isNicValidating = false;
+    this.isNicValid = false;
+    this.isSubmitting = false;
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
     }
-    this.generatedCredentials.password = password;
-    this.isAccountCreated = true;
-    this.newCitizen.hasEgnAccount = true;
   }
 
-  saveCitizen() {
-    const id = 'C00' + (this.citizens.length + 1);
-    const citizenToSave = { 
-      ...this.newCitizen, 
-      id,
-      familyMembers: [] 
+  onNicChange() {
+    const nic = this.newCitizen.nic ? this.newCitizen.nic.trim() : '';
+    
+    // Clear timeout
+    if (this.debounceTimeout) {
+      clearTimeout(this.debounceTimeout);
+    }
+    
+    // Reset
+    this.isNicValid = false;
+    this.newCitizen.fullName = '';
+    this.newCitizen.address = '';
+
+    if (!nic) {
+      this.isNicValidating = false;
+      return;
+    }
+
+    this.isNicValidating = true;
+
+    // Debounce for 500ms
+    this.debounceTimeout = setTimeout(() => {
+      this.validateCitizenNic(nic);
+    }, 500);
+  }
+
+  validateCitizenNic(nic: string) {
+    const token = sessionStorage.getItem('token');
+    const headers = token ? new HttpHeaders().set('Authorization', `Bearer ${token}`) : new HttpHeaders();
+
+    this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nic}`, { headers }).subscribe({
+      next: (res) => {
+        this.isNicValidating = false;
+        if (res && res.fullName) {
+          const citizenDivision = res.gnDivisionId || res.GnDivisionId;
+          if (citizenDivision && this.gnDivisionId && citizenDivision !== this.gnDivisionId) {
+            this.isNicValid = false;
+            this.showAlertModal(
+              'Division Mismatch',
+              'Citizen does not belong to your GN Division. You can only register citizens from your assigned division.',
+              'error'
+            );
+          } else {
+            this.newCitizen.fullName = res.fullName;
+            this.newCitizen.address = res.address || 'Address registered in Citizen Master';
+            this.isNicValid = true;
+          }
+        } else {
+          this.handleInvalidNic();
+        }
+      },
+      error: (err) => {
+        this.isNicValidating = false;
+        console.error('[ResidenceRegistry] NIC validation error:', err);
+        this.handleInvalidNic();
+      }
+    });
+  }
+
+  handleInvalidNic() {
+    this.isNicValid = false;
+    this.newCitizen.fullName = '';
+    this.newCitizen.address = '';
+    this.showAlertModal(
+      'Citizen Validation Failed',
+      'Citizen not found in Citizen Master.',
+      'error'
+    );
+  }
+
+  submitEgnCitizen() {
+    this.isSubmitting = true;
+    
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      this.showAlertModal('Registration Failed', 'Authorization token is missing. Please log in again.', 'error');
+      this.isSubmitting = false;
+      return;
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    // Generate credentials
+    const tempPassword = 'eGN@' + Math.floor(1000 + Math.random() * 9000);
+    const username = this.newCitizen.nic;
+
+    const payload = {
+      nic: this.newCitizen.nic,
+      fullName: this.newCitizen.fullName,
+      username: username,
+      email: this.newCitizen.email,
+      phone: this.newCitizen.contact,
+      password: tempPassword
     };
-    this.citizens.unshift(citizenToSave);
-    this.filterCitizens();
-    this.closeAddModal();
+
+    this.http.post<any>('http://localhost:5058/api/Account/citizen', payload, { headers }).subscribe({
+      next: (res) => {
+        this.isSubmitting = false;
+        if (res.success) {
+          if (res.message === 'existing_account_detected') {
+            this.registeredCitizen = {
+              name: this.newCitizen.fullName,
+              nic: res.data.nic,
+              usernameOrEmail: res.data.usernameOrEmail,
+              existingRoles: res.data.existingRoles,
+              action: res.data.action,
+              isExisting: true,
+              tempPassword: '',
+              existingAccountMessage: `The NIC already has a ${res.data.existingRoles.join(' / ')} account. Use existing login credential.`
+            };
+            this.showAlertModal(
+              'Existing Account Detected',
+              `The NIC already has a ${res.data.existingRoles.join(' / ')} account. Use existing login credential.`,
+              'warning'
+            );
+          } else {
+            this.registeredCitizen = {
+              name: this.newCitizen.fullName,
+              nic: this.newCitizen.nic,
+              username: this.newCitizen.nic,
+              tempPassword: tempPassword,
+              isExisting: false
+            };
+            this.showAlertModal(
+              'Successful Registration',
+              'Citizen successfully added to eGN services.',
+              'success'
+            );
+          }
+
+          this.closeAddModal();
+          this.loadDivisionData();
+        } else {
+          if (res.message === 'citizen_not_found') {
+            this.showAlertModal('Citizen Not Found', 'Citizen not found in Citizen Master.', 'error');
+          } else if (res.message === 'duplicate_citizen_role') {
+            this.showAlertModal('Citizen already registered', 'Citizen already registered.', 'error');
+          } else {
+            this.showAlertModal('Registration Failed', res.message || 'Registration failed. Please try again.', 'error');
+          }
+        }
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        console.error('[ResidenceRegistry Submit Error]', err);
+        this.showAlertModal('Registration Failed', 'Registration failed. Please try again.', 'error');
+      }
+    });
+  }
+
+  showAlertModal(title: string, message: string, type: 'success' | 'warning' | 'error') {
+    this.alertModalTitle = title;
+    this.alertModalMessage = message;
+    this.alertModalType = type;
+    this.isAlertModalOpen = true;
+  }
+
+  closeAlertModal() {
+    this.isAlertModalOpen = false;
   }
 }

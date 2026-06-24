@@ -1,10 +1,6 @@
 <div class="appointments-container">
   <div class="header">
     <div>
-      <!-- <a routerLink="/citizen" class="back-link">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-        Back to Dashboard
-      </a> -->
       <h1>Appointments</h1>
       <p>Schedule your session with the Grama Niladhari for official services.</p>
     </div>
@@ -16,7 +12,6 @@
         <full-calendar #calendar [options]="calendarOptions"></full-calendar>
       </div>
 
-      <!-- User's Existing Appointments (Moved here) -->
       <div class="card-section current-appointments" *ngIf="userAppointments.length > 0">
         <h3>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -24,40 +19,54 @@
         </h3>
         <div class="appointment-card" *ngFor="let app of userAppointments">
           <div class="app-info">
-            <span class="app-service">{{ app.service }}</span>
-            <span class="app-time">{{ app.date | date:'mediumDate' }} • {{ app.time }}</span>
+            <div class="app-header">
+              <span class="app-service">{{ app.serviceType }}</span>
+              <span class="app-status" 
+                    [ngClass]="{
+                      'status-pending': app.status === 'PENDING', 
+                      'status-confirmed': app.status === 'CONFIRMED',
+                      'status-completed': app.status === 'COMPLETED',
+                      'status-cancelled': app.status === 'CANCELLED_BY_CITIZEN' || app.status === 'CANCELLED_BY_GN',
+                      'status-rescheduled': app.status === 'RESCHEDULED'
+                    }">
+                {{ app.status }}
+              </span>
+            </div>
+            <span class="app-time">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              {{ app.appointmentDate | date:'mediumDate' }} • {{ app.startTime }} - {{ app.endTime }}
+            </span>
+            <span class="app-officer" *ngIf="app.gnOfficerName">
+              GN Officer: {{ app.gnOfficerName }}
+            </span>
+            <div class="cancellation-reason" *ngIf="app.status === 'CANCELLED_BY_GN'" style="margin-top: 0.75rem; padding: 0.75rem; background-color: #fef2f2; border-left: 3px solid #ef4444; border-radius: 4px;">
+              <span style="display: block; font-size: 0.75rem; font-weight: 600; color: #dc2626; margin-bottom: 0.25rem;">Cancelled by GN Officer:</span>
+              <span style="font-size: 0.85rem; color: #7f1d1d;">{{ app.cancellationReason || app.CancellationReason || 'No reason provided' }}</span>
+            </div>
           </div>
-          <button class="cancel-btn" (click)="confirmCancel(app.id)">Cancel</button>
+          <div class="app-actions" *ngIf="app.status === 'PENDING' || app.status === 'CONFIRMED' || app.status === 'RESCHEDULED'">
+            <button class="cancel-btn" (click)="confirmCancel(app.appointmentId)">Cancel</button>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Right Section: Service & Slots -->
     <div class="detail-panel">
-      <!-- Holiday Warning -->
-      <div class="holiday-panel" *ngIf="isHoliday">
-        <div class="icon">🚩</div>
-        <div class="info">
-          <h4>{{ isHoliday ? holidayDetail?.summary : 'Selected Date' }}</h4>
-          <p *ngIf="isHoliday">Official bookings are unavailable for this date due to a holiday.</p>
-          <p *ngIf="!isHoliday" style="font-weight: 500;">{{ selectedDate | date:'fullDate' }}</p>
-        </div>
-      </div>
-
       <!-- Service Selection -->
       <div class="card-section service-select">
         <h3>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
           Select Service Type
         </h3>
-        <select [(ngModel)]="selectedService" [disabled]="isHoliday">
+        <select [(ngModel)]="selectedService" [disabled]="isDateRestricted || (gnStatus !== 'GN_OFFICE' && gnStatus !== 'NONE' && gnStatus !== '')">
           <option value="" disabled selected>Choose a service...</option>
-          <option *ngFor="let service of services" [value]="service">{{ service }}</option>
+          <option *ngFor="let service of services" [value]="service.serviceName">{{ service.serviceName }}</option>
         </select>
       </div>
 
       <!-- Slot Selection -->
-      <div class="card-section" *ngIf="!isHoliday">
+      <div class="card-section">
         <h3>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           Available Slots
@@ -66,7 +75,7 @@
           {{ selectedDate | date:'EEEE, MMM d, y' }}
         </p>
         
-        <div class="slots-grid" *ngIf="slots.length > 0">
+        <div class="slots-grid" *ngIf="!isDateRestricted && slots.length > 0">
           <div class="slot-card" 
                *ngFor="let slot of slots"
                [class.available]="slot.status === 'available'"
@@ -78,15 +87,14 @@
           </div>
         </div>
 
-        <!-- No Slots Available message -->
-        <div class="no-slots-msg" *ngIf="slots.length === 0">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <p>No available slots for this date.</p>
+        <div class="no-slots-msg" *ngIf="isDateRestricted || slots.length === 0" style="padding: 10px; font-size: 0.9rem; color: #6b7280; display: flex; align-items: center; gap: 8px;">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          {{ isDateRestricted || (gnStatus !== 'GN_OFFICE' && gnStatus !== 'NONE' && gnStatus !== '') ? restrictionMessage : 'No slots available' }}
         </div>
       </div>
 
       <!-- Confirmation -->
-      <div class="card-section booking-summary" *ngIf="!isHoliday">
+      <div class="card-section booking-summary" *ngIf="!isDateRestricted">
         <h3>
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           Booking Summary
@@ -113,7 +121,6 @@
     </div>
   </div>
 
-  <!-- Custom Confirmation Modal -->
   <div class="modal-overlay" *ngIf="showCancelModal" (click)="closeModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
@@ -130,7 +137,6 @@
     </div>
   </div>
 
-  <!-- Alert Modal (Success/Error) -->
   <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
     <div class="modal-content" (click)="$event.stopPropagation()" [class.error]="alertType === 'error'">
       <div class="modal-header">
@@ -146,7 +152,7 @@
       </div>
     </div>
   </div>
-  <!-- Calendar Popover (Details on Click) -->
+
   <div class="calendar-popover" 
        *ngIf="showPopover" 
        [style.top]="popoverPosition.top" 

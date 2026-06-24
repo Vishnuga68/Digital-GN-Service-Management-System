@@ -4,6 +4,8 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { filter } from 'rxjs/operators';
 import { TranslationService } from '../../core/services/translation.service';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-citizen-layout',
@@ -16,8 +18,10 @@ export class CitizenLayoutComponent implements OnInit {
   translationService = inject(TranslationService);
   router = inject(Router);
   el = inject(ElementRef);
+  private http = inject(HttpClient);
+  private authService = inject(AuthService);
 
-  citizenName = 'Citizen Nimal';
+  citizenName = 'Citizen';
   isDashboard = true;
   searchPlaceholder = 'Search...';
 
@@ -30,6 +34,20 @@ export class CitizenLayoutComponent implements OnInit {
       // Close dropdowns on navigate
       this.isProfileModalOpen = false;
       this.isNotificationModalOpen = false;
+    });
+
+    // Fetch dynamic profile and dashboard stats from DB
+    this.authService.fetchProfile().subscribe();
+    
+    // Subscribe to profile to update top bar UI
+    this.authService.profile$.subscribe(profile => {
+      if (profile) {
+        this.citizenName = profile.FullName || profile.fullName || 'Citizen';
+        this.citizenNIC = profile.Nic || profile.nic || sessionStorage.getItem('userNic') || '';
+        this.citizenAddress = profile.Address || profile.address || 'No Address Listed';
+        this.citizenEmail = profile.Email || profile.email || 'No Email';
+        this.citizenPhone = profile.Phone || profile.phone || 'No Phone';
+      }
     });
   }
 
@@ -61,7 +79,7 @@ export class CitizenLayoutComponent implements OnInit {
 
       } else if (path.includes('messages')) {
         this.searchPlaceholder = 'Search messages...';
-      } else if (path.includes('downloads')) {
+      } else if (path.includes('document-handling')) {
         this.searchPlaceholder = 'Search forms...';
       } else if (path.includes('notifications')) {
         this.searchPlaceholder = 'Search notifications...';
@@ -70,12 +88,11 @@ export class CitizenLayoutComponent implements OnInit {
       }
     }
   }
-    // Mock Profile Data
-  citizenNIC = '199812345678';
-  citizenAddress = 'No. 123, Galle Road, Colombo 03, Sri Lanka';
-  citizenEmail = 'nimal.citizen@example.com';
-  citizenPhone = '+94 77 123 4567';
-  citizenPassword = 'password123'; // Sample masked password
+  citizenNIC = '';
+  citizenAddress = '';
+  citizenEmail = '';
+  citizenPhone = '';
+  citizenPassword = '••••••••'; // Masked password
   userImageUrl = ''; // Default profile image if empty
 
     isSidebarExpanded = true;

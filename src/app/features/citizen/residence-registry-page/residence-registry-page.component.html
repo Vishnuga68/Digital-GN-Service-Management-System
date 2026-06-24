@@ -1,7 +1,15 @@
 <div class="registry-container">
   <div class="header">
-    <h1>My Registry</h1>
-    <p>Comprehensive overview of your personal and family records in the GN system.</p>
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+      <div>
+        <h1>{{ isViewingMember ? 'Family Member Profile' : 'My Registry' }}</h1>
+        <p>{{ isViewingMember ? 'Details of selected family member.' : 'Comprehensive overview of your personal and family records in the GN system.' }}</p>
+      </div>
+      <button *ngIf="isViewingMember" class="btn-back" (click)="backToMyProfile()" style="padding: 8px 16px; border-radius: 6px; border: 1px solid #cbd5e1; background: white; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to My Profile
+      </button>
+    </div>
   </div>
 
   <div class="registry-grid">
@@ -94,7 +102,16 @@
           </div>
 
           <div class="special-status-grid">
-            <div class="status-card" [class.active]="myData.specialStatus.isNalanpuri">
+            <div class="status-card" *ngIf="myData.specialStatus.hasVoterId" [class.active]="myData.specialStatus.hasVoterId">
+              <div class="card-icon">
+                <img src="/assets/icons/family.png" alt="voter" class="status-ic">
+              </div>
+              <div class="card-info">
+                <span class="status-title">Registered Voter</span>
+                <span class="status-value">{{ myData.specialStatus.hasVoterId ? 'Verified ID' : 'No ID Registered' }}</span>
+              </div>
+            </div>
+            <div class="status-card" *ngIf="myData.specialStatus.isNalanpuri" [class.active]="myData.specialStatus.isNalanpuri">
               <div class="card-icon">
                 <img src="/assets/icons/nalanpuri.png" alt="nalanpuri" class="status-ic">
               </div>
@@ -103,16 +120,16 @@
                 <span class="status-value">{{ myData.specialStatus.isNalanpuri ? 'Verified' : 'Not Enrolled' }}</span>
               </div>
             </div>
-            <div class="status-card" [class.active]="isElderly(myData.dob)">
+            <div class="status-card" *ngIf="myData.specialStatus.hasElderlyEligible" [class.active]="myData.specialStatus.hasElderlyEligible">
               <div class="card-icon">
                 <img src="/assets/icons/elder.png" alt="elder" class="status-ic">
               </div>
               <div class="card-info">
                 <span class="status-title">Elderly Status</span>
-                <span class="status-value">{{ isElderly(myData.dob) ? 'Verified (60+)' : 'Standard' }}</span>
+                <span class="status-value">{{ myData.specialStatus.hasElderlyEligible ? 'Verified (60+)' : 'Standard' }}</span>
               </div>
             </div>
-            <div class="status-card" [class.active]="myData.specialStatus.hasKidneyDisease">
+            <div class="status-card" *ngIf="myData.specialStatus.hasKidneyDisease" [class.active]="myData.specialStatus.hasKidneyDisease">
               <div class="card-icon">
                 <img src="/assets/icons/kidney.png" alt="kidney" class="status-ic">
               </div>
@@ -121,7 +138,7 @@
                 <span class="status-value">{{ myData.specialStatus.hasKidneyDisease ? 'Recipient' : 'None' }}</span>
               </div>
             </div>
-            <div class="status-card" [class.active]="myData.specialStatus.hasCancer">
+            <div class="status-card" *ngIf="myData.specialStatus.hasCancer" [class.active]="myData.specialStatus.hasCancer">
               <div class="card-icon">
                 <img src="/assets/icons/cancer.png" alt="cancer" class="status-ic">
               </div>
@@ -134,9 +151,6 @@
         </div>
 
         <div class="footer-actions">
-          <button class="btn-secondary">
-            <span>View Linked Family Card History</span>
-          </button>
         </div>
       </div>
     </div>
@@ -151,18 +165,24 @@
       </div>
 
       <div class="panel-body">
-        <div class="family-summary">
-          <div class="summary-item">
-            <span class="label">Family Head</span>
-            <span class="value">{{ familyData.head }}</span>
+        <div class="family-summary" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Family Head</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ familyData.head }}</span>
           </div>
-          <div class="summary-item">
-            <span class="label">Family Card ID</span>
-            <span class="value">{{ familyData.cardNumber }}</span>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Family Card ID</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ familyData.cardNumber }}</span>
           </div>
-          <div class="summary-item">
-            <span class="label">Registered Division</span>
-            <span class="value">{{ familyData.gn }}</span>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Card Status</span>
+            <span class="status-indicator" [class.not-active]="familyData.status !== 'Active'" style="font-size: 0.9rem; font-weight: 600;">
+              {{ familyData.status }}
+            </span>
+          </div>
+          <div class="summary-item" style="display: flex; flex-direction: column; gap: 4px;">
+            <span class="label" style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Registered Division</span>
+            <span class="value" style="font-size: 1rem; font-weight: 600; color: #0f172a;">{{ familyData.gn }}</span>
           </div>
         </div>
 
@@ -174,9 +194,7 @@
                 <th>Relationship</th>
                 <th>DOB</th>
                 <th>Voter Status</th>
-                <th>Special Category</th>
                 <th>Status</th>
-                <th>Details</th>
               </tr>
             </thead>
             <tbody>
@@ -187,25 +205,63 @@
                 </td>
                 <td>{{ member.dob | date:'mediumDate' }}</td>
                 <td>
-                  <span class="icon-circle" [class.success]="isVoterEligible(member.dob)">
-                    <span class="symbol">{{ isVoterEligible(member.dob) ? '✓' : '✕' }}</span>
+                  <span class="icon-circle" [class.success]="isVoterEligible(member.dob, member.status)">
+                    <span class="symbol">{{ isVoterEligible(member.dob, member.status) ? '✓' : '✕' }}</span>
                   </span>
                 </td>
+
                 <td>
-                  <span class="special-badge" *ngIf="member.special !== 'None'" [class.nalanpuri]="member.special === 'Nalanpuri'">
-                    {{ member.special }}
-                  </span>
-                  <span class="special-badge none" *ngIf="member.special === 'None'">—</span>
-                </td>
-                <td>
-                  <span class="state-pill" [class.active]="member.status === 'Active'">{{ member.status }}</span>
-                </td>
-                <td>
-                  <button class="btn-view">Details</button>
+                  <span class="state-pill" [class.active]="member.status === 'Active' || member.status === 'Alive'">{{ member.status }}</span>
                 </td>
               </tr>
             </tbody>
           </table>
+        </div>
+
+        <div class="footer-actions" style="margin-top: 20px;">
+          <button class="btn-secondary" (click)="viewPastFamilyHistory()" *ngIf="myData.pastFamilyCard && !familyData.showHistory">
+            <span>View Linked Family Card History</span>
+          </button>
+        </div>
+
+        <!-- History Section -->
+        <div *ngIf="familyData.showHistory" class="history-section" style="margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+          <div class="section-title">Past Family Card History ({{ myData.pastFamilyCard }})</div>
+
+          <div *ngIf="familyData.pastHistoryNotFound" style="padding: 20px; text-align: center; color: #64748b; font-weight: 500; border: 1px dashed #cbd5e1; border-radius: 8px; margin-top: 15px; background: #f8fafc;">
+            Past family card not found
+          </div>
+
+          <div *ngIf="!familyData.pastHistoryNotFound" class="table-container" style="margin-top: 15px;">
+            <table class="members-table">
+              <thead>
+                <tr>
+                  <th>Member Name</th>
+                  <th>Relationship</th>
+                  <th>DOB</th>
+                  <th>Voter Status</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let member of familyData.historyMembers" [class.self-row]="member.relationship === 'Self'">
+                  <td class="name-cell">{{ member.name }}</td>
+                  <td>
+                    <span class="rel-tag">{{ member.relationship }}</span>
+                  </td>
+                  <td>{{ member.dob | date:'mediumDate' }}</td>
+                  <td>
+                    <span class="icon-circle" [class.success]="isVoterEligible(member.dob, member.status)">
+                      <span class="symbol">{{ isVoterEligible(member.dob, member.status) ? '✓' : '✕' }}</span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="state-pill" [class.active]="member.status === 'Active' || member.status === 'Alive'">{{ member.status }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

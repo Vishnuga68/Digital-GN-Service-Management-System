@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-gn-dashboard',
@@ -13,16 +14,17 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 })
 export class DashboardPageComponent implements OnInit {
   public router = inject(Router);
+  private authService = inject(AuthService);
   
-  officerName = 'Nimal Perera';
-  divisionName = 'Puliyankoodal';
-  divisionID = 'J/60';
+  officerName = 'Loading...';
+  divisionName = 'Loading...';
+  divisionID = '';
 
   summaryCards = [
-    { title: 'Total Families', value: '450', color: 'primary' },
-    { title: 'Pending Requests', value: '12', color: 'warning' },
-    { title: 'Verified Documents', value: '1,240', color: 'success' },
-    { title: 'Complaints', value: '05', color: 'danger' }
+    { title: 'Total Family Cards', value: '0', color: 'primary' },
+    { title: 'Pending Requests', value: '0', color: 'warning' },
+    { title: 'Total Citizens', value: '0', color: 'success' },
+    { title: 'Total Service Requests', value: '0', color: 'info' }
   ];
 
   recentRequests = [
@@ -80,5 +82,43 @@ export class DashboardPageComponent implements OnInit {
   };
   public barChartType: ChartType = 'bar';
 
-  ngOnInit(): void {}
+  updateProfile(profile: any) {
+    this.officerName = profile.FullName || profile.fullName || 'GN Officer';
+    this.divisionName = profile.GnDivisionName || profile.gnDivisionName || 'Division';
+    this.divisionID = profile.GnDivisionId || profile.gnDivisionId || '';
+  }
+
+  updateStats(stats: any) {
+    this.summaryCards = [
+      { title: 'Total Family Cards', value: stats.TotalFamilyCards?.toString() || '0', color: 'primary' },
+      { title: 'Pending Requests', value: stats.PendingRequests?.toString() || '0', color: 'warning' },
+      { title: 'Total Citizens', value: stats.TotalCitizens?.toString() || '0', color: 'success' },
+      { title: 'Total Service Requests', value: stats.TotalRequests?.toString() || '0', color: 'info' }
+    ];
+  }
+
+  ngOnInit(): void {
+    const profileStr = sessionStorage.getItem('userProfile');
+    const statsStr = sessionStorage.getItem('userStats');
+
+    if (profileStr) {
+      this.updateProfile(JSON.parse(profileStr));
+    }
+
+    if (statsStr) {
+      this.updateStats(JSON.parse(statsStr));
+    }
+
+    this.authService.profile$.subscribe(profile => {
+      if (profile) {
+        this.updateProfile(profile);
+      }
+    });
+
+    this.authService.stats$.subscribe(stats => {
+      if (stats) {
+        this.updateStats(stats);
+      }
+    });
+  }
 }

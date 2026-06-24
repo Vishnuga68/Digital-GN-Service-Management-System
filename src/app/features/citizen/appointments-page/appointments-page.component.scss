@@ -169,12 +169,12 @@ $shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)
             .fc-day-disabled, .fc-date-restricted {
               opacity: 0.3;
               cursor: not-allowed !important;
-              pointer-events: none !important;
               .fc-daygrid-day-number { color: #94a3b8 !important; }
             }
 
             /* Holiday Cell */
             .fc-daygrid-day.fc-holiday-cell {
+              cursor: not-allowed !important;
               .fc-daygrid-day-number {
                 color: $holiday-text !important;
                 font-weight: 700;
@@ -222,30 +222,70 @@ $shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)
 
         .appointment-card {
           display: flex;
+          flex-direction: column;
           justify-content: space-between;
-          padding: 1rem;
-          background: $primary-light;
-          border-radius: 0.75rem;
-          margin-bottom: 0.75rem;
-          align-items: center;
-          border: 1px solid rgba($primary, 0.1);
-          transition: transform 0.2s ease;
-          &:hover { transform: scale(1.01); }
+          padding: 1.25rem;
+          background: $white;
+          border-radius: 1rem;
+          margin-bottom: 1rem;
+          align-items: flex-start;
+          border: 1px solid rgba(0,0,0,0.05);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          &:hover { transform: scale(1.01); box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-color: rgba($primary, 0.2); }
+          
           .app-info {
-             .app-service { font-weight: 600; font-size: 0.95rem; display: block; color: $text-dark; }
-             .app-time { font-size: 0.85rem; color: $text-gray; }
+             width: 100%;
+             .app-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 0.5rem;
+             }
+             .app-service { font-weight: 600; font-size: 1.05rem; display: block; color: $text-dark; }
+             .app-status {
+                font-size: 0.75rem;
+                font-weight: 600;
+                padding: 0.25rem 0.75rem;
+                border-radius: 2rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                &.status-pending { background: #f3f4f6; color: #374151; }
+                &.status-confirmed { background: #fef3c7; color: #92400e; }
+                &.status-completed { background: #dcfce7; color: #166534; }
+                &.status-cancelled { background: #fee2e2; color: #dc2626; }
+                &.status-rescheduled { background: #dbeafe; color: #1e40af; }
+             }
+             .app-time { 
+                font-size: 0.85rem; 
+                color: $text-gray; 
+                display: flex; 
+                align-items: center; 
+                gap: 0.4rem; 
+                margin-bottom: 0.25rem;
+             }
+             .app-officer {
+                font-size: 0.85rem;
+                color: $text-gray;
+                display: block;
+             }
+          }
+          .app-actions {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
           }
           .cancel-btn {
-            border: 1.5px solid rgba($holiday-text, 0.3);
-            background: $white;
-            color: $holiday-text;
-            padding: 0.4rem 1rem;
+            border: none;
+            background: #fff1f2;
+            color: #e11d48;
+            padding: 0.5rem 1.25rem;
             border-radius: 0.5rem;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            &:hover { background: $holiday-text; color: $white; border-color: $holiday-text; }
+            &:hover { background: #e11d48; color: $white; box-shadow: 0 4px 10px rgba(225, 29, 72, 0.2); }
           }
         }
       }

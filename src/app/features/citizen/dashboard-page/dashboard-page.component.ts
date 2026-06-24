@@ -1,10 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TranslationService } from '../../../core/services/translation.service';
 import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-dashboard-page',
@@ -13,22 +14,82 @@ import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.scss']
 })
-export class DashboardPageComponent {
+export class DashboardPageComponent implements OnInit {
   translationService = inject(TranslationService);
   router = inject(Router);
+  private authService = inject(AuthService);
 
-  citizenName = 'Citizen Nimal';
-  pendingRequests = 2;
-  upcomingMeetings = 1;
-  newMessages = 3;
+  citizenName = 'Loading...';
+  pendingRequests = 0;
+  upcomingMeetings = 0;
+  newMessages = 0;
 
   // Mock Profile Data
-  citizenNIC = '199812345678';
-  citizenAddress = 'No. 123, Galle Road, Colombo 03, Sri Lanka';
-  citizenEmail = 'nimal.citizen@example.com';
-  citizenPhone = '+94 77 123 4567';
-  citizenPassword = 'password123'; // Sample masked password
+  citizenNIC = '';
+  citizenAddress = '';
+  citizenEmail = '';
+  citizenPhone = '';
+  citizenPassword = '••••••••'; // Sample masked password
   userImageUrl = ''; // Default profile image if empty
+
+  updateProfile(profile: any) {
+    this.citizenName = profile.FullName || profile.fullName || 'Citizen';
+    this.citizenNIC = profile.Nic || profile.nic || '';
+    this.citizenAddress = profile.Address || profile.address || 'No Address Listed';
+    this.citizenEmail = profile.Email || profile.email || 'No Email';
+    this.citizenPhone = profile.Phone || profile.phone || 'No Phone';
+  }
+
+  updateStats(stats: any) {
+    this.pendingRequests = stats.PendingRequests || stats.pendingRequests || 0;
+    
+    const approved = stats.ApprovedRequests || stats.approvedRequests || 0;
+    const pending = stats.PendingRequests || stats.pendingRequests || 0;
+    const total = stats.TotalRequests || stats.totalRequests || 0;
+    const other = Math.max(0, total - approved - pending);
+    
+    // Update charts dynamically based on real data
+    this.pieChartData = {
+      labels: [ 'Pending Requests', 'Approved', 'Other/Completed' ],
+      datasets: [ {
+        data: [ pending, approved, other ],
+        backgroundColor: ['#FEF3C7', '#D1FAE5', '#FEE2E2'],
+        hoverBackgroundColor: ['#FDE68A', '#A7F3D0', '#FECACA'],
+        borderColor: ['#D97706', '#059669', '#DC2626']
+      } ]
+    };
+    
+    this.pieChartAnalysis = [
+      { label: 'Pending Requests', value: pending, percentage: total > 0 ? (pending * 100 / total).toFixed(1) + '%' : '0%', color: '#D97706' },
+      { label: 'Approved', value: approved, percentage: total > 0 ? (approved * 100 / total).toFixed(1) + '%' : '0%', color: '#059669' },
+      { label: 'Other/Completed', value: other, percentage: total > 0 ? (other * 100 / total).toFixed(1) + '%' : '0%', color: '#DC2626' }
+    ];
+  }
+
+  ngOnInit() {
+    const profileStr = sessionStorage.getItem('userProfile');
+    const statsStr = sessionStorage.getItem('userStats');
+    
+    if (profileStr) {
+      this.updateProfile(JSON.parse(profileStr));
+    }
+    
+    if (statsStr) {
+      this.updateStats(JSON.parse(statsStr));
+    }
+
+    this.authService.profile$.subscribe(profile => {
+      if (profile) {
+        this.updateProfile(profile);
+      }
+    });
+
+    this.authService.stats$.subscribe(stats => {
+      if (stats) {
+        this.updateStats(stats);
+      }
+    });
+  }
 
   recentActivities = [
     { date: '2025-10-12', action: 'Applied for Residence Certificate', status: 'Pending', detail: 'Waiting for GN approval' },

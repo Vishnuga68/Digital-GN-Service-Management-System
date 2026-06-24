@@ -1,0 +1,218 @@
+<div class="downloads-container fade-in">
+  <div style="margin-bottom: 1.5rem;">
+    <button class="btn-icon" routerLink="../" style="background: transparent; border: none; cursor: pointer; color: #64748b; display: flex; align-items: center; gap: 0.5rem; font-weight: 500; font-size: 0.9rem; padding: 0; transition: color 0.2s;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+      Back to Document Handling
+    </button>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- Header Section -->
+    <header class="page-header">
+      <div class="header-titles">
+        <div>
+          <h1>{{ 'Document Vault' }}</h1>
+          <p>{{ 'Securely store and manage your personal documents' }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <div class="category-filter-minimal">
+          <select [(ngModel)]="activeCategory" (change)="filterDocuments()" class="gn-input minimal-select" style="min-width: 150px; cursor: pointer; border-radius: 8px;">
+            <option value="All">All Categories</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <button class="btn-action btn-outline" (click)="openManageCategoriesModal()">
+          Manage Categories
+        </button>
+
+        <button class="btn-action btn-primary" (click)="openUploadModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Upload Document
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading Skeleton -->
+    <div class="loading-area" *ngIf="isLoading">
+      <div class="skeleton-card" *ngFor="let i of [1,2,3]"></div>
+    </div>
+
+    <!-- Grid Section -->
+    <main class="forms-main" *ngIf="!isLoading">
+      
+      <!-- Empty State -->
+      <div class="empty-state card" *ngIf="filteredDocuments.length === 0">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8l5 5v11a2 2 0 0 1-2 2z"></path><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+        </div>
+        <h2>No Documents Found</h2>
+        <p>You have not uploaded any documents to your Document Vault yet.</p>
+      </div>
+
+      <!-- Compact Grid List -->
+      <div class="forms-grid" *ngIf="filteredDocuments.length > 0">
+        <article class="form-card card slide-up" *ngFor="let doc of filteredDocuments">
+          
+          <div class="gn-actions" style="position: absolute; top: 1rem; right: 1rem; display: flex; gap: 0.5rem; z-index: 10;">
+            <button class="btn-icon-sm delete" style="background: white; border: 1px solid #ef4444; color: #ef4444; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="Delete" (click)="deleteDocument(doc.vaultDocumentId)"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+          </div>
+
+          <div class="file-type-badge" [class.pdf]="doc.fileType === 'pdf'" [class.docx]="doc.fileType === 'docx' || doc.fileType === 'doc'">
+            {{ doc.fileType | uppercase }}
+          </div>
+
+          <div class="card-content" (click)="downloadDocument(doc)" style="cursor: pointer;">
+            <div class="file-icon">
+              <svg *ngIf="doc.fileType === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <svg *ngIf="doc.fileType === 'docx' || doc.fileType === 'doc'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15l1-4l1 4"></path><path d="M9 13h2"></path></svg>
+              <svg *ngIf="doc.fileType === 'jpg' || doc.fileType === 'png'" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </div>
+            
+            <h3 class="form-title">{{ doc.documentName }}</h3>
+            <p class="form-size">{{ doc.categoryName }}</p>
+            <p class="form-size" style="font-size: 0.75rem; margin-top: 0.25rem;">Uploaded: {{ doc.uploadedAt | date:'shortDate' }}</p>
+          </div>
+
+          <div class="card-footer" (click)="downloadDocument(doc)" style="cursor: pointer;">
+            <button class="btn-download-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              Download
+            </button>
+          </div>
+
+        </article>
+      </div>
+
+    </main>
+  </div>
+
+
+
+  <!-- Manage Categories Modal -->
+  <div class="modal-overlay" *ngIf="isManageCategoriesModalOpen" (click)="closeManageCategoriesModal()">
+    <div class="modal-content form-modal fade-in-up" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-with-icon">
+          <div class="icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <h3>Manage Personal Categories</h3>
+        </div>
+        <button class="close-x" (click)="closeManageCategoriesModal()">&times;</button>
+      </div>
+      <div class="modal-body custom-scroll">
+        <div class="form-group">
+          <label>{{ editingCategoryIndex !== null ? 'Edit Category' : 'New Category Label' }} <span class="required">*</span></label>
+          <div class="input-action-group">
+            <input type="text" class="gn-input" [(ngModel)]="newCategoryInput" placeholder="E.g., Medical Records" (keyup.enter)="addCategory()">
+            <button class="btn-submit-modern" (click)="addCategory()" [disabled]="!newCategoryInput.trim()">{{ editingCategoryIndex !== null ? 'Update' : 'Add' }}</button>
+          </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #64748b;">Your Categories</h4>
+          <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+            <li *ngIf="categories.length === 0" style="color: #94a3b8; font-size: 0.875rem;">No categories created yet.</li>
+            <li *ngFor="let cat of categories; let i = index" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;">
+              <span style="font-size: 0.875rem;">{{ cat }}</span>
+              <div style="display: flex; gap: 0.5rem;">
+                <button (click)="editCategory(i)" style="background: none; border: none; color: #3b82f6; cursor: pointer; padding: 0.25rem;">Edit</button>
+                <button (click)="removeCategory(i)" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0.25rem;">Remove</button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel-modern" (click)="closeManageCategoriesModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Modal -->
+  <div class="modal-overlay" *ngIf="isUploadModalOpen" (click)="closeUploadModal()">
+    <div class="modal-content form-modal fade-in-up" (click)="$event.stopPropagation()">
+       <div class="modal-header">
+          <div class="header-with-icon">
+            <div class="icon-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <h3>Upload to Vault</h3>
+          </div>
+          <button class="close-x" (click)="closeUploadModal()">&times;</button>
+       </div>
+       <div class="modal-body custom-scroll">
+          <div class="form-group">
+              <label>Document Title <span class="required">*</span></label>
+              <input type="text" class="gn-input" [(ngModel)]="newDocTitle" placeholder="E.g., Birth Certificate">
+          </div>
+          <div class="form-group" style="margin-top: 1.25rem;">
+              <label>Category <span class="required">*</span></label>
+              <select class="gn-input" [(ngModel)]="newDocCategory">
+                  <option value="" disabled *ngIf="categories.length === 0">No categories found - please create one first</option>
+                  <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+              </select>
+          </div>
+          <div class="form-group" style="margin-top: 1.5rem;">
+              <label>Select Document File <span class="required">*</span></label>
+              <div class="upload-zone" (click)="filePicker.click()">
+                  <input type="file" #filePicker hidden (change)="handleFileInput($event)">
+                  <div class="upload-inner">
+                      <div class="upload-icon-circle">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                      </div>
+                      <div class="upload-labels">
+                          <h3>{{ newDocFile ? newDocFile.name : 'Click to Upload Document' }}</h3>
+                          <p>{{ newDocFile ? (newDocFile.size / 1024 / 1024 | number:'1.1-2') + ' MB' : 'PDF, Word, Excel, JPG, PNG (Max 10MB)' }}</p>
+                      </div>
+                  </div>
+              </div>
+          </div>
+       </div>
+       <div class="modal-footer">
+          <button class="btn-cancel-modern" (click)="closeUploadModal()">Discard</button>
+          <button class="btn-submit-modern" (click)="uploadDocument()" [disabled]="!newDocFile || !newDocTitle || !newDocCategory">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Upload
+          </button>
+       </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay alert-modal" *ngIf="isDeleteModalOpen" (click)="closeDeleteModal()">
+    <div class="modal-content fade-in-up" (click)="$event.stopPropagation()" style="max-width: 400px;">
+      <div class="modal-body" style="text-align: center; padding: 2.5rem 2rem;">
+        <div class="status-icon" style="color: #ef4444; margin-bottom: 1.25rem;">
+          <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem; font-weight: 700; color: #1e293b;">Delete Document</h3>
+        <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5; margin-bottom: 0;">Are you sure you want to delete this document from your vault? This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding: 0 2rem 2.5rem 2rem; gap: 1rem;">
+        <button class="btn-cancel-modern" style="flex: 1;" (click)="closeDeleteModal()">Cancel</button>
+        <button class="btn-danger-modern" style="flex: 1;" (click)="confirmDelete()">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Response Toasts -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+    <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 380px;">
+      <div class="modal-body" style="text-align: center; padding-top: 2rem;">
+        <div class="status-icon" [style.color]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="margin-bottom: 1rem;">
+          <svg *ngIf="alertType === 'success'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <svg *ngIf="alertType === 'error'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 style="margin-bottom: 0.5rem;">{{ alertType === 'success' ? 'Completed' : 'Error' }}</h3>
+        <p style="color: #64748b; font-size: 0.9rem;">{{ alertMessage }}</p>
+      </div>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding-bottom: 2rem;">
+        <button [style.background]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="color:white; border:none; padding:0.625rem 2rem; border-radius:8px; cursor:pointer;" (click)="closeAlert()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
