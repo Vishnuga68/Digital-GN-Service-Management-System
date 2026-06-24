@@ -1,0 +1,6 @@
+@EGN_Service_Management_HostAddress = http://localhost:5058
+
+GET {{EGN_Service_Management_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

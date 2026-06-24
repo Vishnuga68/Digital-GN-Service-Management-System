@@ -1,0 +1,47 @@
+using EGN_Service_Management.Entity;
+using EGN_Service_Management.IRepositories;
+using EGN_Service_Management.IServices;
+
+namespace EGN_Service_Management.Services
+{
+    public class ChatAttachmentService : IChatAttachmentService
+    {
+        private readonly IChatAttachmentRepository _repository;
+
+        public ChatAttachmentService(IChatAttachmentRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public async Task<IEnumerable<ChatAttachment>> GetAllAsync()
+        {
+            return await _repository.GetAllAsync();
+        }
+
+        public async Task<ChatAttachment> GetByIdAsync(string id)
+        {
+            var entity = await _repository.GetByIdAsync(id);
+            if (entity == null)
+            {
+                throw new KeyNotFoundException("ChatAttachment not found.");
+            }
+
+            return entity;
+        }
+
+        public async Task<ChatAttachment> CreateAsync(ChatAttachment entity)
+        {
+            return await _repository.AddAsync(entity);
+        }
+
+        public async Task<ChatAttachment> UpdateAsync(string id, ChatAttachment entity)
+        {
+            return await _repository.UpdateAsync(id, entity);
+        }
+
+        public async Task DeleteAsync(string id)
+        {
+            await _repository.DeleteAsync(id);
+        }
+    }
+}

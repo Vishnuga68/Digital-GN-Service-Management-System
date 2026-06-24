@@ -1,0 +1,2135 @@
+[
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AccountController",
+    "Method": "GetAllAccountRecords",
+    "RelativePath": "api/Account",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AccountController",
+    "Method": "CreateAccount",
+    "RelativePath": "api/Account",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AccountRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AccountController",
+    "Method": "GetAccountById",
+    "RelativePath": "api/Account/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AccountController",
+    "Method": "UpdateAccount",
+    "RelativePath": "api/Account/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AccountRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AccountController",
+    "Method": "DeleteAccount",
+    "RelativePath": "api/Account/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementController",
+    "Method": "GetAllAnnouncementRecords",
+    "RelativePath": "api/Announcement",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementController",
+    "Method": "CreateAnnouncement",
+    "RelativePath": "api/Announcement",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AnnouncementRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementController",
+    "Method": "GetAnnouncementById",
+    "RelativePath": "api/Announcement/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementController",
+    "Method": "UpdateAnnouncement",
+    "RelativePath": "api/Announcement/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AnnouncementRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementController",
+    "Method": "DeleteAnnouncement",
+    "RelativePath": "api/Announcement/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementTargetCitizenController",
+    "Method": "GetAllAnnouncementTargetCitizenRecords",
+    "RelativePath": "api/AnnouncementTargetCitizen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementTargetCitizenController",
+    "Method": "CreateAnnouncementTargetCitizen",
+    "RelativePath": "api/AnnouncementTargetCitizen",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AnnouncementTargetCitizenRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementTargetCitizenController",
+    "Method": "GetAnnouncementTargetCitizenById",
+    "RelativePath": "api/AnnouncementTargetCitizen/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementTargetCitizenController",
+    "Method": "UpdateAnnouncementTargetCitizen",
+    "RelativePath": "api/AnnouncementTargetCitizen/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AnnouncementTargetCitizenRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AnnouncementTargetCitizenController",
+    "Method": "DeleteAnnouncementTargetCitizen",
+    "RelativePath": "api/AnnouncementTargetCitizen/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AppointmentController",
+    "Method": "GetAllAppointmentRecords",
+    "RelativePath": "api/Appointment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AppointmentController",
+    "Method": "CreateAppointment",
+    "RelativePath": "api/Appointment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AppointmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AppointmentController",
+    "Method": "GetAppointmentById",
+    "RelativePath": "api/Appointment/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AppointmentController",
+    "Method": "UpdateAppointment",
+    "RelativePath": "api/Appointment/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.AppointmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.AppointmentController",
+    "Method": "DeleteAppointment",
+    "RelativePath": "api/Appointment/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatAttachmentController",
+    "Method": "GetAllChatAttachmentRecords",
+    "RelativePath": "api/ChatAttachment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatAttachmentController",
+    "Method": "CreateChatAttachment",
+    "RelativePath": "api/ChatAttachment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ChatAttachmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatAttachmentController",
+    "Method": "GetChatAttachmentById",
+    "RelativePath": "api/ChatAttachment/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatAttachmentController",
+    "Method": "UpdateChatAttachment",
+    "RelativePath": "api/ChatAttachment/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ChatAttachmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatAttachmentController",
+    "Method": "DeleteChatAttachment",
+    "RelativePath": "api/ChatAttachment/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatMessageController",
+    "Method": "GetAllChatMessageRecords",
+    "RelativePath": "api/ChatMessage",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatMessageController",
+    "Method": "CreateChatMessage",
+    "RelativePath": "api/ChatMessage",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ChatMessageRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatMessageController",
+    "Method": "GetChatMessageById",
+    "RelativePath": "api/ChatMessage/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatMessageController",
+    "Method": "UpdateChatMessage",
+    "RelativePath": "api/ChatMessage/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ChatMessageRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ChatMessageController",
+    "Method": "DeleteChatMessage",
+    "RelativePath": "api/ChatMessage/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenMasterController",
+    "Method": "GetAllCitizenMasterRecords",
+    "RelativePath": "api/CitizenMaster",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenMasterController",
+    "Method": "CreateCitizenMaster",
+    "RelativePath": "api/CitizenMaster",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.CitizenMasterRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenMasterController",
+    "Method": "GetCitizenMasterById",
+    "RelativePath": "api/CitizenMaster/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenMasterController",
+    "Method": "UpdateCitizenMaster",
+    "RelativePath": "api/CitizenMaster/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.CitizenMasterRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenMasterController",
+    "Method": "DeleteCitizenMaster",
+    "RelativePath": "api/CitizenMaster/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenSpecialStatusController",
+    "Method": "GetAllCitizenSpecialStatusRecords",
+    "RelativePath": "api/CitizenSpecialStatus",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenSpecialStatusController",
+    "Method": "CreateCitizenSpecialStatus",
+    "RelativePath": "api/CitizenSpecialStatus",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.CitizenSpecialStatusRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenSpecialStatusController",
+    "Method": "GetCitizenSpecialStatusById",
+    "RelativePath": "api/CitizenSpecialStatus/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenSpecialStatusController",
+    "Method": "UpdateCitizenSpecialStatus",
+    "RelativePath": "api/CitizenSpecialStatus/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.CitizenSpecialStatusRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.CitizenSpecialStatusController",
+    "Method": "DeleteCitizenSpecialStatus",
+    "RelativePath": "api/CitizenSpecialStatus/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ConversationController",
+    "Method": "GetAllConversationRecords",
+    "RelativePath": "api/Conversation",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ConversationController",
+    "Method": "CreateConversation",
+    "RelativePath": "api/Conversation",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ConversationRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ConversationController",
+    "Method": "GetConversationById",
+    "RelativePath": "api/Conversation/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ConversationController",
+    "Method": "UpdateConversation",
+    "RelativePath": "api/Conversation/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ConversationRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ConversationController",
+    "Method": "DeleteConversation",
+    "RelativePath": "api/Conversation/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DocumentCategoryController",
+    "Method": "GetAllDocumentCategoryRecords",
+    "RelativePath": "api/DocumentCategory",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DocumentCategoryController",
+    "Method": "CreateDocumentCategory",
+    "RelativePath": "api/DocumentCategory",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DocumentCategoryRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DocumentCategoryController",
+    "Method": "GetDocumentCategoryById",
+    "RelativePath": "api/DocumentCategory/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DocumentCategoryController",
+    "Method": "UpdateDocumentCategory",
+    "RelativePath": "api/DocumentCategory/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DocumentCategoryRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DocumentCategoryController",
+    "Method": "DeleteDocumentCategory",
+    "RelativePath": "api/DocumentCategory/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DownloadFormController",
+    "Method": "GetAllDownloadFormRecords",
+    "RelativePath": "api/DownloadForm",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DownloadFormController",
+    "Method": "CreateDownloadForm",
+    "RelativePath": "api/DownloadForm",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DownloadFormRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DownloadFormController",
+    "Method": "GetDownloadFormById",
+    "RelativePath": "api/DownloadForm/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DownloadFormController",
+    "Method": "UpdateDownloadForm",
+    "RelativePath": "api/DownloadForm/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DownloadFormRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DownloadFormController",
+    "Method": "DeleteDownloadForm",
+    "RelativePath": "api/DownloadForm/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsDivisionController",
+    "Method": "GetAllDsDivisionRecords",
+    "RelativePath": "api/DsDivision",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsDivisionController",
+    "Method": "CreateDsDivision",
+    "RelativePath": "api/DsDivision",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DsDivisionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsDivisionController",
+    "Method": "GetDsDivisionById",
+    "RelativePath": "api/DsDivision/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsDivisionController",
+    "Method": "UpdateDsDivision",
+    "RelativePath": "api/DsDivision/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DsDivisionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsDivisionController",
+    "Method": "DeleteDsDivision",
+    "RelativePath": "api/DsDivision/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsOfficerController",
+    "Method": "GetAllDsOfficerRecords",
+    "RelativePath": "api/DsOfficer",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsOfficerController",
+    "Method": "CreateDsOfficer",
+    "RelativePath": "api/DsOfficer",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DsOfficerRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsOfficerController",
+    "Method": "GetDsOfficerById",
+    "RelativePath": "api/DsOfficer/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsOfficerController",
+    "Method": "UpdateDsOfficer",
+    "RelativePath": "api/DsOfficer/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.DsOfficerRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.DsOfficerController",
+    "Method": "DeleteDsOfficer",
+    "RelativePath": "api/DsOfficer/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.EgnServiceCitizenController",
+    "Method": "GetAllEgnServiceCitizenRecords",
+    "RelativePath": "api/EgnServiceCitizen",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.EgnServiceCitizenController",
+    "Method": "CreateEgnServiceCitizen",
+    "RelativePath": "api/EgnServiceCitizen",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.EgnServiceCitizenRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.EgnServiceCitizenController",
+    "Method": "GetEgnServiceCitizenById",
+    "RelativePath": "api/EgnServiceCitizen/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.EgnServiceCitizenController",
+    "Method": "UpdateEgnServiceCitizen",
+    "RelativePath": "api/EgnServiceCitizen/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.EgnServiceCitizenRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.EgnServiceCitizenController",
+    "Method": "DeleteEgnServiceCitizen",
+    "RelativePath": "api/EgnServiceCitizen/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.FamilyCardController",
+    "Method": "GetAllFamilyCardRecords",
+    "RelativePath": "api/FamilyCard",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.FamilyCardController",
+    "Method": "CreateFamilyCard",
+    "RelativePath": "api/FamilyCard",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.FamilyCardRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.FamilyCardController",
+    "Method": "GetFamilyCardById",
+    "RelativePath": "api/FamilyCard/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.FamilyCardController",
+    "Method": "UpdateFamilyCard",
+    "RelativePath": "api/FamilyCard/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.FamilyCardRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.FamilyCardController",
+    "Method": "DeleteFamilyCard",
+    "RelativePath": "api/FamilyCard/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnDivisionController",
+    "Method": "GetAllGnDivisionRecords",
+    "RelativePath": "api/GnDivision",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnDivisionController",
+    "Method": "CreateGnDivision",
+    "RelativePath": "api/GnDivision",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnDivisionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnDivisionController",
+    "Method": "GetGnDivisionById",
+    "RelativePath": "api/GnDivision/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnDivisionController",
+    "Method": "UpdateGnDivision",
+    "RelativePath": "api/GnDivision/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnDivisionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnDivisionController",
+    "Method": "DeleteGnDivision",
+    "RelativePath": "api/GnDivision/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnLeaveHolidayController",
+    "Method": "GetAllGnLeaveHolidayRecords",
+    "RelativePath": "api/GnLeaveHoliday",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnLeaveHolidayController",
+    "Method": "CreateGnLeaveHoliday",
+    "RelativePath": "api/GnLeaveHoliday",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnLeaveHolidayRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnLeaveHolidayController",
+    "Method": "GetGnLeaveHolidayById",
+    "RelativePath": "api/GnLeaveHoliday/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnLeaveHolidayController",
+    "Method": "UpdateGnLeaveHoliday",
+    "RelativePath": "api/GnLeaveHoliday/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnLeaveHolidayRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnLeaveHolidayController",
+    "Method": "DeleteGnLeaveHoliday",
+    "RelativePath": "api/GnLeaveHoliday/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnOfficerController",
+    "Method": "GetAllGnOfficerRecords",
+    "RelativePath": "api/GnOfficer",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnOfficerController",
+    "Method": "CreateGnOfficer",
+    "RelativePath": "api/GnOfficer",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnOfficerRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnOfficerController",
+    "Method": "GetGnOfficerById",
+    "RelativePath": "api/GnOfficer/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnOfficerController",
+    "Method": "UpdateGnOfficer",
+    "RelativePath": "api/GnOfficer/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.GnOfficerRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.GnOfficerController",
+    "Method": "DeleteGnOfficer",
+    "RelativePath": "api/GnOfficer/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.NotificationController",
+    "Method": "GetAllNotificationRecords",
+    "RelativePath": "api/Notification",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.NotificationController",
+    "Method": "CreateNotification",
+    "RelativePath": "api/Notification",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.NotificationRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.NotificationController",
+    "Method": "GetNotificationById",
+    "RelativePath": "api/Notification/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.NotificationController",
+    "Method": "UpdateNotification",
+    "RelativePath": "api/Notification/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.NotificationRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.NotificationController",
+    "Method": "DeleteNotification",
+    "RelativePath": "api/Notification/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollOptionController",
+    "Method": "GetAllPollOptionRecords",
+    "RelativePath": "api/PollOption",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollOptionController",
+    "Method": "CreatePollOption",
+    "RelativePath": "api/PollOption",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.PollOptionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollOptionController",
+    "Method": "GetPollOptionById",
+    "RelativePath": "api/PollOption/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollOptionController",
+    "Method": "UpdatePollOption",
+    "RelativePath": "api/PollOption/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.PollOptionRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollOptionController",
+    "Method": "DeletePollOption",
+    "RelativePath": "api/PollOption/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollVoteController",
+    "Method": "GetAllPollVoteRecords",
+    "RelativePath": "api/PollVote",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollVoteController",
+    "Method": "CreatePollVote",
+    "RelativePath": "api/PollVote",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.PollVoteRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollVoteController",
+    "Method": "GetPollVoteById",
+    "RelativePath": "api/PollVote/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollVoteController",
+    "Method": "UpdatePollVote",
+    "RelativePath": "api/PollVote/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.PollVoteRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.PollVoteController",
+    "Method": "DeletePollVote",
+    "RelativePath": "api/PollVote/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestAttachmentController",
+    "Method": "GetAllRequestAttachmentRecords",
+    "RelativePath": "api/RequestAttachment",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestAttachmentController",
+    "Method": "CreateRequestAttachment",
+    "RelativePath": "api/RequestAttachment",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestAttachmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestAttachmentController",
+    "Method": "GetRequestAttachmentById",
+    "RelativePath": "api/RequestAttachment/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestAttachmentController",
+    "Method": "UpdateRequestAttachment",
+    "RelativePath": "api/RequestAttachment/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestAttachmentRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestAttachmentController",
+    "Method": "DeleteRequestAttachment",
+    "RelativePath": "api/RequestAttachment/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestRemarkController",
+    "Method": "GetAllRequestRemarkRecords",
+    "RelativePath": "api/RequestRemark",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestRemarkController",
+    "Method": "CreateRequestRemark",
+    "RelativePath": "api/RequestRemark",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestRemarkRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestRemarkController",
+    "Method": "GetRequestRemarkById",
+    "RelativePath": "api/RequestRemark/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestRemarkController",
+    "Method": "UpdateRequestRemark",
+    "RelativePath": "api/RequestRemark/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestRemarkRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestRemarkController",
+    "Method": "DeleteRequestRemark",
+    "RelativePath": "api/RequestRemark/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestTimelineController",
+    "Method": "GetAllRequestTimelineRecords",
+    "RelativePath": "api/RequestTimeline",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestTimelineController",
+    "Method": "CreateRequestTimeline",
+    "RelativePath": "api/RequestTimeline",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestTimelineRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestTimelineController",
+    "Method": "GetRequestTimelineById",
+    "RelativePath": "api/RequestTimeline/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestTimelineController",
+    "Method": "UpdateRequestTimeline",
+    "RelativePath": "api/RequestTimeline/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.RequestTimelineRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.RequestTimelineController",
+    "Method": "DeleteRequestTimeline",
+    "RelativePath": "api/RequestTimeline/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ServiceRequestController",
+    "Method": "GetAllServiceRequestRecords",
+    "RelativePath": "api/ServiceRequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ServiceRequestController",
+    "Method": "CreateServiceRequest",
+    "RelativePath": "api/ServiceRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ServiceRequestRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ServiceRequestController",
+    "Method": "GetServiceRequestById",
+    "RelativePath": "api/ServiceRequest/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ServiceRequestController",
+    "Method": "UpdateServiceRequest",
+    "RelativePath": "api/ServiceRequest/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.ServiceRequestRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.ServiceRequestController",
+    "Method": "DeleteServiceRequest",
+    "RelativePath": "api/ServiceRequest/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.SurveyResponseController",
+    "Method": "GetAllSurveyResponseRecords",
+    "RelativePath": "api/SurveyResponse",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.SurveyResponseController",
+    "Method": "CreateSurveyResponse",
+    "RelativePath": "api/SurveyResponse",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.SurveyResponseRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.SurveyResponseController",
+    "Method": "GetSurveyResponseById",
+    "RelativePath": "api/SurveyResponse/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.SurveyResponseController",
+    "Method": "UpdateSurveyResponse",
+    "RelativePath": "api/SurveyResponse/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.SurveyResponseRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.SurveyResponseController",
+    "Method": "DeleteSurveyResponse",
+    "RelativePath": "api/SurveyResponse/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.TransferRequestController",
+    "Method": "GetAllTransferRequestRecords",
+    "RelativePath": "api/TransferRequest",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.TransferRequestController",
+    "Method": "CreateTransferRequest",
+    "RelativePath": "api/TransferRequest",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.TransferRequestRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.TransferRequestController",
+    "Method": "GetTransferRequestById",
+    "RelativePath": "api/TransferRequest/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.TransferRequestController",
+    "Method": "UpdateTransferRequest",
+    "RelativePath": "api/TransferRequest/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "requestDTO",
+        "Type": "EGN_Service_Management.DTO.RequestDTO.TransferRequestRequestDTO",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "EGN_Service_Management.Controllers.TransferRequestController",
+    "Method": "DeleteTransferRequest",
+    "RelativePath": "api/TransferRequest/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

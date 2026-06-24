@@ -1,0 +1,421 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\egn_service_management.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\egn_service_management.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\services\\announcementservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\services\\announcementservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\repositories\\pollvoterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\repositories\\pollvoterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\iservices\\iconversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\iservices\\iconversationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\services\\crudservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\services\\crudservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\services\\citizenmasterservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\services\\citizenmasterservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\iservices\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\iservices\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\repositories\\citizenmasterrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\repositories\\citizenmasterrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\inotificationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\inotificationrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\ichatmessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\ichatmessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\icitizenspecialstatusrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\icitizenspecialstatusrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\iaccountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\iaccountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\iannouncementrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\iannouncementrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\entity\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\entity\\account.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\database\\egndbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\database\\egndbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\controllers\\familycardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\controllers\\familycardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\repositories\\crudrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\repositories\\crudrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\iservices\\icrudservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\iservices\\icrudservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\irepositories\\icrudrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\irepositories\\icrudrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|c:\\users\\hp\\documents\\acedemic\\semester 8\\gn-system\\backend\\egn_service_management\\migrations\\20260526094714_test.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{0D4DEB01-4BFF-4510-B4B4-AE6D92363343}|EGN_Service_Management\\EGN_Service_Management.csproj|solutionrelative:egn_service_management\\migrations\\20260526094714_test.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "AnnouncementService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\AnnouncementService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Services\\AnnouncementService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\AnnouncementService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Services\\AnnouncementService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T10:04:40.953Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "CitizenMasterService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\CitizenMasterService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Services\\CitizenMasterService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\CitizenMasterService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Services\\CitizenMasterService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:59:47.641Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "IAccountService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\IAccountService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IServices\\IAccountService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\IAccountService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IServices\\IAccountService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:59:35.498Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\appsettings.json",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\appsettings.json",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\appsettings.json",
+              "RelativeToolTip": "EGN_Service_Management\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2026-05-26T09:16:37.427Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "EGN_Service_Management.http",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\EGN_Service_Management.http",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\EGN_Service_Management.http",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\EGN_Service_Management.http",
+              "RelativeToolTip": "EGN_Service_Management\\EGN_Service_Management.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2026-05-26T10:07:47.07Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "IConversationService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\IConversationService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IServices\\IConversationService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\IConversationService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IServices\\IConversationService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T10:04:18.984Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "AccountService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\AccountService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Services\\AccountService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\AccountService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Services\\AccountService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:59:18.265Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Program.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Program.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Program.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:18:10.655Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PollVoteRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\PollVoteRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Repositories\\PollVoteRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\PollVoteRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Repositories\\PollVoteRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T10:04:34.094Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AccountRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\AccountRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Repositories\\AccountRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\AccountRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Repositories\\AccountRepository.cs",
+              "ViewState": "AgIAACAAAAAAAAAAAAAUwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:59:11.963Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "CitizenMasterRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\CitizenMasterRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Repositories\\CitizenMasterRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\CitizenMasterRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Repositories\\CitizenMasterRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:59:13.136Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "CrudService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\CrudService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Services\\CrudService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Services\\CrudService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Services\\CrudService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAuwAUAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:16:31.904Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "20260526094714_test.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Migrations\\20260526094714_test.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Migrations\\20260526094714_test.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Migrations\\20260526094714_test.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Migrations\\20260526094714_test.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:47:14.696Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Controllers\\AccountController.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAAAUwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:39:35.901Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "INotificationRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\INotificationRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\INotificationRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\INotificationRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\INotificationRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:45:42.985Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "IChatMessageRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IChatMessageRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\IChatMessageRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IChatMessageRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\IChatMessageRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:45:39.427Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "ICitizenSpecialStatusRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\ICitizenSpecialStatusRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\ICitizenSpecialStatusRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\ICitizenSpecialStatusRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\ICitizenSpecialStatusRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:45:34.85Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "IAccountRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IAccountRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\IAccountRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IAccountRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\IAccountRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:45:33.122Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "IAnnouncementRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IAnnouncementRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\IAnnouncementRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\IAnnouncementRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\IAnnouncementRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:45:31.073Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Account.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Entity\\Account.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Entity\\Account.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Entity\\Account.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Entity\\Account.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:44:44.931Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "FamilyCardController.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Controllers\\FamilyCardController.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Controllers\\FamilyCardController.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Controllers\\FamilyCardController.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Controllers\\FamilyCardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:39:42.891Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "CrudRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\CrudRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Repositories\\CrudRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Repositories\\CrudRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Repositories\\CrudRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:16:21.766Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "EgnDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Database\\EgnDbContext.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\Database\\EgnDbContext.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\Database\\EgnDbContext.cs",
+              "RelativeToolTip": "EGN_Service_Management\\Database\\EgnDbContext.cs",
+              "ViewState": "AgIAAB8AAAAAAAAAAAAkwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:15:10.334Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "ICrudService.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\ICrudService.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IServices\\ICrudService.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IServices\\ICrudService.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IServices\\ICrudService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:16:17.502Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "ICrudRepository.cs",
+              "DocumentMoniker": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\ICrudRepository.cs",
+              "RelativeDocumentMoniker": "EGN_Service_Management\\IRepositories\\ICrudRepository.cs",
+              "ToolTip": "C:\\Users\\hp\\Documents\\ACEDEMIC\\SEMESTER 8\\GN-SYSTEM\\BACKEND\\EGN_Service_Management\\IRepositories\\ICrudRepository.cs",
+              "RelativeToolTip": "EGN_Service_Management\\IRepositories\\ICrudRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-05-26T09:16:08.031Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
