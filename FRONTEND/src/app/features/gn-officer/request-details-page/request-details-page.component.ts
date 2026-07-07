@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-request-details-page',
@@ -17,82 +18,65 @@ export class RequestDetailsPageComponent implements OnInit {
   updateStatusValue: string = '';
   newRemark: string = '';
 
-  constructor(private route: ActivatedRoute, private router: Router) {}
+  constructor(private route: ActivatedRoute, private router: Router, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.requestId = this.route.snapshot.paramMap.get('id');
     
-    // Simulate loading details
-    setTimeout(() => {
-      this.loadMockData(this.requestId);
+    if (this.requestId) {
+      this.fetchRequestDetails(this.requestId);
+    } else {
       this.isLoading = false;
-    }, 1200);
+    }
   }
 
-  loadMockData(id: string | null) {
-    // Generate mock details based on whatever ID is passed
-    const isApproved = id === 'REQ-2023-001' || id === 'REQ-2023-005';
-    const isRejected = id === 'REQ-2023-004';
-    const isPending = id === 'REQ-2023-003' || id === 'REQ-2023-006';
-    
-    let currentStatus = 'In Progress';
-    if (isApproved) currentStatus = 'Approved';
-    if (isRejected) currentStatus = 'Rejected';
-    if (isPending) currentStatus = 'Pending';
+  fetchRequestDetails(id: string) {
+    this.http.get(`http://localhost:5058/api/CitizenRequest/details/${id}`).subscribe({
+      next: (data: any) => {
+        this.requestDetails = data;
+        this.requestDetails.id = data.requestId;
+        
+        // Ensure currentStep is set correctly for UI based on status
+        if (this.requestDetails.currentStatus === 'Pending') this.requestDetails.currentStep = 1;
+        else if (this.requestDetails.currentStatus === 'Verified') this.requestDetails.currentStep = 3;
+        else if (this.requestDetails.currentStatus === 'Approved' || this.requestDetails.currentStatus === 'Rejected' || this.requestDetails.currentStatus === 'Accepted') this.requestDetails.currentStep = 4;
+        else this.requestDetails.currentStep = 2; // Default In Progress
 
-    let currentStep = 2; // Default to 'In Progress' phase
-    if (currentStatus === 'Pending') currentStep = 1;
-    if (currentStatus === 'Approved' || currentStatus === 'Rejected') currentStep = 4;
+        // Ensure status property exists for UI binding
+        this.requestDetails.status = this.requestDetails.currentStatus;
+        
+        // Ensure documents mapping
+        this.requestDetails.documents = data.attachments?.map((a: any) => ({
+          name: a.fileName,
+          type: a.fileType?.includes('pdf') ? 'pdf' : 'image',
+          date: a.uploadedDate,
+          size: a.fileSize || 'Unknown',
+          url: a.fileUrl?.startsWith('/') ? `http://localhost:5058${a.fileUrl}` : a.fileUrl
+        })) || [];
 
-    this.requestDetails = {
-      id: id || 'REQ-UNKNOWN',
-      serviceType: 'Income Certificate',
-      category: 'Certificates',
-      description: 'Requesting an income certificate for university scholarship application purposes. Required for the year 2023.',
-      submittedDate: new Date('2023-10-01T10:00:00'),
-      lastUpdated: new Date('2023-10-05T14:30:00'),
-      status: currentStatus,
-      citizenName: 'Nimal Perera',
-      citizenNIC: '199012345678',
-      citizenAddress: 'No. 123, Galle Road, Colombo 03',
-      
-      // Progress Timeline
-      currentStep: currentStep,
-      timeline: [
-        { step: 1, title: 'Submitted', timestamp: new Date('2023-10-01T10:00:00'), completed: true },
-        { step: 2, title: 'Under Review', timestamp: currentStep >= 2 ? new Date('2023-10-02T11:15:00') : null, completed: currentStep >= 2, officer: currentStep >= 2 ? 'KMP' : null },
-        { step: 3, title: 'Verified', timestamp: currentStep >= 3 ? new Date('2023-10-03T09:30:00') : null, completed: currentStep >= 3, officer: currentStep >= 3 ? 'KMP' : null },
-        { 
-          step: 4, 
-          title: currentStatus === 'Rejected' ? 'Rejected' : (currentStatus === 'Approved' ? 'Approved' : 'Final Decision'), 
-          timestamp: currentStep === 4 ? new Date('2023-10-05T14:30:00') : null, 
-          completed: currentStep === 4, 
-          officer: currentStep === 4 ? 'JD' : null 
+        // Determine applicant info for GN View
+        if (data.applicant) {
+            this.requestDetails.citizenName = data.applicant.fullName;
+            this.requestDetails.citizenNIC = data.applicant.nic;
+            this.requestDetails.citizenAddress = data.applicant.address;
         }
-      ],
 
-      // Attached Documents
-      documents: [
-        { name: 'National_ID_Front_Back.pdf', type: 'pdf', date: new Date('2023-10-01T10:00:00'), size: '1.2 MB' },
-        { name: 'Salary_Slip_Last_3_Months.png', type: 'image', date: new Date('2023-10-01T10:02:00'), size: '2.5 MB' }
-      ],
-
-      // Remarks/Comments
-      remarks: [
-        { author: 'GN Officer', role: 'Reviewer', text: 'All documents are present. Forwarding to DS for final approval.', date: new Date('2023-10-03T09:35:00') }
-      ],
-      
-      // Outcome
-      rejectionReason: currentStatus === 'Rejected' ? 'The provided salary slips are illegible. Please re-apply with clear scans.' : null,
-      finalDocumentUrl: currentStatus === 'Approved' ? '/assets/dummy-certificate.pdf' : null
-    };
-
-    if (currentStatus === 'Rejected') {
-      this.requestDetails.remarks.push({ author: 'Divisional Sec.', role: 'Approver', text: 'Rejected due to unclear documents.', date: new Date('2023-10-05T14:30:00') });
-    } else if (currentStatus === 'Approved') {
-      this.requestDetails.remarks.push({ author: 'Divisional Sec.', role: 'Approver', text: 'Approved. Certificate generated successfully.', date: new Date('2023-10-05T14:30:00') });
-    }
-    this.updateStatusValue = 'In Progress';
+        const allowedStatuses = ['In Progress', 'Verified', 'Accepted', 'Rejected'];
+        if (allowedStatuses.includes(this.requestDetails.status)) {
+            this.updateStatusValue = this.requestDetails.status;
+        } else if (this.requestDetails.status === 'Approved') {
+            this.updateStatusValue = 'Accepted'; // 'Approved' maps to 'Accepted' in dropdown
+        } else {
+            this.updateStatusValue = 'In Progress'; // Default placeholder
+        }
+        
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Error fetching request details', err);
+        this.isLoading = false;
+      }
+    });
   }
 
   updateRequestStatus() {

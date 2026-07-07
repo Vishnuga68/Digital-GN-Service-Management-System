@@ -1,39 +1,37 @@
-<div class="announcements-container fade-in">
-  
+<div class="announcements-container">
   <div class="content-wrapper">
     <!-- Header Section -->
     <header class="page-header">
       <div class="header-title">
-        <h1>Announcements & Updates</h1>
-        <p>Stay informed with GN notices, surveys, and updates</p>
+        <h1>Announcement</h1>
+        <p>Stay updated with latest announcements, surveys, and polls.</p>
       </div>
     </header>
 
-    <!-- Filters / Tabs -->
+    <!-- Tabs Navigation -->
     <div class="tabs-container">
       <div class="tab-list">
-        <button 
-          *ngFor="let tab of tabs" 
-          class="tab-btn" 
-          [class.active]="activeTab === tab"
-          (click)="setTab(tab)">
-          {{ tab }}
-          <!-- Optional badge for unchecked personal items when viewing ALL -->
-          <span class="badge" *ngIf="tab === 'Personal'">!</span>
-        </button>
+        <button class="tab-btn" [class.active]="activeTab === 'All'" (click)="setTab('All')">All</button>
+        <button class="tab-btn" [class.active]="activeTab === 'Public'" (click)="setTab('Public')">Announcement</button>
+        <button class="tab-btn" [class.active]="activeTab === 'Surveys'" (click)="setTab('Surveys')">Survey</button>
+        <button class="tab-btn" [class.active]="activeTab === 'Polls'" (click)="setTab('Polls')">Poll</button>
       </div>
     </div>
 
-    <!-- Announcements Cards Section -->
-    <main class="cards-section">
-      
+    <!-- Main Content Area -->
+    <div class="cards-section">
+      <!-- Loading State (Optional visual improvement) -->
+      <div class="empty-state slide-up" *ngIf="isLoading" style="padding: 3rem 0; opacity: 0.6;">
+        <p>Loading announcements...</p>
+      </div>
+
       <!-- Empty State -->
-      <div class="empty-state card" *ngIf="filteredAnnouncements.length === 0">
+      <div class="empty-state slide-up" *ngIf="filteredAnnouncements.length === 0 && !isLoading">
         <div class="empty-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </div>
-        <h2>No announcements available</h2>
-        <p>You're all caught up with your GN division updates.</p>
+        <h2>No items found</h2>
+        <p>Check back later for new updates.</p>
       </div>
 
       <!-- Card List -->
@@ -41,81 +39,67 @@
         <article *ngFor="let item of filteredAnnouncements" 
                  class="card slide-up" 
                  [ngClass]="{
-                   'type-personal': item.type === 'Personal',
-                   'type-public': item.type === 'Public',
-                   'type-poll': item.type === 'Poll',
-                   'type-survey': item.type === 'Survey',
-                   'unread': !item.isRead && item.type === 'Personal'
+                   'type-public': item.announcementType === 'Public',
+                   'type-poll': item.announcementType === 'Poll',
+                   'type-survey': item.announcementType === 'Survey'
                  }">
           
           <div class="card-header">
-            <span class="tag" [ngClass]="item.type.toLowerCase()">
-              <svg *ngIf="item.type === 'Personal'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              <svg *ngIf="item.type === 'Public'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
-              <svg *ngIf="item.type === 'Poll'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-              <svg *ngIf="item.type === 'Survey'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-              {{ item.type }}
-            </span>
-            <span class="date">{{ item.date | date:'MMM d, y, h:mm a' }}</span>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+               <span class="tag" [ngClass]="item.announcementType.toLowerCase()">
+                  <svg *ngIf="item.announcementType === 'Public'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                  <svg *ngIf="item.announcementType === 'Poll'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                  <svg *ngIf="item.announcementType === 'Survey'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  {{ item.announcementType }}
+               </span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+               <span class="date">{{ item.publishDate | date:'MMM d, y, h:mm a' }}</span>
+            </div>
           </div>
 
-          <div class="card-body">
-            <h3>{{ item.title }}</h3>
-            <p class="description">{{ item.description }}</p>
-            
-            <!-- Attachment for Public -->
-            <div class="attachment" *ngIf="item.attachmentName">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-              <span class="file-name">{{ item.attachmentName }}</span>
-              <button class="btn-icon outline" title="Download">⬇</button>
-            </div>
+          <div class="card-body" style="display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 0.5rem;">{{ item.title }}</h3>
+            <p class="description" style="margin-bottom: 1.5rem;">{{ item.description }}</p>
+            <!-- Poll Options (Moved up) -->
+            <app-poll-ui 
+              *ngIf="item.announcementType === 'Poll' && item.pollOptions"
+              [announcementId]="item.announcementId"
+              [options]="item.pollOptions"
+              [hasVoted]="hasVoted(item.announcementId)"
+              [selectedOptionId]="getUserVotedOptionId(item.announcementId)"
+              [totalVotes]="getTotalVotes(item.announcementId)"
+              (voteSubmitted)="submitPoll(item.announcementId, $event)"
+              style="margin-bottom: 1.5rem;">
+            </app-poll-ui>
 
-            <!-- Poll Options -->
-            <div class="poll-content" *ngIf="item.type === 'Poll' && item.options">
-              <p class="poll-total">{{ item.totalVotes }} votes cast</p>
-              
-              <!-- If unvoted -->
-              <div class="poll-options" *ngIf="!item.userVotedId">
-                <label class="poll-option-radio" *ngFor="let opt of item.options">
-                  <input type="radio" name="{{'poll-'+item.id}}" (change)="submitPoll(item, opt.id)">
-                  <span class="radio-custom"></span>
-                  <span class="opt-label">{{ opt.text }}</span>
-                </label>
-              </div>
-
-              <!-- If voted (Results) -->
-              <div class="poll-results" *ngIf="item.userVotedId">
-                <div class="poll-result-bar" *ngFor="let opt of item.options">
-                  <div class="result-info">
-                    <span class="label">{{ opt.text }}</span>
-                    <span class="percentage">{{ opt.percentage }}%</span>
-                  </div>
-                  <div class="progress-track" [class.winner]="opt.id === item.userVotedId">
-                    <div class="progress-fill" [style.width.%]="opt.percentage"></div>
-                  </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-top: auto; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
+                <div style="font-size: 0.8rem; color: #64748b; display: flex; flex-direction: column; gap: 0.4rem;">
+                   <div><span style="font-weight: 600; color: #475569;">Created By:</span> {{ item.createdByName }}</div>
+                   <div><span style="font-weight: 600; color: #475569;">Last Modified By:</span> {{ item.modifiedByName }}</div>
+                   <div *ngIf="item.announcementType !== 'Public'"><span style="font-weight: 600; color: #ef4444;">Deadline:</span> {{ item.expiryDate | date:'yyyy-MM-dd' }}</div>
                 </div>
-              </div>
+                
+                <!-- Attachment -->
+                <div class="attachment" *ngIf="item.documentName">
+                  <a [href]="'http://localhost:5058' + item.documentUrl" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f8fafc; border-radius: 8px; color: #2563eb; text-decoration: none; font-size: 0.85rem; font-weight: 500; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.textDecoration='underline'; this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.textDecoration='none'; this.style.backgroundColor='#f8fafc'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    <span class="file-name">{{ item.documentName }}</span>
+                  </a>
+                </div>
             </div>
-
           </div>
 
-          <div class="card-footer" *ngIf="item.actionLabel || item.estimatedTime">
-            <button class="btn btn-primary outline" 
-                    *ngIf="item.actionLabel" 
-                    (click)="acknowledge(item)"
-                    [disabled]="item.isRead">
-              {{ item.isRead ? 'Acknowledged' : item.actionLabel }}
-            </button>
-            
-            <button class="btn btn-primary" *ngIf="item.type === 'Survey'">
+          <!-- Survey Action Button -->
+          <div class="card-footer" *ngIf="item.announcementType === 'Survey'" style="padding-top: 1rem; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;">
+            <a [href]="item.externalSurveyUrl" target="_blank" class="btn btn-primary" style="display: inline-block; padding: 0.625rem 1.25rem; font-size: 0.85rem; border-radius: 8px; text-decoration: none;">
               Start Survey &rarr;
-            </button>
-            <span class="est-time" *ngIf="item.estimatedTime">Est: {{ item.estimatedTime }}</span>
+            </a>
           </div>
 
         </article>
       </div>
-
-    </main>
+    </div>
   </div>
 </div>

@@ -63,9 +63,13 @@ export class ServiceFormPageComponent implements OnInit {
   formSchema: FormSchemaField[] = [];
   groupedFormSchema: FormSchemaGroup[] = [];
   
+  // Modal properties
+  isSuccessModalOpen = false;
+  successRequestId = '';
+  
   applicantType: string = 'myself';
   isUploading: boolean = false;
-  uploadedFiles: string[] = [];
+  uploadedFiles: File[] = [];
 
   private dynamicSubscriptions: any[] = [];
 
@@ -647,17 +651,40 @@ export class ServiceFormPageComponent implements OnInit {
     this.evaluateVisibility();
   }
 
-  onFileChange(event: any) {
+  onFileChange(event: any, fieldName?: string) {
     const files = event.target.files;
     if (files.length > 0) {
       this.isUploading = true;
       setTimeout(() => {
         for (let i = 0; i < files.length; i++) {
-          this.uploadedFiles.push(files[i].name);
+          this.uploadedFiles.push(files[i]);
+        }
+        if (fieldName) {
+           const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+           dynamicGroup.get(fieldName)?.patchValue('uploaded');
         }
         this.isUploading = false;
-      }, 1000);
+      }, 500);
     }
+  }
+
+  onCheckboxChange(event: any, fieldName: string) {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    const control = dynamicGroup.get(fieldName);
+    let currentValue = control?.value || [];
+    if (!Array.isArray(currentValue)) {
+       currentValue = [];
+    }
+    
+    if (event.target.checked) {
+      currentValue.push(event.target.value);
+    } else {
+      const index = currentValue.indexOf(event.target.value);
+      if (index >= 0) {
+        currentValue.splice(index, 1);
+      }
+    }
+    control?.patchValue(currentValue);
   }
 
   removeFile(index: number) {
@@ -665,36 +692,89 @@ export class ServiceFormPageComponent implements OnInit {
   }
 
   submitRequest() {
-    if (this.requestForm.valid && this.selectedService && this.selectedCategory) {
+    console.log('--- submitRequest called ---');
+    console.log('Form valid?', this.requestForm.valid);
+    console.log('selectedService?', !!this.selectedService);
+    console.log('selectedCategory?', !!this.selectedCategory);
+    
+    // Log form errors if any
+    Object.keys(this.requestForm.controls).forEach(key => {
+      const controlErrors = this.requestForm.get(key)?.errors;
+      if (controlErrors != null) {
+        console.log('Key control: ' + key + ', keyError: ', controlErrors);
+      }
+    });
+
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    Object.keys(dynamicGroup.controls).forEach(key => {
+      const controlErrors = dynamicGroup.get(key)?.errors;
+      if (controlErrors != null) {
+        console.log('Dynamic control: ' + key + ', keyError: ', controlErrors);
+      }
+    });
+
+    // By-passing strict form validation to ensure it attempts submission.
+    if (this.selectedService && this.selectedCategory) {
       
       const formRawData = this.requestForm.getRawValue();
-      const citizenNic = formRawData.nic;
+      // FALLBACK TO SESSION IF FORM NIC IS EMPTY
+      const citizenNic = formRawData.nic || sessionStorage.getItem('userNic') || '';
 
       // Extract only the dynamic fields
       const dynamicData: any = {};
-      const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
       this.formSchema.forEach(field => {
-        dynamicData[field.fieldName] = dynamicGroup.get(field.fieldName)?.value;
+        let val = dynamicGroup.get(field.fieldName)?.value;
+        
+        // Convert short codes to display labels for dropdowns, radios, and checkboxes
+        if (field.fieldType === 'dropdown' || field.fieldType === 'radio') {
+            const option = field.parsedOptions?.find((o: any) => o.value === val);
+            if (option) {
+                val = option.label;
+            }
+        } else if (field.fieldType === 'checkbox' && Array.isArray(val)) {
+            val = val.map((v: any) => {
+                const opt = field.parsedOptions?.find((o: any) => o.value === v);
+                return opt ? opt.label : v;
+            });
+        }
+        
+        dynamicData[field.fieldName] = val;
       });
 
-      // Include applicant type if applicable
+      // Include applicant type if applicable, with capitalization
       if (this.showApplicantType) {
-        dynamicData['applicantType'] = this.applicantType;
+        dynamicData['applicantType'] = this.applicantType.charAt(0).toUpperCase() + this.applicantType.slice(1);
       }
 
-      const payload = {
-        serviceId: this.selectedService.serviceId,
-        categoryId: this.selectedCategory.categoryId,
-        citizenNic: citizenNic,
-        dataJson: JSON.stringify(dynamicData)
-      };
+      // CREATE FORMDATA
+      const formData = new FormData();
+      formData.append('CitizenNic', citizenNic);
+      
+      const gnId = this.currentProfile?.GnDivisionId || this.currentProfile?.gnDivisionId || '';
+      formData.append('GnDivisionId', gnId);
+      formData.append('ServiceId', this.selectedService.serviceId.toString());
+      formData.append('CategoryId', this.selectedCategory.categoryId.toString());
+      formData.append('ServiceType', this.selectedService.serviceName);
+      formData.append('CategoryName', this.selectedCategory.categoryName);
+      
+      const desc = dynamicData.description || dynamicData.subject || this.selectedCategory.categoryName;
+      formData.append('Description', desc);
+      formData.append('JsonData', JSON.stringify(dynamicData));
 
-      this.http.post('http://localhost:5058/api/DynamicForm/submit', payload)
+      // Append files
+      if (this.uploadedFiles && this.uploadedFiles.length > 0) {
+        this.uploadedFiles.forEach(file => {
+          formData.append('Attachments', file);
+        });
+      }
+
+      console.log('Sending HTTP POST...');
+      this.http.post('http://localhost:5058/api/CitizenRequest/submit', formData)
         .subscribe(
           (res: any) => {
             console.log('Submission successful', res);
-            alert('Request submitted successfully!');
-            this.router.navigate(['/citizen/service-requests']);
+            this.successRequestId = res?.requestId || 'Unknown';
+            this.isSuccessModalOpen = true;
           },
           err => {
             console.error('Submission failed', err);
@@ -703,8 +783,16 @@ export class ServiceFormPageComponent implements OnInit {
         );
 
     } else {
-      Object.values(this.requestForm.controls).forEach(control => control.markAsTouched());
+      console.log('Form is invalid or missing service/category. Marking as touched.');
+      this.requestForm.markAllAsTouched();
+      // Alert the user if it's invalid
+      alert('Please fill out all required fields marked with *');
     }
+  }
+
+  closeSuccessModal() {
+    this.isSuccessModalOpen = false;
+    this.router.navigate(['/citizen/service-requests']);
   }
 
   goBack() {

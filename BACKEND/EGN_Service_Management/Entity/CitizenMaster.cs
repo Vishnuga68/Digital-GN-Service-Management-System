@@ -49,7 +49,6 @@ public class CitizenMaster
     public EgnServiceUser? EgnServiceUser { get; set; }
     public CitizenSpecialStatus? SpecialStatus { get; set; }
     public ICollection<FamilyCard> HeadedFamilyCards { get; set; } = new List<FamilyCard>();
-    public ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
     public ICollection<AnnouncementTargetCitizen> AnnouncementTargets { get; set; } = new List<AnnouncementTargetCitizen>();
 }
 }

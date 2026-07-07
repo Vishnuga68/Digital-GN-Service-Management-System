@@ -13,6 +13,10 @@ namespace EGN_Service_Management.Entity
         public int RequestId { get; set; }
 
         [Required]
+        [MaxLength(30)]
+        public string RequestNumber { get; set; } = string.Empty;
+
+        [Required]
         [MaxLength(20)]
         public string CitizenNic { get; set; }
 
@@ -33,7 +37,12 @@ namespace EGN_Service_Management.Entity
         public DateTime LastUpdated { get; set; }
 
         [MaxLength(20)]
-        public string AssignedGnDivisionNic { get; set; }
+        public string AssignedGnOfficerNic { get; set; }
+
+        [MaxLength(100)]
+        public string? GnDivision { get; set; }
+
+        public string? FinalDocumentUrl { get; set; }
 
         public DateTime? ApprovedDate { get; set; }
         public DateTime? RejectedDate { get; set; }
@@ -48,13 +57,13 @@ namespace EGN_Service_Management.Entity
         [ForeignKey("CategoryId")]
         public virtual ServiceCategory Category { get; set; }
 
-        [ForeignKey("AssignedGnDivisionNic")]
+        [ForeignKey("AssignedGnOfficerNic")]
         public virtual GnOfficer AssignedOfficer { get; set; }
 
         // Related data
-        public virtual ICollection<RequestData> DynamicData { get; set; }
+        public virtual RequestData DynamicData { get; set; }
         public virtual ICollection<UnifiedRequestAttachment> Attachments { get; set; }
-        public virtual ICollection<RequestStatusHistory> StatusHistory { get; set; }
+        public virtual RequestStatusHistory StatusHistory { get; set; }
         public virtual ICollection<UnifiedRequestRemark> Remarks { get; set; }
     }
 }

@@ -128,6 +128,19 @@ namespace EGN_Service_Management.Controllers
                 .Select(c => new { c.GnDivisionId })
                 .FirstOrDefaultAsync();
 
+            string? gnDivision = citizen?.GnDivisionId;
+            string? assignedOfficer = null;
+
+            if (!string.IsNullOrEmpty(gnDivision))
+            {
+                assignedOfficer = await _context.GnOfficers
+                    .Where(g => g.GnDivisionId == gnDivision)
+                    .Select(g => g.Nic)
+                    .FirstOrDefaultAsync();
+            }
+
+            var requestNumber = $"REQ-{DateTime.UtcNow:yyyy}-{Guid.NewGuid().ToString().Substring(0, 5).ToUpper()}";
+
             var request = new Entity.UnifiedRequest
             {
                 CitizenNic = payload.CitizenNic,
@@ -136,7 +149,9 @@ namespace EGN_Service_Management.Controllers
                 CurrentStatus = "Pending",
                 SubmittedDate = DateTime.UtcNow,
                 LastUpdated = DateTime.UtcNow,
-                AssignedGnDivisionNic = null // Would normally query GN officer for this division
+                AssignedGnOfficerNic = assignedOfficer,
+                GnDivision = gnDivision,
+                RequestNumber = requestNumber
             };
 
             _context.UnifiedRequests.Add(request);
@@ -164,7 +179,7 @@ namespace EGN_Service_Management.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Request submitted successfully", requestId = request.RequestId });
+            return Ok(new { message = "Request submitted successfully", requestId = request.RequestNumber });
         }
     }
 

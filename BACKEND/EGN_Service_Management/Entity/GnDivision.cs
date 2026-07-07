@@ -23,6 +23,5 @@ public class GnDivision
     public GnOfficer? GnOfficer { get; set; }
     public ICollection<CitizenMaster> Citizens { get; set; } = new List<CitizenMaster>();
     public ICollection<FamilyCard> FamilyCards { get; set; } = new List<FamilyCard>();
-    public ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
 }
 }

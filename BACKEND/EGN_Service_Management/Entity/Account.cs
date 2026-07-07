@@ -32,8 +32,6 @@ public class Account
     public DsOfficer? DsOfficer { get; set; }
     public GnOfficer? GnOfficer { get; set; }
     public EgnServiceUser? EgnServiceUser { get; set; }
-    public ICollection<RequestTimeline> RequestTimelines { get; set; } = new List<RequestTimeline>();
-    public ICollection<RequestRemark> RequestRemarks { get; set; } = new List<RequestRemark>();
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
     public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

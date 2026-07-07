@@ -143,7 +143,7 @@
                           </select>
                           
                           <!-- Radio Buttons -->
-                          <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;">
+                          <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                             <label *ngFor="let opt of field.parsedOptions" class="radio-option">
                               <input type="radio" [formControlName]="field.fieldName" [value]="opt.value">
                               <span class="radio-circle"></span>
@@ -152,16 +152,16 @@
                           </div>
 
                           <!-- Checkboxes -->
-                          <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                          <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                             <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
-                              <input type="checkbox" [value]="opt.value" (change)="$event.stopPropagation();"> 
+                              <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
                               <span class="label-text">{{ opt.label }}</span>
                             </label>
                           </div>
 
                           <!-- File Upload -->
-                          <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;">
-                              <input type="file" #filePicker hidden (change)="onFileChange($event)" multiple>
+                          <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                              <input type="file" #filePicker hidden (change)="onFileChange($event, field.fieldName)" multiple>
                               <div class="upload-inner">
                                   <div class="upload-icon-circle">
                                       <img src="/assets/icons/downloads.png" alt="upload">
@@ -178,7 +178,7 @@
                               <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
                                   <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
                                       <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                      <span class="file-name-text">{{ f }}</span>
+                                      <span class="file-name-text">{{ f.name }}</span>
                                       <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
                                   </div>
                               </div>
@@ -244,7 +244,7 @@
                       </select>
                       
                       <!-- Radio Buttons -->
-                      <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;">
+                      <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                         <label *ngFor="let opt of field.parsedOptions" class="radio-option">
                           <input type="radio" [formControlName]="field.fieldName" [value]="opt.value">
                           <span class="radio-circle"></span>
@@ -253,16 +253,16 @@
                       </div>
 
                       <!-- Checkboxes -->
-                      <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                      <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                         <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
-                          <input type="checkbox" [value]="opt.value" (change)="$event.stopPropagation();"> 
+                          <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
                           <span class="label-text">{{ opt.label }}</span>
                         </label>
                       </div>
 
                       <!-- File Upload -->
-                      <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;">
-                          <input type="file" #filePicker hidden (change)="onFileChange($event)" multiple>
+                      <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                          <input type="file" #filePicker hidden (change)="onFileChange($event, field.fieldName)" multiple>
                           <div class="upload-inner">
                               <div class="upload-icon-circle">
                                   <img src="/assets/icons/downloads.png" alt="upload">
@@ -279,7 +279,7 @@
                           <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
                               <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
                                   <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                  <span class="file-name-text">{{ f }}</span>
+                                  <span class="file-name-text">{{ f.name }}</span>
                                   <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
                               </div>
                           </div>
@@ -301,7 +301,7 @@
 
             <div class="form-actions-area" *ngIf="selectedCategory">
                 <button type="button" class="btn-cancel-modern" (click)="goBack()">Discard</button>
-                <button type="submit" class="btn-submit-modern">
+                <button type="button" class="btn-submit-modern" (click)="submitRequest()">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="btn-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                     Submit Request
                 </button>
@@ -335,6 +335,37 @@
                 </div>
             </div>
         </div>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-overlay" *ngIf="isSuccessModalOpen">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title-wrapper">
+        <img src="/assets/icons/success.png" alt="Success Icon" class="modal-icon" onerror="this.src='/assets/icons/status_q.png'">
+        <span class="modal-title" style="color: #4CAF50;">Request Submitted</span>
+      </div>
+      <button class="btn-close" (click)="closeSuccessModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="text-align: center; padding: 30px;">
+      <h3 style="margin-bottom: 15px; font-weight: 600;">Success!</h3>
+      <p style="color: #666; margin-bottom: 20px;">Your request has been submitted successfully.</p>
+      
+      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 0 auto; max-width: 300px;">
+        <span style="display: block; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Request Reference</span>
+        <strong style="font-size: 20px; color: #333; letter-spacing: 1px; margin-top: 5px; display: block;">{{ successRequestId }}</strong>
+      </div>
+      
+      <p style="font-size: 13px; color: #888; margin-top: 20px;">
+        Please save this reference number for future inquiries.
+      </p>
+    </div>
+    
+    <div class="modal-footer" style="justify-content: center; border-top: none;">
+      <button class="btn-submit-modern" (click)="closeSuccessModal()" style="padding: 10px 40px; margin: 0; width: auto; flex: none;">Continue to My Requests</button>
     </div>
   </div>
 </div>

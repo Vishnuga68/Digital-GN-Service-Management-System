@@ -139,6 +139,12 @@ builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
 builder.Services.AddScoped<ISurveyResponseService, SurveyResponseService>();
 builder.Services.AddScoped<ITransferRequestService, TransferRequestService>();
 
+// Gn Announcement Module
+builder.Services.AddScoped<IGnAnnouncementRepository, GnAnnouncementRepository>();
+builder.Services.AddScoped<IGnAnnouncementService, GnAnnouncementService>();
+
+builder.Services.AddScoped<ICitizenRequestService, CitizenRequestService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CORSOpenPolicy", policy =>

@@ -8,10 +8,6 @@ namespace EGN_Service_Management.Entity
     public class RequestData
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int Id { get; set; }
-
-        [Required]
         public int RequestId { get; set; }
 
         public string JsonData { get; set; }

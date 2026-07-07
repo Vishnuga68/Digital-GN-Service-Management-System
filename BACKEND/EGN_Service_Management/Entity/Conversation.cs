@@ -27,7 +27,6 @@ public class Conversation
 
     public EgnServiceUser? Citizen { get; set; }
     public GnOfficer? GnOfficer { get; set; }
-    public ServiceRequest? ServiceRequest { get; set; }
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 }
 }

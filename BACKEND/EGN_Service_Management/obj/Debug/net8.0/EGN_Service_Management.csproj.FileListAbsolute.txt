@@ -441,3 +441,4 @@ C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Manageme
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\Microsoft.Extensions.Primitives.dll
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\System.Diagnostics.DiagnosticSource.dll
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\BCrypt-Net-Next.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\obj\Debug\net8.0\EGN_Service_Management.sourcelink.json

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 export interface ServiceRequest {
   id: string;
@@ -20,7 +21,7 @@ export interface ServiceRequest {
   styleUrls: ['./service-requests-page.component.scss']
 })
 export class ServiceRequestsPageComponent implements OnInit {
-  constructor(private router: Router) {}
+  constructor(private router: Router, private http: HttpClient) {}
   
   isLoading = true;
   
@@ -41,20 +42,26 @@ export class ServiceRequestsPageComponent implements OnInit {
   categories = ['All', 'Certificates', 'Permits', 'Complaints', 'Inquiries'];
   
   ngOnInit(): void {
-    // Simulate loading
-    setTimeout(() => {
-      this.allRequests = [
-        { id: 'REQ-2023-001', serviceType: 'Income Certificate', category: 'Certificates', status: 'Approved', submittedDate: new Date('2023-10-01T10:00:00'), lastUpdated: new Date('2023-10-05T14:30:00') },
-        { id: 'REQ-2023-002', serviceType: 'Residence Registration', category: 'Certificates', status: 'In Progress', submittedDate: new Date('2023-10-12T09:15:00'), lastUpdated: new Date('2023-10-14T11:20:00') },
-        { id: 'REQ-2023-003', serviceType: 'Business Permit', category: 'Permits', status: 'Pending', submittedDate: new Date('2023-10-20T16:45:00'), lastUpdated: new Date('2023-10-20T16:45:00') },
-        { id: 'REQ-2023-004', serviceType: 'Noise Complaint', category: 'Complaints', status: 'Rejected', submittedDate: new Date('2023-09-15T08:30:00'), lastUpdated: new Date('2023-09-18T10:00:00') },
-        { id: 'REQ-2023-005', serviceType: 'Land Boundary Inquiry', category: 'Inquiries', status: 'Approved', submittedDate: new Date('2023-08-22T11:00:00'), lastUpdated: new Date('2023-08-28T09:45:00') },
-        { id: 'REQ-2023-006', serviceType: 'Marriage Certificate Copy', category: 'Certificates', status: 'Pending', submittedDate: new Date('2023-10-24T14:10:00'), lastUpdated: new Date('2023-10-24T14:10:00') },
-        { id: 'REQ-2023-007', serviceType: 'Building Permit', category: 'Permits', status: 'In Progress', submittedDate: new Date('2023-10-10T13:20:00'), lastUpdated: new Date('2023-10-15T15:30:00') }
-      ];
-      this.applyFilters();
+    const nic = sessionStorage.getItem('userNic');
+    const token = sessionStorage.getItem('token');
+    
+    if (nic && token) {
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      this.http.get<ServiceRequest[]>(`http://localhost:5058/api/CitizenRequest/citizen/${nic}`, { headers })
+        .subscribe({
+          next: (data) => {
+            this.allRequests = data;
+            this.applyFilters();
+            this.isLoading = false;
+          },
+          error: (err) => {
+            console.error('Failed to fetch requests', err);
+            this.isLoading = false;
+          }
+        });
+    } else {
       this.isLoading = false;
-    }, 1500); // 1.5s loading simulation
+    }
   }
 
   // Summary counts
@@ -87,7 +94,7 @@ export class ServiceRequestsPageComponent implements OnInit {
         const end = new Date(this.endDate).getTime();
         // Set end time to end of day
         const endOfEndDay = end + 24 * 60 * 60 * 1000 - 1;
-        const reqTime = req.submittedDate.getTime();
+        const reqTime = new Date(req.submittedDate).getTime();
         matchDate = reqTime >= start && reqTime <= endOfEndDay;
       }
 
@@ -95,7 +102,7 @@ export class ServiceRequestsPageComponent implements OnInit {
     });
     
     // Default sorting: newest first by submittedDate
-    this.filteredRequests.sort((a, b) => b.submittedDate.getTime() - a.submittedDate.getTime());
+    this.filteredRequests.sort((a, b) => new Date(b.submittedDate).getTime() - new Date(a.submittedDate).getTime());
   }
 
   // Pagination logic

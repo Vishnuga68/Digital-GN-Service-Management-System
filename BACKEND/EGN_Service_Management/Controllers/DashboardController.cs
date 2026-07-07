@@ -88,9 +88,9 @@ namespace EGN_Service_Management.Controllers
                         command.CommandText = @"
                             SELECT 
                                 COUNT(*) AS TotalRequests,
-                                SUM(CASE WHEN [Status] = 'Pending' THEN 1 ELSE 0 END) AS PendingRequests,
-                                SUM(CASE WHEN [Status] = 'Approved' THEN 1 ELSE 0 END) AS ApprovedRequests
-                            FROM [service_requests]
+                                SUM(CASE WHEN [CurrentStatus] = 'Pending' THEN 1 ELSE 0 END) AS PendingRequests,
+                                SUM(CASE WHEN [CurrentStatus] = 'Approved' THEN 1 ELSE 0 END) AS ApprovedRequests
+                            FROM [Requests]
                             WHERE [CitizenNic] = @Nic";
 
                         var param = command.CreateParameter();
@@ -153,7 +153,7 @@ namespace EGN_Service_Management.Controllers
                                 gd.[Id] AS GnDivisionId, gd.[Name] AS GnDivisionName,
                                 dd.[Id] AS DsDivisionId, dd.[Name] AS DsDivisionName,
                                 (SELECT TOP 1 StartDate FROM [gn_division_assignments] WHERE GnOfficerNic = go.[Nic] ORDER BY StartDate DESC) AS AppointmentDate,
-                                (SELECT COUNT(*) FROM [service_requests] WHERE [GnDivisionId] = gd.[Id] AND [Status] = 'Approved') AS TasksCompleted
+                                (SELECT COUNT(*) FROM [Requests] WHERE [AssignedGnOfficerNic] = go.[Nic] AND [CurrentStatus] = 'Approved') AS TasksCompleted
                             FROM [gn_officers] go
                             INNER JOIN [accounts] a ON go.[Nic] = a.[Nic]
                             INNER JOIN [gn_divisions] gd ON go.[GnDivisionId] = gd.[Id]
@@ -213,8 +213,8 @@ namespace EGN_Service_Management.Controllers
                         {
                             command.CommandText = @"
                                 SELECT 
-                                    (SELECT COUNT(*) FROM [service_requests] WHERE [GnDivisionId] = @GnDivId) AS TotalRequests,
-                                    (SELECT COUNT(*) FROM [service_requests] WHERE [GnDivisionId] = @GnDivId AND [Status] = 'Pending') AS PendingRequests,
+                                    (SELECT COUNT(*) FROM [Requests] r INNER JOIN [Citizen_Master] cm ON r.[CitizenNic] = cm.[Nic] WHERE cm.[GnDivisionId] = @GnDivId) AS TotalRequests,
+                                    (SELECT COUNT(*) FROM [Requests] r INNER JOIN [Citizen_Master] cm ON r.[CitizenNic] = cm.[Nic] WHERE cm.[GnDivisionId] = @GnDivId AND r.[CurrentStatus] = 'Pending') AS PendingRequests,
                                     (SELECT COUNT(*) FROM [Citizen_Master] cm INNER JOIN [family_cards] fc ON cm.[FamilyCardNumber] = fc.[FamilyCardNumber] WHERE fc.[GnDivisionId] = @GnDivId) AS TotalCitizens,
                                     (SELECT COUNT(*) FROM [family_cards] WHERE [GnDivisionId] = @GnDivId) AS TotalFamilyCards";
 
@@ -323,7 +323,7 @@ namespace EGN_Service_Management.Controllers
                             command.CommandText = @"
                                 SELECT 
                                     (SELECT COUNT(*) FROM [gn_divisions] WHERE [DsDivisionId] = @DsDivId) AS TotalGnDivisions,
-                                    (SELECT COUNT(*) FROM [service_requests] sr INNER JOIN [gn_divisions] gd ON sr.[GnDivisionId] = gd.[Id] WHERE gd.[DsDivisionId] = @DsDivId) AS TotalRequests,
+                                    (SELECT COUNT(*) FROM [Requests] sr INNER JOIN [Citizen_Master] cm ON sr.[CitizenNic] = cm.[Nic] INNER JOIN [gn_divisions] gd ON cm.[GnDivisionId] = gd.[Id] WHERE gd.[DsDivisionId] = @DsDivId) AS TotalRequests,
                                     (SELECT COUNT(*) FROM [Citizen_Master] cm INNER JOIN [family_cards] fc ON cm.[FamilyCardNumber] = fc.[FamilyCardNumber] INNER JOIN [gn_divisions] gd ON fc.[GnDivisionId] = gd.[Id] WHERE gd.[DsDivisionId] = @DsDivId) AS TotalCitizens,
                                     (SELECT COUNT(*) FROM [gn_officers] go INNER JOIN [gn_divisions] gd ON go.[GnDivisionId] = gd.[Id] WHERE gd.[DsDivisionId] = @DsDivId) AS TotalGnOfficers";
 

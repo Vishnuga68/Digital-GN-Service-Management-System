@@ -1,0 +1,120 @@
+<div class="announcements-container fade-in" style="padding: 2rem;">
+  <div class="content-wrapper">
+    <header class="page-header" style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: flex-start;">
+      <button class="back-link" (click)="goBack()" style="display: flex; align-items: center; gap: 0.5rem; background: transparent; border: none; color: #2563eb; font-size: 0.875rem; font-weight: 500; padding: 0; margin-bottom: 0.75rem; cursor: pointer; transition: color 0.2s; text-decoration: none;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Announcements
+      </button>
+      <div class="header-title">
+        <h1 style="font-size: 1.5rem; font-weight: 700;">{{ isEditMode ? 'Update Announcement' : 'Create New Announcement' }}</h1>
+        <p style="color: #64748b; font-size: 0.9rem;">Fill in the details below to publish an announcement for your division.</p>
+      </div>
+    </header>
+
+    <div class="form-container" style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 2rem; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+      
+      <div class="info-section no-border" style="margin-bottom: 2rem;">
+         <div class="section-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">1. Configuration</div>
+         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+           <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Target Type <span style="color: #ef4444;">*</span></label>
+              <select class="gn-input" [(ngModel)]="currentAnnouncement.type" style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+                 <option value="Public">Public Notice</option>
+                 <option value="Poll">Citizen Poll</option>
+                 <option value="Survey">Divisional Survey</option>
+              </select>
+           </div>
+           <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Status</label>
+              <select class="gn-input" [(ngModel)]="currentAnnouncement.status" style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+                <option value="Draft">Draft Only</option>
+                <option value="Published">Publish Now</option>
+              </select>
+           </div>
+         </div>
+         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-top: 1.25rem;">
+           <div class="form-group">
+              <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Expiry Date <span style="color: #ef4444;">*</span></label>
+              <input type="date" class="gn-input" [(ngModel)]="currentAnnouncement.expiryDate" style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+           </div>
+         </div>
+      </div>
+
+      <div class="info-section" style="margin-bottom: 2rem;">
+         <div class="section-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">2. Primary Details</div>
+         <div class="form-group" style="margin-bottom: 1.25rem;">
+           <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Announcement Title <span style="color: #ef4444;">*</span></label>
+           <input type="text" class="gn-input" [(ngModel)]="currentAnnouncement.title" placeholder="Enter a descriptive title..." style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+         </div>
+         <div class="form-group">
+           <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Detailed Content / Question <span style="color: #ef4444;">*</span></label>
+           <textarea class="gn-input" rows="4" [(ngModel)]="currentAnnouncement.description" placeholder="Provide the full details of your announcement or the main question for your poll/survey..." style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px; resize: vertical;"></textarea>
+         </div>
+      </div>
+
+      <!-- Type Specific Settings -->
+      <div class="info-section fade-in" *ngIf="currentAnnouncement.type === 'Poll'" style="margin-bottom: 2rem;">
+         <div class="section-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">3. Poll Options</div>
+         <div class="form-group" *ngFor="let opt of pollOptionsInput; let i = index; trackBy: trackByIndex" style="margin-bottom: 0.75rem;">
+            <div style="display: flex; gap: 0.5rem;">
+               <input type="text" class="gn-input" [(ngModel)]="pollOptionsInput[i]" placeholder="Option {{ i + 1 }}" style="flex: 1; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+               <button type="button" class="btn-icon-sm delete" style="width: 42px; border-radius: 8px; border: 1.5px solid #edf2f7; background: #f8fafc; cursor: pointer; display: flex; align-items: center; justify-content: center;" (click)="removePollOption(i)" [disabled]="pollOptionsInput.length <= 2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #ef4444;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+               </button>
+            </div>
+         </div>
+         <button class="btn-outline-small" (click)="addPollOption()" style="background: transparent; color: #2563eb; border: 1.5px dashed #bfdbfe; border-radius: 8px; padding: 0.625rem 1rem; width: 100%; font-weight: 600; cursor: pointer;">+ Add Another Option</button>
+      </div>
+
+      <div class="info-section fade-in" *ngIf="currentAnnouncement.type === 'Survey'" style="margin-bottom: 2rem;">
+         <div class="section-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">3. Survey Configuration</div>
+         <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div class="form-group">
+               <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Survey Link <span style="color: #ef4444;">*</span></label>
+               <input type="url" class="gn-input" [(ngModel)]="currentAnnouncement.surveyLink" placeholder="https://forms.gle/..." style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+            </div>
+         </div>
+      </div>
+
+      <!-- Attachment Section -->
+      <div class="info-section no-border" style="margin-bottom: 2rem;">
+         <div class="section-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #1e293b; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">{{ currentAnnouncement.type === 'Public' ? '3. ' : '4. ' }} Attach Document</div>
+         
+         <div class="form-group" style="margin-bottom: 1rem;">
+            <label style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem;">Select Document</label>
+            <select class="gn-input" [(ngModel)]="currentAnnouncement.documentId" style="width: 100%; padding: 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 8px;">
+               <option [ngValue]="null">No Attachment</option>
+               <option *ngFor="let doc of documents" [value]="doc.documentId">📄 {{ doc.title }} ({{ doc.fileName }})</option>
+            </select>
+            <p style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">Only "Published" documents from your Document Handling module are available here.</p>
+         </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-secondary" (click)="goBack()" [disabled]="isSubmitting">Cancel</button>
+        <button *ngIf="currentAnnouncement.status === 'Draft'" class="btn-primary" (click)="saveAnnouncement()" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Save Draft' }}
+        </button>
+        <button *ngIf="currentAnnouncement.status === 'Published'" class="btn-primary" (click)="saveAnnouncement()" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Saving...' : 'Publish' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Response Modals -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()" style="position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+    <div class="modal-content" (click)="$event.stopPropagation()" style="background: white; max-width: 400px; width: 100%; text-align: center; padding: 2rem; border-radius: 16px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);">
+      <div class="status-icon" [style.color]="alertType === 'success' ? '#10b981' : '#ef4444'" style="margin-bottom: 1.5rem; display: flex; justify-content: center;">
+        <svg *ngIf="alertType === 'success'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <svg *ngIf="alertType === 'error'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; font-weight: 700;">{{ alertType === 'success' ? 'Task Completed' : 'Issue Occurred' }}</h3>
+      <p style="color: #64748b; margin-bottom: 2rem; line-height: 1.5;">{{ alertMessage }}</p>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding: 0 0 1rem 0;">
+         <button [style.background]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="color:white; border:none; padding:0.625rem 2.5rem; border-radius:8px; cursor:pointer; font-weight: 600; font-family: inherit;" (click)="closeAlert()">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>

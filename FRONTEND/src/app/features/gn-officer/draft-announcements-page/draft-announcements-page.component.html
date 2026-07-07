@@ -1,0 +1,218 @@
+<div class="announcements-container fade-in">
+  <div class="content-wrapper">
+    <header class="page-header" style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: flex-start;">
+      <button class="back-link" (click)="goBack()" style="display: flex; align-items: center; gap: 0.5rem; background: transparent; border: none; color: #2563eb; font-size: 0.875rem; font-weight: 500; padding: 0; margin-bottom: 0.75rem; cursor: pointer; transition: color 0.2s; text-decoration: none;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 18px; height: 18px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to Announcements
+      </button>
+      <div class="header-title">
+        <h1>Draft Announcements</h1>
+        <p>Manage and publish your saved drafts.</p>
+      </div>
+    </header>
+
+    <!-- Tabs Container (Citizen Style) -->
+    <div class="tabs-container">
+      <div class="tab-list">
+        <button 
+          *ngFor="let tab of tabs" 
+          class="tab-btn" 
+          [class.active]="activeTab === tab"
+          (click)="setTab(tab)">
+          {{ tab }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Announcements Cards Section -->
+    <main class="cards-section">
+      
+      <!-- Empty State -->
+      <div class="empty-state card" *ngIf="filteredAnnouncements.length === 0">
+        <div class="empty-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </div>
+        <h2>No draft announcements found</h2>
+      </div>
+
+      <!-- Card List -->
+      <div class="announcement-list" *ngIf="filteredAnnouncements.length > 0">
+        <article *ngFor="let item of filteredAnnouncements" 
+                 class="card slide-up" 
+                 [ngClass]="{
+                   'type-public': item.announcementType === 'Public',
+                   'type-poll': item.announcementType === 'Poll',
+                   'type-survey': item.announcementType === 'Survey'
+                 }">
+          
+          <div class="card-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+               <span class="tag" [ngClass]="item.announcementType.toLowerCase()">
+                  <svg *ngIf="item.announcementType === 'Public'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
+                  <svg *ngIf="item.announcementType === 'Poll'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                  <svg *ngIf="item.announcementType === 'Survey'" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                  {{ item.announcementType }}
+               </span>
+               <span class="status-indicator" [style.color]="item.status === 'Published' ? '#10b981' : '#64748b'" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+                  ● {{ item.status }}
+               </span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+               <span class="date">{{ item.createdAt | date:'MMM d, y, h:mm a' }}</span>
+               <!-- Officer Actions -->
+               <div style="display: flex; gap: 4px;">
+                  <button class="btn-icon" style="background: transparent; border: none; cursor: pointer; color: #2563eb;" title="Edit" (click)="editAnnouncement(item.announcementId)">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                  <button class="btn-icon" style="background: transparent; border: none; cursor: pointer; color: #ef4444;" title="Delete" (click)="deleteAnnouncement(item.announcementId)">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+               </div>
+            </div>
+          </div>
+
+          <div class="card-body" style="display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 0.5rem;">{{ item.title }}</h3>
+            <p class="description" style="margin-bottom: 1.5rem;">{{ item.description }}</p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem; margin-top: auto; padding-top: 1rem; border-top: 1px dashed #e2e8f0;">
+                <div style="font-size: 0.8rem; color: #64748b; display: flex; flex-direction: column; gap: 0.4rem;">
+                   <div><span style="font-weight: 600; color: #475569;">Created By:</span> {{ item.createdByName }}</div>
+                   <div><span style="font-weight: 600; color: #475569;">Last Modified By:</span> {{ item.modifiedByName }}</div>
+                   <div *ngIf="item.announcementType !== 'Public'"><span style="font-weight: 600; color: #ef4444;">Deadline:</span> {{ item.expiryDate | date:'yyyy-MM-dd' }}</div>
+                </div>
+                
+                <!-- Attachment -->
+                <div class="attachment" *ngIf="item.documentName">
+                  <a [href]="'http://localhost:5058' + item.documentUrl" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #f8fafc; border-radius: 8px; color: #2563eb; text-decoration: none; font-size: 0.85rem; font-weight: 500; border: 1px solid #cbd5e1; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.textDecoration='underline'; this.style.backgroundColor='#f1f5f9'" onmouseout="this.style.textDecoration='none'; this.style.backgroundColor='#f8fafc'">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    <span class="file-name">{{ item.documentName }}</span>
+                  </a>
+                </div>
+            </div>
+          </div>
+
+          <div class="card-footer" style="padding-top: 1rem; border-top: 1px solid #f1f5f9; display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;">
+             <button class="btn btn-primary" (click)="publishAnnouncement(item)" *ngIf="item.status === 'Draft' || item.status === 'Expired'">
+               {{ item.status === 'Expired' ? 'Update Expiry & Republish' : 'Publish' }}
+             </button>
+             
+             <a [href]="item.externalSurveyUrl" target="_blank" class="btn btn-primary outline" *ngIf="item.status === 'Published' && item.announcementType === 'Survey'" style="text-decoration: none; display: inline-flex; align-items: center;">
+               View Survey Link &rarr;
+             </a>
+
+             <button class="btn btn-primary outline" (click)="openResultsModal(item)" *ngIf="item.status === 'Published' && item.announcementType === 'Poll'">
+               View Detailed Results &rarr;
+             </button>
+          </div>
+        </article>
+      </div>
+    </main>
+  </div>
+
+
+
+  <!-- Custom Confirmation Modal -->
+  <div class="modal-overlay alert-modal" *ngIf="isConfirmModalOpen" (click)="closeConfirmModal()">
+    <div class="modal-content fade-in-up" (click)="$event.stopPropagation()" style="max-width: 400px;">
+      <div class="modal-body" style="text-align: center; padding: 2.5rem 2rem;">
+        <div class="status-icon" [style.color]="confirmType === 'delete' ? '#ef4444' : '#2563eb'" style="margin-bottom: 1.25rem;">
+          <svg *ngIf="confirmType === 'delete'" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <svg *ngIf="confirmType === 'publish'" width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h3 style="margin-bottom: 0.75rem; font-size: 1.25rem; font-weight: 700; color: #1e293b;">{{ confirmTitle }}</h3>
+        <p style="color: #64748b; font-size: 0.9rem; line-height: 1.5;">{{ confirmMessage }}</p>
+      </div>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding: 0 2rem 2.5rem 2rem; gap: 1rem; display: flex;">
+        <button class="btn-cancel-modern" style="flex: 1;" (click)="closeConfirmModal()">Cancel</button>
+        <button class="btn-submit-modern" style="flex: 1;" [style.background]="confirmType === 'delete' ? '#ef4444' : '#2563eb'" (click)="executeConfirm()">Confirm Action</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Results Modal -->
+  <div class="modal-overlay" *ngIf="isResultsModalOpen && resultsAnnouncement" (click)="closeResultsModal()">
+    <div class="modal-content form-modal fade-in-up" (click)="$event.stopPropagation()" style="max-width: 650px;">
+       <div class="modal-header">
+          <div class="header-with-icon">
+            <div class="icon-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <h3>{{ resultsAnnouncement.announcementType }} Insights: {{ resultsAnnouncement.title }}</h3>
+          </div>
+          <button class="close-x" (click)="closeResultsModal()">&times;</button>
+       </div>
+
+       <div class="modal-body custom-scroll">
+          
+          <!-- Case 1: Poll Detailed Breakdown -->
+          <div *ngIf="resultsAnnouncement.announcementType === 'Poll'">
+             <div class="info-section no-border">
+                <div class="section-title">Visual Distribution</div>
+                <div style="display: flex; gap: 2rem; align-items: center; margin-top: 1.5rem; background: #f8fafc; padding: 2rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+                   
+                   <!-- Left: Pie Chart -->
+                   <div style="flex-shrink: 0; position: relative; width: 160px; height: 160px; border-radius: 50%; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"
+                        [style.background]="getPieChartStyle(resultsAnnouncement.pollOptions || [])">
+                   </div>
+
+                   <!-- Right: Options List -->
+                   <div class="poll-results" style="flex: 1;">
+                      <div class="poll-result-bar" *ngFor="let opt of resultsAnnouncement.pollOptions; let i = index" style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <div style="width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0;"
+                             [style.background]="['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'][i % 7]">
+                        </div>
+                        <div class="result-info" style="flex: 1; display: flex; justify-content: space-between; align-items: center; background: white; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                          <span class="label" style="font-weight: 600; color: #1e293b; font-size: 0.9rem;">{{ opt.optionText }}</span>
+                          <span class="percentage" style="color: #475569; font-weight: 700; font-size: 0.9rem; background: #f1f5f9; padding: 0.25rem 0.75rem; border-radius: 20px;">{{ opt.votes }} votes</span>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <!-- Case 2: Survey Responses List -->
+          <div *ngIf="resultsAnnouncement.announcementType === 'Survey'">
+             <div class="info-section no-border">
+                <div class="section-title">Individual Responses ({{ surveyResponses.length }})</div>
+                <div class="response-list" style="margin-top: 1rem;">
+                   <div *ngFor="let resp of surveyResponses" class="response-item" style="padding: 1rem; border: 1.5px solid #edf2f7; border-radius: 12px; margin-bottom: 0.75rem; background: #f9fafb;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                         <span style="font-weight: 700; color: #1e293b; font-size: 0.85rem;">{{ resp.citizen }}</span>
+                         <span style="font-size: 0.7rem; color: #94a3b8;">{{ resp.date | date:'MMM d, y' }}</span>
+                      </div>
+                      <p style="margin: 0; font-size: 0.85rem; color: #475569; line-height: 1.5; font-style: italic;">"{{ resp.response }}"</p>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+       </div>
+
+       <div class="modal-footer" style="justify-content: flex-end;">
+          <button class="btn-secondary" (click)="closeResultsModal()">Close View</button>
+          <button class="btn-submit-modern" (click)="exportResults()">
+             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btn-icon"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+             Export Results (.CSV)
+          </button>
+       </div>
+    </div>
+  </div>
+
+  <!-- Response Modals -->
+  <div class="modal-overlay alert-modal" *ngIf="showAlertModal" (click)="closeAlert()">
+    <div class="modal-content" (click)="$event.stopPropagation()" style="max-width: 400px; text-align: center; padding: 2rem; border-radius: 16px;">
+      <div class="status-icon" [style.color]="alertType === 'success' ? '#10b981' : '#ef4444'" style="margin-bottom: 1.5rem;">
+        <svg *ngIf="alertType === 'success'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <svg *ngIf="alertType === 'error'" width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">{{ alertType === 'success' ? 'Task Completed' : 'Issue Occurred' }}</h3>
+      <p style="color: #64748b; margin-bottom: 2rem; line-height: 1.5;">{{ alertMessage }}</p>
+      <div class="modal-footer" style="background: white; border: none; justify-content: center; padding: 0 0 1rem 0;">
+         <button [style.background]="alertType === 'success' ? '#22c55e' : '#ef4444'" style="color:white; border:none; padding:0.625rem 2.5rem; border-radius:8px; cursor:pointer; font-weight: 600; font-family: inherit;" (click)="closeAlert()">Continue</button>
+      </div>
+    </div>
+  </div>
+</div>

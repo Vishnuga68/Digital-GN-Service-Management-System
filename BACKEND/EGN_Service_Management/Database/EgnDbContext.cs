@@ -34,10 +34,6 @@ namespace EGN_Service_Management.Database
         public DbSet<UnifiedRequestRemark> UnifiedRequestRemarks { get; set; }
         public DbSet<CitizenWelfareStatus> CitizenWelfareStatuses { get; set; }
 
-        public DbSet<ServiceRequest> ServiceRequests { get; set; }
-        public DbSet<RequestTimeline> RequestTimelines { get; set; }
-        public DbSet<RequestAttachment> RequestAttachments { get; set; }
-        public DbSet<RequestRemark> RequestRemarks { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<GnAvailability> GnAvailabilities { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
@@ -56,9 +52,19 @@ namespace EGN_Service_Management.Database
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<TransferRequest> TransferRequests { get; set; }
         public DbSet<GnDivisionAssignment> GnDivisionAssignments { get; set; }
+        
+        // New Announcement Module DbSets
+        public DbSet<GnAnnouncement> GnAnnouncements { get; set; }
+        public DbSet<GnPollOption> GnPollOptions { get; set; }
+        public DbSet<GnPollVote> GnPollVotes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Configure Unique Constraint for GnPollVote
+            modelBuilder.Entity<GnPollVote>()
+                .HasIndex(v => new { v.AnnouncementId, v.CitizenNic })
+                .IsUnique();
+
             modelBuilder.Entity<DsDivision>()
                 .HasIndex(x => x.Name)
                 .IsUnique();
@@ -241,48 +247,6 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey<CitizenSpecialStatus>(x => x.CitizenNic)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(x => x.Citizen)
-                .WithMany(x => x.ServiceRequests)
-                .HasForeignKey(x => x.CitizenNic)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(x => x.GnDivision)
-                .WithMany(x => x.ServiceRequests)
-                .HasForeignKey(x => x.GnDivisionId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<RequestTimeline>()
-                .HasOne(x => x.ServiceRequest)
-                .WithMany(x => x.Timelines)
-                .HasForeignKey(x => x.RequestId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<RequestTimeline>()
-                .HasOne(x => x.Officer)
-                .WithMany(x => x.RequestTimelines)
-                .HasForeignKey(x => x.OfficerNic)
-                .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<RequestAttachment>()
-                .HasOne(x => x.ServiceRequest)
-                .WithMany(x => x.Attachments)
-                .HasForeignKey(x => x.RequestId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<RequestRemark>()
-                .HasOne(x => x.ServiceRequest)
-                .WithMany(x => x.Remarks)
-                .HasForeignKey(x => x.RequestId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<RequestRemark>()
-                .HasOne(x => x.Author)
-                .WithMany(x => x.RequestRemarks)
-                .HasForeignKey(x => x.AuthorNic)
-                .OnDelete(DeleteBehavior.Restrict);
-
             modelBuilder.Entity<Appointment>()
                 .HasOne(x => x.Citizen)
                 .WithMany(x => x.Appointments)
@@ -397,12 +361,6 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey(x => x.GnOfficerNic)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Conversation>()
-                .HasOne(x => x.ServiceRequest)
-                .WithMany(x => x.Conversations)
-                .HasForeignKey(x => x.RequestId)
-                .OnDelete(DeleteBehavior.SetNull);
-
             modelBuilder.Entity<ChatMessage>()
                 .HasOne(x => x.Conversation)
                 .WithMany(x => x.ChatMessages)
@@ -515,13 +473,13 @@ namespace EGN_Service_Management.Database
             modelBuilder.Entity<UnifiedRequest>()
                 .HasOne(x => x.AssignedOfficer)
                 .WithMany()
-                .HasForeignKey(x => x.AssignedGnDivisionNic)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasForeignKey(x => x.AssignedGnOfficerNic)
+                .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<RequestData>()
-                .HasOne(x => x.Request)
-                .WithMany(x => x.DynamicData)
-                .HasForeignKey(x => x.RequestId)
+            modelBuilder.Entity<UnifiedRequest>()
+                .HasOne(x => x.DynamicData)
+                .WithOne(x => x.Request)
+                .HasForeignKey<RequestData>(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<UnifiedRequestAttachment>()
@@ -530,10 +488,10 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<RequestStatusHistory>()
-                .HasOne(x => x.Request)
-                .WithMany(x => x.StatusHistory)
-                .HasForeignKey(x => x.RequestId)
+            modelBuilder.Entity<UnifiedRequest>()
+                .HasOne(x => x.StatusHistory)
+                .WithOne(x => x.Request)
+                .HasForeignKey<RequestStatusHistory>(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RequestStatusHistory>()
