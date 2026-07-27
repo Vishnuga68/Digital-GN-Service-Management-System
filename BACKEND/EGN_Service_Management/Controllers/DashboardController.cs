@@ -148,7 +148,7 @@ namespace EGN_Service_Management.Controllers
                     {
                         command.CommandText = @"
                             SELECT 
-                                go.[Nic], go.[FullName],
+                                go.[Nic], COALESCE(cm.[FullName], go.[FullName]) AS [FullName],
                                 a.[Email], a.[Phone], a.[Status],
                                 gd.[Id] AS GnDivisionId, gd.[Name] AS GnDivisionName,
                                 dd.[Id] AS DsDivisionId, dd.[Name] AS DsDivisionName,
@@ -158,6 +158,7 @@ namespace EGN_Service_Management.Controllers
                             INNER JOIN [accounts] a ON go.[Nic] = a.[Nic]
                             INNER JOIN [gn_divisions] gd ON go.[GnDivisionId] = gd.[Id]
                             INNER JOIN [ds_divisions] dd ON gd.[DsDivisionId] = dd.[Id]
+                            LEFT JOIN [Citizen_Master] cm ON go.[Nic] = cm.[Nic]
                             WHERE go.[Nic] = @Nic";
 
                         var param = command.CreateParameter();
@@ -269,19 +270,22 @@ namespace EGN_Service_Management.Controllers
                 {
                     // 1. Fetch DS Officer profile and division information
                     var profile = new Dictionary<string, object>();
-                    int dsDivisionId = 0;
+                    string dsDivisionId = string.Empty;
 
                     using (var command = dbConnection.CreateCommand())
                     {
                         command.CommandText = @"
                             SELECT 
-                                dso.[Nic], dso.[FullName],
+                                dso.[Nic], COALESCE(cm.[FullName], dso.[FullName]) AS [FullName],
                                 a.[Email], a.[Phone],
                                 dd.[Id] AS DsDivisionId, dd.[Name] AS DsDivisionName, 
-                                dd.[District], dd.[Province]
+                                dist.[Name] AS District, prov.[Name] AS Province
                             FROM [ds_officers] dso
                             INNER JOIN [accounts] a ON dso.[Nic] = a.[Nic]
                             INNER JOIN [ds_divisions] dd ON dso.[DsDivisionId] = dd.[Id]
+                            LEFT JOIN [Districts] dist ON dd.[DistrictId] = dist.[Id]
+                            LEFT JOIN [Provinces] prov ON dd.[ProvinceId] = prov.[Id]
+                            LEFT JOIN [Citizen_Master] cm ON dso.[Nic] = cm.[Nic]
                             WHERE dso.[Nic] = @Nic";
 
                         var param = command.CreateParameter();
@@ -297,7 +301,7 @@ namespace EGN_Service_Management.Controllers
                                 {
                                     profile[reader.GetName(i)] = reader.IsDBNull(i) ? null : reader.GetValue(i);
                                 }
-                                dsDivisionId = Convert.ToInt32(reader["DsDivisionId"]);
+                                dsDivisionId = reader["DsDivisionId"].ToString() ?? string.Empty;
                             }
                         }
                     }
@@ -316,7 +320,7 @@ namespace EGN_Service_Management.Controllers
                         { "TotalGnOfficers", 0 }
                     };
 
-                    if (dsDivisionId > 0)
+                    if (!string.IsNullOrEmpty(dsDivisionId))
                     {
                         using (var command = dbConnection.CreateCommand())
                         {

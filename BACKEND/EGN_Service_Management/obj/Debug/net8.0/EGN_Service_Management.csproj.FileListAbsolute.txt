@@ -442,3 +442,10 @@ C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Manageme
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\System.Diagnostics.DiagnosticSource.dll
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\BCrypt-Net-Next.dll
 C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\obj\Debug\net8.0\EGN_Service_Management.sourcelink.json
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\PdfSharpCore.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\QRCoder.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\ICSharpCode.SharpZipLib.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\SixLabors.ImageSharp.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\de\PdfSharpCore.resources.dll
+C:\Users\hp\Documents\ACEDEMIC\SEMESTER 8\GN-SYSTEM\BACKEND\EGN_Service_Management\bin\Debug\net8.0\PuppeteerSharp.dll

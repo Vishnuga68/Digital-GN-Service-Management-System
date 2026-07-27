@@ -9,7 +9,7 @@ export interface ServiceRequest {
   citizenName: string;
   serviceType: string;
   category: string;
-  status: 'Pending' | 'In Progress' | 'Approved' | 'Rejected';
+  status: string;
   submittedDate: Date;
   lastUpdated: Date;
 }
@@ -51,7 +51,34 @@ export class ServiceRequestsPageComponent implements OnInit {
       this.http.get<ServiceRequest[]>(`http://localhost:5058/api/CitizenRequest/gn/${nic}`, { headers })
         .subscribe({
           next: (data) => {
-            this.allRequests = data;
+            const statusMap: any = {
+              'PENDING': 'Pending',
+              'Pending': 'Pending',
+              'SUBMITTED': 'Pending',
+              'Submitted': 'Pending',
+              'UNDER_REVIEW': 'Under Review',
+              'Under Review': 'Under Review',
+              'CHANGES_REQUESTED': 'Changes Requested',
+              'Changes Requested': 'Changes Requested',
+              'RESUBMITTED': 'In Progress',
+              'Resubmitted': 'In Progress',
+              'VERIFIED': 'Verified',
+              'Verified': 'Verified',
+              'APPROVED': 'Approved',
+              'Approved': 'Approved',
+              'ACCEPTED': 'Approved',
+              'Accepted': 'Approved',
+              'REJECTED': 'Rejected',
+              'Rejected': 'Rejected',
+              'REVOKED': 'Rejected',
+              'Revoked': 'Rejected'
+            };
+            this.allRequests = data.map((r: any) => ({
+              ...r,
+              submittedDate: r.submittedDate ? new Date(r.submittedDate) : null,
+              lastUpdated: r.lastUpdated ? new Date(r.lastUpdated) : null,
+              status: statusMap[r.status] || r.status
+            }));
             this.applyFilters();
             this.isLoading = false;
           },
@@ -65,12 +92,34 @@ export class ServiceRequestsPageComponent implements OnInit {
     }
   }
 
+  // Filtered requests specifically for calculating counts (ignoring the selectedStatus filter)
+  get filteredRequestsForCounts(): ServiceRequest[] {
+    return this.allRequests.filter(req => {
+      const matchCategory = this.selectedCategory === 'All' || req.category === this.selectedCategory;
+      
+      let matchDate = true;
+      if (this.startDate && this.endDate) {
+        const start = new Date(this.startDate).getTime();
+        const end = new Date(this.endDate).getTime();
+        const endOfEndDay = end + 24 * 60 * 60 * 1000 - 1;
+        const reqTime = new Date(req.submittedDate).getTime();
+        matchDate = reqTime >= start && reqTime <= endOfEndDay;
+      }
+
+      return matchCategory && matchDate;
+    });
+  }
+
   // Summary counts
-  get totalRequests() { return this.allRequests.length; }
-  get pendingRequests() { return this.allRequests.filter(r => r.status === 'Pending').length; }
-  get inProgressRequests() { return this.allRequests.filter(r => r.status === 'In Progress').length; }
-  get approvedRequests() { return this.allRequests.filter(r => r.status === 'Approved').length; }
-  get rejectedRequests() { return this.allRequests.filter(r => r.status === 'Rejected').length; }
+  get totalRequests() { return this.filteredRequestsForCounts.length; }
+  get pendingRequests() { return this.filteredRequestsForCounts.filter(r => r.status === 'Pending').length; }
+  get inProgressRequests() { return this.filteredRequestsForCounts.filter(r => r.status === 'In Progress' || r.status === 'Under Review' || r.status === 'Verified' || r.status === 'Changes Requested').length; }
+  get approvedRequests() { return this.filteredRequestsForCounts.filter(r => r.status === 'Approved').length; }
+  get rejectedRequests() { 
+    return this.filteredRequestsForCounts.filter(r => 
+      r.status === 'Rejected' || r.status === 'REJECTED' || r.status === 'REVOKED' || r.status === 'Revoked'
+    ).length; 
+  }
 
   // Filter actions
   setStatusFilter(status: 'All' | 'Pending' | 'In Progress' | 'Approved' | 'Rejected') {
@@ -86,7 +135,10 @@ export class ServiceRequestsPageComponent implements OnInit {
 
   applyFilters() {
     this.filteredRequests = this.allRequests.filter(req => {
-      const matchStatus = this.selectedStatus === 'All' || req.status === this.selectedStatus;
+      const matchStatus = this.selectedStatus === 'All' || 
+                          req.status === this.selectedStatus ||
+                          (this.selectedStatus === 'In Progress' && 
+                           (req.status === 'Under Review' || req.status === 'Verified' || req.status === 'Changes Requested'));
       const matchCategory = this.selectedCategory === 'All' || req.category === this.selectedCategory;
       
       let matchDate = true;

@@ -1,0 +1,372 @@
+<div class="editor-container">
+  <!-- Header consistent with other system pages -->
+  <header class="editor-header">
+    <div class="header-left-row">
+      <button class="back-btn" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to Request
+      </button>
+      <h1 class="title">Document Verification <span class="request-id">{{ requestNumber }}</span></h1>
+    </div>
+  </header>
+
+  <!-- Metadata Info Bar -->
+  <div class="editor-request-info-bar" *ngIf="requestDetails">
+    <div class="info-fields-left">
+      <div class="editor-request-info-item">
+        <span class="info-label">Citizen Name:</span>
+        <span class="info-value">{{ requestDetails.applicant?.fullName }}</span>
+      </div>
+      <div class="editor-request-info-item">
+        <span class="info-label">Citizen NIC:</span>
+        <span class="info-value" style="font-family: monospace;">{{ requestDetails.applicant?.nic }}</span>
+      </div>
+      <div class="editor-request-info-item">
+        <span class="info-label">Applicant Type:</span>
+        <span class="info-value">{{ applicantType }}</span>
+      </div>
+      <div class="editor-request-info-item" *ngIf="relationshipToChild">
+        <span class="info-label">Relationship:</span>
+        <span class="info-value">{{ relationshipToChild }}</span>
+      </div>
+      <div class="editor-request-info-item">
+        <span class="info-label">Status:</span>
+        <span class="status-badge" 
+              [ngClass]="{
+                'status-pending': requestDetails.currentStatus === 'Pending' || requestDetails.currentStatus === 'SUBMITTED',
+                'status-in-progress': requestDetails.currentStatus === 'In Progress' || requestDetails.currentStatus === 'UNDER_REVIEW' || requestDetails.currentStatus === 'RESUBMITTED',
+                'status-verified': requestDetails.currentStatus === 'Verified' || requestDetails.currentStatus === 'VERIFIED',
+                'status-approved': requestDetails.currentStatus === 'Approved' || requestDetails.currentStatus === 'APPROVED' || requestDetails.currentStatus === 'Accepted' || requestDetails.currentStatus === 'ACCEPTED',
+                'status-rejected': requestDetails.currentStatus === 'Rejected' || requestDetails.currentStatus === 'REJECTED' || requestDetails.currentStatus === 'Revoked' || requestDetails.currentStatus === 'REVOKED'
+              }">{{ requestDetails.statusText }}</span>
+      </div>
+    </div>
+    <div class="info-actions-right">
+      <button class="btn btn-preview" (click)="previewVerification()">
+        <img src="/assets/icons/seen.png" alt="Preview" style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; filter: brightness(0) invert(1);" /> Live Preview
+      </button>
+    </div>
+  </div>
+
+  <div class="editor-layout">
+    <!-- Left panel: Element Picker -->
+    <aside class="editor-sidebar left-sidebar">
+      <h2>Document Elements</h2>
+      <p class="subtitle">Click an element to place it on the document page.</p>
+
+      <div class="elements-list">
+        <button class="element-btn" (click)="addElement('SIGNATURE')" [disabled]="isElementPlaced('SIGNATURE')" [class.disabled-btn]="isElementPlaced('SIGNATURE')">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/signature.png" class="icon-img" alt="Signature">
+            </div>
+            <div class="btn-text">
+              <span class="name">Digital Signature</span>
+              <span class="desc" *ngIf="!isElementPlaced('SIGNATURE')">Your official signature</span>
+              <span class="desc" *ngIf="isElementPlaced('SIGNATURE')" style="color: #059669; font-weight: 500;">Already placed on document</span>
+            </div>
+          </div>
+          <div class="signature-preview-container" *ngIf="mySignature">
+            <img [src]="mySignature" alt="Signature Preview" class="signature-preview-img" />
+          </div>
+          <div class="preview-placeholder" *ngIf="!mySignature">
+            Signature preview unavailable
+          </div>
+        </button>
+
+        <button class="element-btn" (click)="addElement('RUBBER_STAMP')" [disabled]="isElementPlaced('RUBBER_STAMP')" [class.disabled-btn]="isElementPlaced('RUBBER_STAMP')">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/stamp.png" class="icon-img" alt="Stamp">
+            </div>
+            <div class="btn-text">
+              <span class="name">Rubber Stamp</span>
+              <span class="desc" *ngIf="!isElementPlaced('RUBBER_STAMP')">Your Division stamp</span>
+              <span class="desc" *ngIf="isElementPlaced('RUBBER_STAMP')" style="color: #059669; font-weight: 500;">Already placed on document</span>
+            </div>
+          </div>
+          <div class="stamp-preview-container" *ngIf="myStamp">
+            <img [src]="myStamp" alt="Stamp Preview" class="stamp-preview-img" />
+          </div>
+          <div class="preview-placeholder" *ngIf="!myStamp">
+            Rubber stamp preview unavailable
+          </div>
+        </button>
+
+        <button class="element-btn" (click)="addElement('QR_CODE')" [disabled]="isElementPlaced('QR_CODE')" [class.disabled-btn]="isElementPlaced('QR_CODE')">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/qr.png" class="icon-img" alt="QR">
+            </div>
+            <div class="btn-text">
+              <span class="name">Verification QR</span>
+              <span class="desc" *ngIf="!isElementPlaced('QR_CODE')">Secured lookup code</span>
+              <span class="desc" *ngIf="isElementPlaced('QR_CODE')" style="color: #059669; font-weight: 500;">Already placed on document</span>
+            </div>
+          </div>
+        </button>
+
+        <button class="element-btn" (click)="addElement('VERIFIED_DATE')" [disabled]="isElementPlaced('VERIFIED_DATE')" [class.disabled-btn]="isElementPlaced('VERIFIED_DATE')">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/appointments.png" class="icon-img" alt="Date">
+            </div>
+            <div class="btn-text">
+              <span class="name">Verified Date</span>
+              <span class="desc" *ngIf="!isElementPlaced('VERIFIED_DATE')">Insert today's date</span>
+              <span class="desc" *ngIf="isElementPlaced('VERIFIED_DATE')" style="color: #059669; font-weight: 500;">Already placed on document</span>
+            </div>
+          </div>
+        </button>
+
+        <button class="element-btn" (click)="addElement('GN_OFFICER_NAME')" [disabled]="isElementPlaced('GN_OFFICER_NAME')" [class.disabled-btn]="isElementPlaced('GN_OFFICER_NAME')">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/profile.png" class="icon-img" alt="Profile">
+            </div>
+            <div class="btn-text">
+              <span class="name">Officer Name</span>
+              <span class="desc" *ngIf="!isElementPlaced('GN_OFFICER_NAME')">Your full name</span>
+              <span class="desc" *ngIf="isElementPlaced('GN_OFFICER_NAME')" style="color: #059669; font-weight: 500;">Already placed on document</span>
+            </div>
+          </div>
+        </button>
+
+        <div class="element-btn text-picker-btn">
+          <div class="element-btn-header">
+            <div class="icon">
+              <img src="/assets/icons/text.png" class="icon-img" alt="Text">
+            </div>
+            <div class="btn-text">
+              <span class="name">Verification Text</span>
+              <span class="desc">Standard or custom note</span>
+            </div>
+          </div>
+          <div class="custom-text-input-group" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px; width: 100%;">
+            <input type="text" [(ngModel)]="customVerificationText" placeholder="Enter custom text..." style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 12px; box-sizing: border-box;" />
+            <button class="btn btn-secondary" style="width: 100%; padding: 8px; font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 6px;" (click)="addElement('VERIFICATION_TEXT')">
+              Add to Page
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page selector -->
+      <div class="page-controls" *ngIf="totalPages > 1">
+        <h3>Page Navigation</h3>
+        <div class="page-navigator">
+          <button [disabled]="currentPage === 1" (click)="changePage(-1)">&larr;</button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button [disabled]="currentPage === totalPages" (click)="changePage(1)">&rarr;</button>
+        </div>
+      </div>
+
+      <!-- Supporting Documents Section -->
+      <div class="supporting-docs-section">
+        <h2>Supporting Documents</h2>
+        <div class="supporting-list">
+          <div *ngFor="let doc of supportingDocuments" class="supporting-item">
+            <div class="doc-meta">
+              <div class="doc-name" [title]="doc.fileName">{{ doc.fileName }}</div>
+              <div class="doc-type">{{ doc.fileType | uppercase }}</div>
+            </div>
+            <a [href]="'http://localhost:5058' + doc.fileUrl" target="_blank" class="btn-view-doc" title="View Document">
+              <img src="/assets/icons/seen.png" alt="View Document" style="width: 16px; height: 16px; display: block;" />
+            </a>
+          </div>
+          <div *ngIf="supportingDocuments.length === 0" class="subtitle" style="font-style: italic;">
+            No supporting documents found.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="editor-workspace" (window:mouseup)="onMouseUp()" (window:mousemove)="onMouseMove($event)">
+      <div class="canvas-wrapper">
+        <div class="canvas-container" #canvasContainer [style.width.px]="containerWidth" [style.height.px]="containerHeight">
+          <!-- Canvas for PDF rendering -->
+          <canvas #pdfCanvas [class.hidden]="isImageDocument"></canvas>
+          
+          <!-- Image rendering fallback -->
+          <img *ngIf="isImageDocument" [src]="documentImageUrl" class="doc-image" (load)="onImageLoaded($event)" />
+
+          <!-- Draggable / Resizable placed elements overlay -->
+          <ng-container *ngFor="let el of placedElements">
+            <div *ngIf="el.pageNumber === currentPage" 
+                 class="placed-element"
+                 [class.selected]="selectedElement?.elementId === el.elementId"
+                 [style.left.px]="el.x * containerWidth"
+                 [style.top.px]="el.y * containerHeight"
+                 [style.width.px]="el.width * containerWidth"
+                 [style.height.px]="el.height * containerHeight"
+                 [style.z-index]="el.layerOrder"
+                 [style.transform]="'rotate(' + el.rotation + 'deg)'"
+                 (mousedown)="onMouseDownElement(el, $event)">
+              
+              <!-- Content presentation -->
+              <div class="element-content">
+                <ng-container [ngSwitch]="el.elementType">
+                  <div *ngSwitchCase="'SIGNATURE'" class="content-sig">
+                    <img *ngIf="mySignature" [src]="mySignature" alt="Signature" draggable="false" />
+                    <span *ngIf="!mySignature" class="placeholder-txt">[Signature]</span>
+                  </div>
+                  <div *ngSwitchCase="'RUBBER_STAMP'" class="content-stamp">
+                    <img *ngIf="myStamp" [src]="myStamp" alt="Stamp" draggable="false" />
+                    <span *ngIf="!myStamp" class="placeholder-txt">[Stamp]</span>
+                  </div>
+                  <div *ngSwitchCase="'QR_CODE'" class="content-qr">
+                    <div class="qr-mock">
+                      <span class="qr-inner">QR</span>
+                    </div>
+                  </div>
+                  <div *ngSwitchCase="'VERIFIED_DATE'" class="content-txt">
+                    {{ el.textValue || formattedDate }}
+                  </div>
+                  <div *ngSwitchCase="'GN_OFFICER_NAME'" class="content-txt">
+                    {{ el.textValue || officerName }}
+                  </div>
+                  <div *ngSwitchCase="'VERIFICATION_TEXT'" class="content-txt text-bold">
+                    {{ el.textValue || 'VERIFIED DOCUMENT' }}
+                  </div>
+                </ng-container>
+              </div>
+
+              <!-- Delete handle -->
+              <button class="delete-handle" (click)="deleteElement(el, $event)">×</button>
+
+              <!-- Resize handle -->
+              <div class="resize-handle" (mousedown)="onMouseDownResize(el, $event)"></div>
+            </div>
+          </ng-container>
+
+          <!-- Loading Spinner overlay -->
+          <div class="spinner-overlay" *ngIf="isLoading">
+            <div class="spinner"></div>
+            <p>Loading document pages...</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Right panel: Properties Inspector -->
+    <aside class="editor-sidebar right-sidebar">
+      <h2>Element Properties</h2>
+      
+      <div *ngIf="selectedElement" class="properties-panel">
+        <div class="property-group">
+          <label>Type</label>
+          <span class="value-badge">{{ selectedElement.elementType }}</span>
+        </div>
+
+        <div class="property-group" *ngIf="isTextElement(selectedElement)">
+          <label>Text Content</label>
+          <textarea [(ngModel)]="selectedElement.textValue" (ngModelChange)="updateTextValue()"></textarea>
+        </div>
+
+        <div class="property-group">
+          <label>Rotation ({{ selectedElement.rotation }}°)</label>
+          <input type="range" min="0" max="360" step="5" [(ngModel)]="selectedElement.rotation" />
+        </div>
+
+        <div class="property-group">
+          <label>Layer Order (Z-Index)</label>
+          <div class="layer-btns">
+            <button (click)="adjustLayer(-1)">Move Down</button>
+            <button (click)="adjustLayer(1)">Move Up</button>
+            <span class="layer-val">{{ selectedElement.layerOrder }}</span>
+          </div>
+        </div>
+
+        <div class="property-group dimensions">
+          <label>Position & Scale</label>
+          <div class="dim-grid">
+            <div><span>X:</span> {{ (selectedElement.x * 100).toFixed(1) }}%</div>
+            <div><span>Y:</span> {{ (selectedElement.y * 100).toFixed(1) }}%</div>
+            <div><span>W:</span> {{ (selectedElement.width * 100).toFixed(1) }}%</div>
+            <div><span>H:</span> {{ (selectedElement.height * 100).toFixed(1) }}%</div>
+          </div>
+        </div>
+
+        <button class="btn btn-delete-all" (click)="deleteElement(selectedElement, $event)">
+          Delete Element
+        </button>
+      </div>
+
+      <div *ngIf="!selectedElement" class="no-selection">
+        <div class="no-sel-icon">
+          <img src="/assets/icons/search.png" class="icon-img" alt="Search" />
+        </div>
+        <p>Select an element on the workspace to customize its properties.</p>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Live Preview Modal -->
+  <div class="modal-overlay" *ngIf="isPreviewOpen">
+    <div class="modal-content preview-modal">
+      <div class="modal-header">
+        <h2>Live Verification Preview</h2>
+        <button class="close-btn" (click)="closePreview()">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Spinner shows when PDF URL is not ready -->
+        <div class="spinner-overlay" *ngIf="!previewPdfUrl">
+          <div class="spinner"></div>
+          <p style="margin-top: 12px; color: #64748b; font-size: 14px;">Generating preview document...</p>
+        </div>
+        <!-- Iframe shows when PDF URL is ready -->
+        <iframe *ngIf="previewPdfUrl" [src]="previewPdfUrl"></iframe>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closePreview()">Cancel</button>
+        <button class="btn btn-finalize" (click)="finalizeVerification()" [disabled]="!previewPdfUrl" [style.opacity]="!previewPdfUrl ? '0.6' : '1'" [style.cursor]="!previewPdfUrl ? 'not-allowed' : 'pointer'">
+          <img src="/assets/icons/document-verify.png" alt="Verify" style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle; filter: brightness(0) invert(1);" /> Finalize & Verify
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Finalize Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="isFinalizeModalOpen">
+    <div class="modal-content confirmation-modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <h2>Confirm Finalization</h2>
+        <button class="close-btn" (click)="cancelFinalize()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 24px; text-align: center;">
+        <p style="font-size: 14px; color: #334155; margin-bottom: 16px; line-height: 1.5; text-align: center;">
+          Are you sure you want to finalize document verification? This will generate the signed PDF and lock the status.
+        </p>
+        <div style="text-align: left; margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; font-size: 0.875rem; color: #475569; margin-bottom: 6px;">Verification Remarks (Optional)</label>
+          <textarea class="form-control" rows="3" [(ngModel)]="finalizeRemarks" placeholder="Add verification remarks..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-size: 14px; box-sizing: border-box;"></textarea>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 12px;">
+          <button class="btn btn-secondary" (click)="cancelFinalize()">Cancel</button>
+          <button class="btn btn-finalize" (click)="confirmFinalize()">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Error/Message Modal -->
+  <div class="modal-overlay" *ngIf="isErrorModalOpen">
+    <div class="modal-content confirmation-modal" style="max-width: 500px;">
+      <div class="modal-header" style="border-bottom: 1px solid #fca5a5; background: #fff5f5;">
+        <h2 style="color: #dc2626; display: flex; align-items: center; gap: 8px; margin: 0; font-size: 18px; font-weight: 600;">
+          <span>⚠️</span> Error
+        </h2>
+        <button class="close-btn" (click)="closeErrorModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding: 24px;">
+        <p style="font-size: 14px; color: #475569; line-height: 1.6; word-break: break-word; white-space: pre-line; margin: 0 0 20px 0; text-align: left;">
+          {{ errorModalMessage }}
+        </p>
+        <div style="display: flex; justify-content: flex-end;">
+          <button class="btn btn-secondary" (click)="closeErrorModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

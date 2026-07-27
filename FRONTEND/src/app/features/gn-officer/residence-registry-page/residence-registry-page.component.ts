@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { catchError, map } from 'rxjs/operators';
 import { of, forkJoin } from 'rxjs';
 
@@ -14,6 +15,7 @@ import { of, forkJoin } from 'rxjs';
 })
 export class ResidenceRegistryPageComponent implements OnInit {
   private http = inject(HttpClient);
+  private route = inject(ActivatedRoute);
 
   isLoading = true;
   gnDivisionId = '';
@@ -130,6 +132,12 @@ export class ResidenceRegistryPageComponent implements OnInit {
             dob: this.parseDate(c.dob)
           }));
           this.filterCitizens();
+
+          // Auto-open citizen details if NIC is passed as query param
+          const targetNic = this.route.snapshot.queryParams['nic'];
+          if (targetNic) {
+            this.selectCitizenByNic(targetNic);
+          }
         }
       },
       error: (err) => {
@@ -173,6 +181,29 @@ export class ResidenceRegistryPageComponent implements OnInit {
        );
     }
     this.filteredCitizens = filtered;
+  }
+
+  selectCitizenByNic(nic: string) {
+    const found = this.citizens.find(c => c.nic === nic);
+    if (found) {
+      this.viewDetails(found);
+    } else {
+      const token = sessionStorage.getItem('token');
+      if (!token) return;
+      const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+      this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nic}`, { headers }).subscribe({
+        next: (res) => {
+          if (res && res.fullName) {
+            const citizenDivision = res.gnDivisionId || res.GnDivisionId;
+            if (citizenDivision === this.gnDivisionId) {
+              res.dob = this.parseDate(res.dob);
+              this.viewDetails(res);
+            }
+          }
+        },
+        error: (err) => console.error('Error fetching citizen by NIC:', err)
+      });
+    }
   }
 
   viewDetails(citizen: any) {

@@ -1,0 +1,77 @@
+﻿
+<div style="font-family:Times New Roman;font-size:14px;line-height:1.8;">
+
+    <div style="text-align:center;">
+        <h2>GRAMA NILADHARI OFFICE</h2>
+        <h3>{{GnDivisionName}}</h3>
+    </div>
+
+    <hr/>
+
+    <h2 style="text-align:center;text-decoration:underline;">
+        CHARACTER CERTIFICATE
+    </h2>
+
+    <p>
+        This is to certify that <strong>{{CitizenFullName}}</strong>,
+        holder of National Identity Card Number
+        <strong>{{CitizenNIC}}</strong>,
+        residing at
+        <strong>{{ResidentialAddress}}</strong>,
+        is a resident of the
+        <strong>{{GnDivisionName}}</strong>
+        Grama Niladhari Division.
+    </p>
+
+    <p>
+        According to the records maintained by this office and the information
+        available at the time of issuing this certificate, the applicant is
+        known to be of good character and conduct.
+    </p>
+
+    <p>
+        This certificate is issued upon the request of the applicant for the
+        purpose of <strong>{{RequiredFor}}</strong>.
+    </p>
+
+    <br/>
+
+    <table style="width:100%;">
+        <tr>
+            <td>
+                <strong>Request No:</strong> {{RequestNumber}}
+            </td>
+            <td style="text-align:right;">
+                <strong>Date:</strong> {{IssuedDate}}
+            </td>
+        </tr>
+    </table>
+
+    <br/><br/><br/>
+
+    <table style="width:100%;">
+        <tr>
+            <td style="width:35%;text-align:center;">
+                {{RubberStamp}}
+            </td>
+
+            <td style="width:35%;text-align:center;">
+                {{OfficerSignature}}<br/><br/>
+                <strong>{{GnOfficerName}}</strong><br/>
+                Grama Niladhari Officer<br/>
+                {{GnDivisionName}}
+            </td>
+
+            <td style="width:30%;text-align:right;">
+                {{QrCode}}
+            </td>
+        </tr>
+    </table>
+
+    <br/>
+
+    <div style="text-align:center;font-size:11px;">
+        This document is electronically generated and can be verified using the QR Code.
+    </div>
+
+</div>

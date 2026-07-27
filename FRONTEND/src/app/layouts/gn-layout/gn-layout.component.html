@@ -157,7 +157,7 @@
     </header>
 
     <!-- ROUTER OUTLET -->
-    <div class="dashboard-body">
+    <div class="dashboard-body" [class.no-padding-footer]="isVerificationEditor">
       <div class="router-wrapper">
         <router-outlet></router-outlet>
       </div>
@@ -235,6 +235,7 @@
           <input type="tel" [(ngModel)]="editablePhone" placeholder="+94 7X XXX XXXX">
         </div>
       </div>
+
     </div>
 
     <div class="modal-footer">

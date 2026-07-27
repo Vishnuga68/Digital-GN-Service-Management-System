@@ -134,10 +134,11 @@
             <td class="category">{{ req.category }}</td>
             <td>
               <span class="status-badge" [ngClass]="{
-                'status-pending': req.status === 'Pending',
-                'status-in-progress': req.status === 'In Progress',
-                'status-approved': req.status === 'Approved',
-                'status-rejected': req.status === 'Rejected'
+                'status-pending': req.status === 'Pending' || req.status === 'Submitted',
+                'status-in-progress': req.status === 'In Progress' || req.status === 'Under Review' || req.status === 'Changes Requested',
+                'status-verified': req.status === 'Verified',
+                'status-approved': req.status === 'Approved' || req.status === 'Accepted',
+                'status-rejected': req.status === 'Rejected' || req.status === 'Revoked'
               }">{{ req.status }}</span>
             </td>
             <td class="date-col">{{ req.submittedDate | date:'MMM d, y, h:mm a' }}</td>

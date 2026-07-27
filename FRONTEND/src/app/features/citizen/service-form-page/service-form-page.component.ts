@@ -66,10 +66,16 @@ export class ServiceFormPageComponent implements OnInit {
   // Modal properties
   isSuccessModalOpen = false;
   successRequestId = '';
+  isSubmitting = false;
+  isErrorModalOpen = false;
+  errorModalMessage = '';
   
   applicantType: string = 'myself';
   isUploading: boolean = false;
   uploadedFiles: File[] = [];
+  
+  mainDocumentFile: File | null = null;
+  supportingFiles: File[] = [];
 
   private dynamicSubscriptions: any[] = [];
 
@@ -398,6 +404,31 @@ export class ServiceFormPageComponent implements OnInit {
          }
       }
 
+      // Auto populate deceasedFullName from deceasedNic when categoryId is 50
+      if (this.selectedCategory?.categoryId === 50 && field.fieldName === 'deceasedNic') {
+        const nicControl = dynamicGroup.get('deceasedNic');
+        const nameControl = dynamicGroup.get('deceasedFullName');
+        if (nicControl && nameControl) {
+          const nicSub = nicControl.valueChanges.subscribe((nicVal: any) => {
+            const trimmedNic = ((nicVal as string) || '').trim();
+            if (trimmedNic.length === 10 || trimmedNic.length === 12) {
+              this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${trimmedNic}`).subscribe({
+                next: (citizenRes) => {
+                  const citizen = citizenRes.data || citizenRes.Data || citizenRes;
+                  if (citizen && (citizen.fullName || citizen.FullName)) {
+                    (nameControl as any).patchValue(citizen.fullName || citizen.FullName);
+                  }
+                },
+                error: (err) => {
+                  console.error('Failed to fetch deceased citizen details', err);
+                }
+              });
+            }
+          });
+          this.dynamicSubscriptions.push(nicSub);
+        }
+      }
+
       // Cascading logic
       if (rules.dependsOn) {
          const parentControl = dynamicGroup.get(rules.dependsOn);
@@ -590,24 +621,46 @@ export class ServiceFormPageComponent implements OnInit {
 
     const nicValue = dynamicGroup.get(fieldName)?.value;
     if (!nicValue) {
-      alert('Please enter a NIC number first.');
+      this.errorModalMessage = 'Please enter a NIC number first.';
+      this.isErrorModalOpen = true;
       return;
     }
 
     const field = this.formSchema.find(f => f.fieldName === fieldName);
     if (!field) return;
 
+    if (fieldName === 'deceasedNic') {
+      this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nicValue}`)
+        .subscribe({
+          next: (res) => {
+            const citizen = res.data || res.Data || res;
+            if (citizen && (citizen.fullName || citizen.FullName)) {
+              dynamicGroup.get('deceasedFullName')?.patchValue(citizen.fullName || citizen.FullName);
+            } else {
+              this.errorModalMessage = `No citizen found with NIC: ${nicValue} in the system.`;
+              this.isErrorModalOpen = true;
+            }
+          },
+          error: (err) => {
+            console.error('Deceased NIC lookup failed', err);
+            this.errorModalMessage = `No citizen found with NIC: ${nicValue} in the system.`;
+            this.isErrorModalOpen = true;
+          }
+        });
+      return;
+    }
+
     const mappings = field.parsedValidationRules?.autoPopulate || {};
 
     this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nicValue}`)
-      .subscribe(
-        res => {
+      .subscribe({
+        next: (res) => {
           let sourceData = res.data || res.Data || res;
           
           const familyCardNumber = this.requestForm.get('familyCardNumber')?.value;
           if (familyCardNumber) {
-             this.http.get<any>(`http://localhost:5058/api/FamilyCard/${familyCardNumber}/members`).subscribe(
-                fcRes => {
+             this.http.get<any>(`http://localhost:5058/api/FamilyCard/${familyCardNumber}/members`).subscribe({
+                next: (fcRes) => {
                    const members = fcRes.data || fcRes.Data || [];
                    const memberData = members.find((m: any) => (m.nic || m.Nic) === nicValue);
                    if (memberData) {
@@ -622,24 +675,44 @@ export class ServiceFormPageComponent implements OnInit {
                            gender: sourceData.Gender || sourceData.gender
                        }, { emitEvent: false });
                    }
+
+                   if (this.selectedCategory?.categoryId === 2) {
+                     dynamicGroup.patchValue({
+                       previousFamilyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber,
+                       familyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber
+                     }, { emitEvent: false });
+                   }
                 },
-                err => {
+                error: (err) => {
                    if (Object.keys(mappings).length > 0) {
                        this.applyAutoPopulateMappings(sourceData, mappings, dynamicGroup);
                    }
+                   if (this.selectedCategory?.categoryId === 2) {
+                     dynamicGroup.patchValue({
+                       previousFamilyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber,
+                       familyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber
+                     }, { emitEvent: false });
+                   }
                 }
-             );
+             });
           } else {
              if (Object.keys(mappings).length > 0) {
                  this.applyAutoPopulateMappings(sourceData, mappings, dynamicGroup);
              }
+             if (this.selectedCategory?.categoryId === 2) {
+               dynamicGroup.patchValue({
+                 previousFamilyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber,
+                 familyCardNumber: sourceData.FamilyCardNumber || sourceData.familyCardNumber
+               }, { emitEvent: false });
+             }
           }
         },
-        err => {
+        error: (err) => {
           console.error('NIC lookup failed', err);
-          alert('No matching citizen found for the provided NIC.');
+          this.errorModalMessage = `No matching citizen found for the provided NIC: ${nicValue}`;
+          this.isErrorModalOpen = true;
         }
-      );
+      });
   }
 
   get showApplicantType(): boolean {
@@ -668,6 +741,57 @@ export class ServiceFormPageComponent implements OnInit {
     }
   }
 
+  onMainDocumentChange(event: any) {
+    const files = event.target.files;
+    if (files.length > 0) {
+      const file = files[0];
+      
+      const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+      const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      if (!allowedExtensions.includes(extension)) {
+        alert('Only PDF, JPG, JPEG, and PNG files are allowed.');
+        return;
+      }
+      
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Maximum file size allowed is 5MB.');
+        return;
+      }
+
+      this.isUploading = true;
+      setTimeout(() => {
+        this.mainDocumentFile = file;
+        this.isUploading = false;
+      }, 300);
+    }
+  }
+
+  onSupportingFilesChange(event: any) {
+    const files = event.target.files;
+    if (files.length > 0) {
+      this.isUploading = true;
+      setTimeout(() => {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`File ${file.name} is too large. Max size 5MB.`);
+            continue;
+          }
+          this.supportingFiles.push(file);
+        }
+        this.isUploading = false;
+      }, 300);
+    }
+  }
+
+  removeMainDocument() {
+    this.mainDocumentFile = null;
+  }
+
+  removeSupportingFile(index: number) {
+    this.supportingFiles.splice(index, 1);
+  }
+
   onCheckboxChange(event: any, fieldName: string) {
     const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
     const control = dynamicGroup.get(fieldName);
@@ -692,6 +816,7 @@ export class ServiceFormPageComponent implements OnInit {
   }
 
   submitRequest() {
+    if (this.isSubmitting) return;
     console.log('--- submitRequest called ---');
     console.log('Form valid?', this.requestForm.valid);
     console.log('selectedService?', !!this.selectedService);
@@ -762,25 +887,41 @@ export class ServiceFormPageComponent implements OnInit {
       formData.append('JsonData', JSON.stringify(dynamicData));
 
       // Append files
-      if (this.uploadedFiles && this.uploadedFiles.length > 0) {
-        this.uploadedFiles.forEach(file => {
-          formData.append('Attachments', file);
-        });
+      if (this.selectedCategory.categoryId === 43 || this.selectedCategory.categoryName.includes('Document Verification')) {
+        if (!this.mainDocumentFile) {
+          alert('Please upload the Main Document to be verified.');
+          return;
+        }
+        formData.append('MainDocument', this.mainDocumentFile);
+        if (this.supportingFiles && this.supportingFiles.length > 0) {
+          this.supportingFiles.forEach(file => {
+            formData.append('Attachments', file);
+          });
+        }
+      } else {
+        if (this.uploadedFiles && this.uploadedFiles.length > 0) {
+          this.uploadedFiles.forEach(file => {
+            formData.append('Attachments', file);
+          });
+        }
       }
 
       console.log('Sending HTTP POST...');
+      this.isSubmitting = true;
       this.http.post('http://localhost:5058/api/CitizenRequest/submit', formData)
-        .subscribe(
-          (res: any) => {
+        .subscribe({
+          next: (res: any) => {
             console.log('Submission successful', res);
+            this.isSubmitting = false;
             this.successRequestId = res?.requestId || 'Unknown';
             this.isSuccessModalOpen = true;
           },
-          err => {
+          error: (err) => {
             console.error('Submission failed', err);
+            this.isSubmitting = false;
             alert('Failed to submit request. Please try again.');
           }
-        );
+        });
 
     } else {
       console.log('Form is invalid or missing service/category. Marking as touched.');
@@ -793,6 +934,10 @@ export class ServiceFormPageComponent implements OnInit {
   closeSuccessModal() {
     this.isSuccessModalOpen = false;
     this.router.navigate(['/citizen/service-requests']);
+  }
+
+  closeErrorModal() {
+    this.isErrorModalOpen = false;
   }
 
   goBack() {

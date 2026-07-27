@@ -1,6 +1,6 @@
 @echo off
 title GN-SYSTEM Launcher
-echo ===================================================dotnet run --launch-profile http
+echo ===================================================
 echo             GN-SYSTEM SERVICES LAUNCHER
 echo ===================================================
 echo.
@@ -21,5 +21,3 @@ echo Done! Both servers have been launched in separate windows.
 echo Keep those windows open to keep the servers running.
 echo ===================================================
 pause
-
-taskkill /IM dotnet.exe /F

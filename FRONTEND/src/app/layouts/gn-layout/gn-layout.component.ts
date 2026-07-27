@@ -25,6 +25,7 @@ export class GnLayoutComponent implements OnInit {
   isDashboard = true;
   searchPlaceholder = 'Search...';
   userImageUrl = ''; 
+  isVerificationEditor = false; 
 
   // GN Profile Data
   officerNIC = '';
@@ -117,6 +118,8 @@ export class GnLayoutComponent implements OnInit {
     const urlTree = this.router.parseUrl(url);
     const path = urlTree.root.children['primary'] ? urlTree.root.children['primary'].segments.map(s => s.path).join('/') : '';
     
+    this.isVerificationEditor = path.includes('verification-editor');
+
     if (path === 'gn-officer' || path === 'gn-officer/dashboard') {
       this.isDashboard = true;
       this.searchPlaceholder = 'Type to search...';

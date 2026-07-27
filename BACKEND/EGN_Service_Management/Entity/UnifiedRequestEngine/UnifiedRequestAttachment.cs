@@ -27,6 +27,24 @@ namespace EGN_Service_Management.Entity
         [Required]
         public DateTime UploadedAt { get; set; }
 
+        [MaxLength(50)]
+        public string? DocumentRole { get; set; }
+
+        [MaxLength(255)]
+        public string? DisplayName { get; set; }
+
+        public bool IsPrimary { get; set; } = false;
+
+        [MaxLength(100)]
+        public string? UploadedBy { get; set; }
+
+        public long? FileSize { get; set; }
+
+        [MaxLength(100)]
+        public string? MimeType { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
         // Navigation property
         [ForeignKey("RequestId")]
         public virtual UnifiedRequest Request { get; set; }

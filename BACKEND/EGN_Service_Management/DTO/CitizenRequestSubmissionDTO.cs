@@ -35,5 +35,7 @@ namespace EGN_Service_Management.DTO
         public string JsonData { get; set; } = string.Empty;
 
         public IFormFileCollection? Attachments { get; set; }
+
+        public IFormFile? MainDocument { get; set; }
     }
 }

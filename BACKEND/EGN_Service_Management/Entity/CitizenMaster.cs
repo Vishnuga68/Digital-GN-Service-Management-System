@@ -44,6 +44,12 @@ public class CitizenMaster
     [MaxLength(50)]
     public string? GnDivisionId { get; set; }
 
+    [MaxLength(50)]
+    public string? RelationshipToHead { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? MonthlyIncome { get; set; }
+
     public GnDivision? GnDivision { get; set; }
     public FamilyCard? FamilyCard { get; set; }
     public EgnServiceUser? EgnServiceUser { get; set; }

@@ -33,6 +33,6 @@ public class Account
     public GnOfficer? GnOfficer { get; set; }
     public EgnServiceUser? EgnServiceUser { get; set; }
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
-    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+    // public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
 }

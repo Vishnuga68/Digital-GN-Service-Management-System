@@ -637,6 +637,57 @@ namespace EGN_Service_Management.Migrations
                     b.ToTable("document_categories");
                 });
 
+            modelBuilder.Entity("EGN_Service_Management.Entity.DocumentPlacementElement", b =>
+                {
+                    b.Property<int>("ElementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ElementId"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ElementType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<double>("Height")
+                        .HasColumnType("float");
+
+                    b.Property<int>("LayerOrder")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PageNumber")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Rotation")
+                        .HasColumnType("float");
+
+                    b.Property<string>("TextValue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("VerificationId")
+                        .HasColumnType("int");
+
+                    b.Property<double>("Width")
+                        .HasColumnType("float");
+
+                    b.Property<double>("X")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Y")
+                        .HasColumnType("float");
+
+                    b.HasKey("ElementId");
+
+                    b.HasIndex("VerificationId");
+
+                    b.ToTable("Document_Placement_Elements");
+                });
+
             modelBuilder.Entity("EGN_Service_Management.Entity.DocumentVaultCategory", b =>
                 {
                     b.Property<int>("Id")
@@ -725,6 +776,84 @@ namespace EGN_Service_Management.Migrations
                     b.HasKey("VaultDocumentId");
 
                     b.ToTable("document_vault_documents");
+                });
+
+            modelBuilder.Entity("EGN_Service_Management.Entity.DocumentVerification", b =>
+                {
+                    b.Property<int>("VerificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VerificationId"));
+
+                    b.Property<string>("AssignedGNOfficerNIC")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FinalFileHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("FinalVerifiedAttachmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MainAttachmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RevocationReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RevokedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("RevokedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VerificationRemarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VerificationStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("VerificationTokenHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("VerificationUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("VerifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("VerificationId");
+
+                    b.HasIndex("AssignedGNOfficerNIC");
+
+                    b.HasIndex("FinalVerifiedAttachmentId");
+
+                    b.HasIndex("MainAttachmentId");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.ToTable("Document_Verifications");
                 });
 
             modelBuilder.Entity("EGN_Service_Management.Entity.DsDivision", b =>
@@ -968,6 +1097,39 @@ namespace EGN_Service_Management.Migrations
                     b.HasIndex("PerformedByNic");
 
                     b.ToTable("gn_document_logs");
+                });
+
+            modelBuilder.Entity("EGN_Service_Management.Entity.GNOfficerDigitalDetails", b =>
+                {
+                    b.Property<string>("GNOfficerNIC")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RubberStampPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SignaturePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("GNOfficerNIC");
+
+                    b.ToTable("gn_officer_digital_details");
                 });
 
             modelBuilder.Entity("EGN_Service_Management.Entity.GnAnnouncement", b =>
@@ -1228,46 +1390,6 @@ namespace EGN_Service_Management.Migrations
                     b.ToTable("gn_poll_votes");
                 });
 
-            modelBuilder.Entity("EGN_Service_Management.Entity.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsRead")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("RecipientNic")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecipientNic");
-
-                    b.ToTable("notifications");
-                });
-
             modelBuilder.Entity("EGN_Service_Management.Entity.PollOption", b =>
                 {
                     b.Property<string>("Id")
@@ -1413,8 +1535,11 @@ namespace EGN_Service_Management.Migrations
 
             modelBuilder.Entity("EGN_Service_Management.Entity.RequestStatusHistory", b =>
                 {
-                    b.Property<int>("RequestId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ChangedBy")
                         .IsRequired()
@@ -1428,14 +1553,19 @@ namespace EGN_Service_Management.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("RequestId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("RequestId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ChangedBy");
+
+                    b.HasIndex("RequestId");
 
                     b.ToTable("Request_Status_History");
                 });
@@ -1720,10 +1850,21 @@ namespace EGN_Service_Management.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttachmentId"));
 
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("DocumentRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("FileType")
                         .IsRequired()
@@ -1734,11 +1875,25 @@ namespace EGN_Service_Management.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("RequestId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("AttachmentId");
 
@@ -1967,6 +2122,50 @@ namespace EGN_Service_Management.Migrations
                     b.Navigation("Province");
                 });
 
+            modelBuilder.Entity("EGN_Service_Management.Entity.DocumentPlacementElement", b =>
+                {
+                    b.HasOne("EGN_Service_Management.Entity.DocumentVerification", "Verification")
+                        .WithMany()
+                        .HasForeignKey("VerificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Verification");
+                });
+
+            modelBuilder.Entity("EGN_Service_Management.Entity.DocumentVerification", b =>
+                {
+                    b.HasOne("EGN_Service_Management.Entity.GnOfficer", "AssignedOfficer")
+                        .WithMany()
+                        .HasForeignKey("AssignedGNOfficerNIC")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EGN_Service_Management.Entity.UnifiedRequestAttachment", "FinalVerifiedAttachment")
+                        .WithMany()
+                        .HasForeignKey("FinalVerifiedAttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EGN_Service_Management.Entity.UnifiedRequestAttachment", "MainAttachment")
+                        .WithMany()
+                        .HasForeignKey("MainAttachmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EGN_Service_Management.Entity.UnifiedRequest", "Request")
+                        .WithOne()
+                        .HasForeignKey("EGN_Service_Management.Entity.DocumentVerification", "RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AssignedOfficer");
+
+                    b.Navigation("FinalVerifiedAttachment");
+
+                    b.Navigation("MainAttachment");
+
+                    b.Navigation("Request");
+                });
+
             modelBuilder.Entity("EGN_Service_Management.Entity.DsDivision", b =>
                 {
                     b.HasOne("EGN_Service_Management.Entity.District", "District")
@@ -2097,6 +2296,17 @@ namespace EGN_Service_Management.Migrations
                     b.Navigation("PerformedBy");
                 });
 
+            modelBuilder.Entity("EGN_Service_Management.Entity.GNOfficerDigitalDetails", b =>
+                {
+                    b.HasOne("EGN_Service_Management.Entity.GnOfficer", "GnOfficer")
+                        .WithOne("DigitalDetails")
+                        .HasForeignKey("EGN_Service_Management.Entity.GNOfficerDigitalDetails", "GNOfficerNIC")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GnOfficer");
+                });
+
             modelBuilder.Entity("EGN_Service_Management.Entity.GnAnnouncement", b =>
                 {
                     b.HasOne("EGN_Service_Management.Entity.GNDocument", "GNDocument")
@@ -2219,17 +2429,6 @@ namespace EGN_Service_Management.Migrations
                     b.Navigation("Option");
                 });
 
-            modelBuilder.Entity("EGN_Service_Management.Entity.Notification", b =>
-                {
-                    b.HasOne("EGN_Service_Management.Entity.Account", "Recipient")
-                        .WithMany("Notifications")
-                        .HasForeignKey("RecipientNic")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Recipient");
-                });
-
             modelBuilder.Entity("EGN_Service_Management.Entity.PollOption", b =>
                 {
                     b.HasOne("EGN_Service_Management.Entity.Announcement", "Announcement")
@@ -2288,8 +2487,8 @@ namespace EGN_Service_Management.Migrations
                         .IsRequired();
 
                     b.HasOne("EGN_Service_Management.Entity.UnifiedRequest", "Request")
-                        .WithOne("StatusHistory")
-                        .HasForeignKey("EGN_Service_Management.Entity.RequestStatusHistory", "RequestId")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("RequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2457,8 +2656,6 @@ namespace EGN_Service_Management.Migrations
                     b.Navigation("EgnServiceUser");
 
                     b.Navigation("GnOfficer");
-
-                    b.Navigation("Notifications");
                 });
 
             modelBuilder.Entity("EGN_Service_Management.Entity.Announcement", b =>
@@ -2555,6 +2752,8 @@ namespace EGN_Service_Management.Migrations
 
                     b.Navigation("Conversations");
 
+                    b.Navigation("DigitalDetails");
+
                     b.Navigation("TransferRequests");
                 });
 
@@ -2596,8 +2795,7 @@ namespace EGN_Service_Management.Migrations
 
                     b.Navigation("Remarks");
 
-                    b.Navigation("StatusHistory")
-                        .IsRequired();
+                    b.Navigation("StatusHistories");
                 });
 
             modelBuilder.Entity("EGN_Service_Management.Entity.UnifiedService", b =>

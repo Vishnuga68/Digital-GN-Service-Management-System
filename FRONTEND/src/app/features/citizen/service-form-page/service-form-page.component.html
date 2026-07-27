@@ -121,7 +121,7 @@
                           </ng-container>
 
                           <ng-container *ngSwitchCase="'text'">
-                            <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
+                            <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || field.fieldName === 'deceasedNic' || field.fieldName === 'DeceasedNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
                               <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
                               <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
                             </div>
@@ -222,7 +222,7 @@
                       </ng-container>
 
                       <ng-container *ngSwitchCase="'text'">
-                        <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
+                        <div class="input-with-button" *ngIf="field.parsedValidationRules?.dataSource === 'CitizenMaster' || field.fieldName === 'spouseNic' || field.fieldName === 'SpouseNIC' || field.fieldName === 'deceasedNic' || field.fieldName === 'DeceasedNIC' || (field.parsedValidationRules?.autoPopulate && field.parsedValidationRules.autoPopulate.source !== 'CurrentFamilyCard' && field.parsedValidationRules.autoPopulate.source !== 'logged_in_citizen'); else defaultTextInput">
                           <input type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" placeholder="Enter {{field.fieldLabel}}">
                           <button type="button" class="btn-nic-lookup" (click)="lookupNic(field.fieldName)">Add</button>
                         </div>
@@ -261,28 +261,89 @@
                       </div>
 
                       <!-- File Upload -->
-                      <div *ngSwitchCase="'file'" class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" style="grid-column: 1 / -1; margin-top: 10px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
-                          <input type="file" #filePicker hidden (change)="onFileChange($event, field.fieldName)" multiple>
-                          <div class="upload-inner">
-                              <div class="upload-icon-circle">
-                                  <img src="/assets/icons/downloads.png" alt="upload">
-                              </div>
-                              <div class="upload-labels">
-                                  <h3>Upload Scanned Documents</h3>
-                                  <p>Drag and drop or click to browse (Max 5MB)</p>
-                                  <span class="file-types">Supported: PDF, JPG, PNG</span>
+                      <div *ngSwitchCase="'file'" style="grid-column: 1 / -1; margin-top: 10px;">
+                          <div *ngIf="selectedCategory?.categoryId === 43 || selectedCategory?.categoryName?.includes('Document Verification'); else standardFileUpload">
+                              <div *ngIf="field.fieldName === 'documentToVerify'">
+                                  <!-- Main Document Upload Zone -->
+                                  <div style="margin-bottom: 20px;">
+                                      <label style="font-weight: 600; font-size: 0.95rem; color: #1e293b; margin-bottom: 8px; display: block;">Main Document to be Verified <span style="color: #ef4444;">*</span></label>
+                                      <div class="upload-zone" (click)="mainDocPicker.click()" [class.uploading]="isUploading" style="border: 2px dashed #3b82f6; background-color: #eff6ff;">
+                                          <input type="file" #mainDocPicker hidden (change)="onMainDocumentChange($event)">
+                                          <div class="upload-inner">
+                                              <div class="upload-icon-circle" style="background: #dbeafe;">
+                                                  <img src="/assets/icons/downloads.png" alt="upload">
+                                              </div>
+                                              <div class="upload-labels">
+                                                  <h3 style="color: #2563eb;">Upload Main Document</h3>
+                                                  <p>This is the primary document that will be verified (Max 5MB)</p>
+                                                  <span class="file-types">Supported: PDF, JPG, PNG</span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <!-- Main File Preview -->
+                                      <div class="file-preview-area" *ngIf="mainDocumentFile" style="margin-top: 10px;">
+                                          <div class="file-tag-modern" style="border: 1px solid #bfdbfe; background: #eff6ff;">
+                                              <svg class="file-icon" fill="none" stroke="#2563eb" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                              <span class="file-name-text" style="color: #1e3a8a; font-weight: 500;">{{ mainDocumentFile.name }} (Main)</span>
+                                              <button type="button" class="btn-remove-file" (click)="removeMainDocument()">&times;</button>
+                                          </div>
+                                      </div>
+                                  </div>
+
+                                  <!-- Supporting Documents Upload Zone -->
+                                  <div>
+                                      <label style="font-weight: 600; font-size: 0.95rem; color: #1e293b; margin-bottom: 8px; display: block;">Supporting Documents (Optional)</label>
+                                      <div class="upload-zone" (click)="supportDocPicker.click()" [class.uploading]="isUploading">
+                                          <input type="file" #supportDocPicker hidden (change)="onSupportingFilesChange($event)" multiple>
+                                          <div class="upload-inner">
+                                              <div class="upload-icon-circle">
+                                                  <img src="/assets/icons/downloads.png" alt="upload">
+                                              </div>
+                                              <div class="upload-labels">
+                                                  <h3>Upload Supporting Files</h3>
+                                                  <p>Upload proof or details to support your verification request (Max 5MB)</p>
+                                                  <span class="file-types">Supported: PDF, JPG, PNG</span>
+                                              </div>
+                                          </div>
+                                      </div>
+                                      <!-- Supporting Files Previews -->
+                                      <div class="file-preview-area" *ngIf="supportingFiles.length > 0" style="margin-top: 10px;">
+                                          <div *ngFor="let f of supportingFiles; let i = index" class="file-tag-modern">
+                                              <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                              <span class="file-name-text">{{ f.name }}</span>
+                                              <button type="button" class="btn-remove-file" (click)="removeSupportingFile(i)">&times;</button>
+                                          </div>
+                                      </div>
+                                  </div>
                               </div>
                           </div>
-                          <div class="upload-progress-overlay" *ngIf="isUploading"></div>
-                          
-                          <!-- File preview tags -->
-                          <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
-                              <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
-                                  <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
-                                  <span class="file-name-text">{{ f.name }}</span>
-                                  <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
+
+                          <!-- Standard Single Upload fallback -->
+                          <ng-template #standardFileUpload>
+                              <div class="upload-zone" (click)="filePicker.click()" [class.uploading]="isUploading" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                                  <input type="file" #filePicker hidden (change)="onFileChange($event, field.fieldName)" multiple>
+                                  <div class="upload-inner">
+                                      <div class="upload-icon-circle">
+                                          <img src="/assets/icons/downloads.png" alt="upload">
+                                      </div>
+                                      <div class="upload-labels">
+                                          <h3>Upload Scanned Documents</h3>
+                                          <p>Drag and drop or click to browse (Max 5MB)</p>
+                                          <span class="file-types">Supported: PDF, JPG, PNG</span>
+                                      </div>
+                                  </div>
+                                  <div class="upload-progress-overlay" *ngIf="isUploading"></div>
+                                  
+                                  <!-- File preview tags -->
+                                  <div class="file-preview-area" *ngIf="uploadedFiles.length > 0" style="margin-top: 15px;">
+                                      <div *ngFor="let f of uploadedFiles; let i = index" class="file-tag-modern">
+                                          <svg class="file-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                          <span class="file-name-text">{{ f.name }}</span>
+                                          <button type="button" class="btn-remove-file" (click)="removeFile(i)">&times;</button>
+                                      </div>
+                                  </div>
                               </div>
-                          </div>
+                          </ng-template>
                       </div>
 
                       <!-- Textarea -->
@@ -301,9 +362,9 @@
 
             <div class="form-actions-area" *ngIf="selectedCategory">
                 <button type="button" class="btn-cancel-modern" (click)="goBack()">Discard</button>
-                <button type="button" class="btn-submit-modern" (click)="submitRequest()">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="btn-icon"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                    Submit Request
+                <button type="button" class="btn-submit-modern" (click)="submitRequest()" [disabled]="isSubmitting">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="btn-icon" *ngIf="!isSubmitting"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    {{ isSubmitting ? 'Submitting...' : 'Submit Request' }}
                 </button>
             </div>
 
@@ -366,6 +427,33 @@
     
     <div class="modal-footer" style="justify-content: center; border-top: none;">
       <button class="btn-submit-modern" (click)="closeSuccessModal()" style="padding: 10px 40px; margin: 0; width: auto; flex: none;">Continue to My Requests</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Error Modal -->
+<div class="modal-overlay" *ngIf="isErrorModalOpen">
+  <div class="modal-content" style="max-width: 450px; border-top: 4px solid #ef4444;">
+    <div class="modal-header">
+      <div class="modal-title-wrapper" style="display: flex; align-items: center; gap: 10px;">
+        <span class="modal-title" style="color: #ef4444; font-weight: 600;">Error</span>
+      </div>
+      <button class="btn-close" (click)="closeErrorModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" style="text-align: center; padding: 24px;">
+      <div style="width: 48px; height: 48px; background-color: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <p style="color: #475569; font-size: 15px; margin-bottom: 20px; line-height: 1.5;">{{ errorModalMessage }}</p>
+    </div>
+    
+    <div class="modal-footer" style="justify-content: center; border-top: none; padding-top: 0;">
+      <button class="btn-submit-modern" (click)="closeErrorModal()" style="background-color: #ef4444; border-color: #ef4444; padding: 10px 30px; margin: 0; width: auto; flex: none;">Close</button>
     </div>
   </div>
 </div>

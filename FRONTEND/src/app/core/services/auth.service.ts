@@ -34,11 +34,13 @@ export class AuthService {
     return this.http.get<any>(`${this.dashboardUrl}/citizen/${nic}`, { headers }).pipe(
       tap(res => {
         if (res && res.success && res.data) {
-          const profile = res.data.profile;
+          // Backend returns PascalCase keys (Profile, Stats) — handle both cases
+          const profile = res.data.profile ?? res.data.Profile;
+          const stats = res.data.stats ?? res.data.Stats;
           sessionStorage.setItem('userProfile', JSON.stringify(profile));
-          sessionStorage.setItem('userStats', JSON.stringify(res.data.stats));
+          sessionStorage.setItem('userStats', JSON.stringify(stats));
           this.setProfile(profile);
-          this.setStats(res.data.stats);
+          this.setStats(stats);
         }
       }),
       catchError(err => {

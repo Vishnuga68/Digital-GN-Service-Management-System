@@ -63,7 +63,7 @@ namespace EGN_Service_Management.Entity
         // Related data
         public virtual RequestData DynamicData { get; set; }
         public virtual ICollection<UnifiedRequestAttachment> Attachments { get; set; }
-        public virtual RequestStatusHistory StatusHistory { get; set; }
+        public virtual ICollection<RequestStatusHistory> StatusHistories { get; set; } = new List<RequestStatusHistory>();
         public virtual ICollection<UnifiedRequestRemark> Remarks { get; set; }
     }
 }

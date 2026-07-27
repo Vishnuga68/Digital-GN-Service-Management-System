@@ -308,6 +308,10 @@
     .profile-photo-row { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem; .avatar-img-edit { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid white; box-shadow: $shadow-sm; } .photo-actions { .photo-btns { display: flex; gap: 0.75rem; margin-bottom: 0.5rem; } .helper-text { font-size: 0.65rem; color: $text-muted; margin: 0; } } }
     .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; &.full-width { grid-template-columns: 1fr; gap: 0.4rem; } }
     .form-group { margin-bottom: 0.75rem; &.full-width { grid-column: span 2; } label { display: block; font-size: 0.75rem; font-weight: 500; color: $text-dark; margin-bottom: 0.5rem; } input { width: 100%; padding: 0.5rem 1rem; border-radius: 4px; border: 1px solid $border-color; font-family: inherit; font-size: 0.7rem; transition: border-color 0.2s; &:focus { outline: none; border-color: $secondary-blue; } &.readonly-input { background: #F8FAFC; color: $text-muted; cursor: not-allowed; border: none;} } .input-with-action { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; input { flex: none; width: 280px; } button { flex: none; margin-left: auto; } } .sub-group-content { display: flex; flex-direction: column; gap: 0.75rem; .btn-row { display: flex; justify-content: flex-end; } } }
+    .digital-preview-box { height: 120px; width: 100%; border: 1px dashed $border-color; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #f8fafc; margin-bottom: 0.5rem; overflow: hidden; .stamp-preview { max-width: 100%; max-height: 100%; object-fit: contain; } .signature-preview { max-width: 100%; max-height: 100%; object-fit: contain; } .no-image-text { font-size: 0.7rem; color: $text-muted; } }
+    .preview-box { height: 150px; width: 100%; border: 1px dashed $border-color; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: #f8fafc; margin-bottom: 0.5rem; overflow: hidden; .stamp-preview, .signature-preview { max-width: 100%; max-height: 100%; object-fit: contain; } .no-image-text { font-size: 0.7rem; color: $text-muted; } }
+    .helper-text.error { color: #DC2626; margin-top: 0.25rem; font-size: 0.65rem; }
+    .full-width-btn { width: 100%; }
     .danger-desc { font-size: 0.7rem; color: #64748B; margin-bottom: 1rem; }
   }
   .modal-footer { padding: 1rem; display: flex; gap: 1rem; border-top: 1px solid $border-color; background: #ffffff; button { flex: 1; padding: 0.6rem; justify-content: center; } }
@@ -354,4 +358,14 @@
   .modal-header { padding: 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid $border-color; h3 { margin: 0; font-size: 1rem; font-weight: 500; color: $primary-blue; } .close-x { background: transparent; border: none; font-size: 1.6rem; color: $text-muted; cursor: pointer; line-height: 1; padding: 0.25rem; transition: color 0.2s; &:hover { color: #DC2626; } } }
   .modal-body { text-align: center; padding: 2rem 1.5rem; .warning-img { width: 42px; height: 42px; margin-bottom: 1rem; } .warning-title { font-size: 0.9rem; font-weight: 500; color: #1F2937; margin: 0 0 0.5rem; line-height: 1.4; } }
   .modal-footer { padding: 1rem; display: flex; gap: 1rem; border-top: 1px solid $border-color; background: #ffffff; button { flex: 1; padding: 0.6rem; justify-content: center; } }
+}
+
+.no-padding-footer {
+  .router-wrapper {
+    padding: 0 !important;
+  }
+  .dashboard-footer {
+    margin: 0 !important;
+    padding: 10px 0 !important;
+  }
 }

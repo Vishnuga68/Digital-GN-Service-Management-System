@@ -21,6 +21,10 @@ namespace EGN_Service_Management.Database
         public DbSet<FamilyCard> FamilyCards { get; set; }
         public DbSet<CitizenSpecialStatus> CitizenSpecialStatuses { get; set; }
         
+        public DbSet<GNOfficerDigitalDetails> GNOfficerDigitalDetails { get; set; }
+        public DbSet<DocumentVerification> DocumentVerifications { get; set; }
+        public DbSet<DocumentPlacementElement> DocumentPlacementElements { get; set; }
+        
         // Unified Request Engine DbSets
         public DbSet<ServiceParentHeading> ServiceParentHeadings { get; set; }
         public DbSet<ServiceFormSchema> ServiceFormSchemas { get; set; }
@@ -49,7 +53,7 @@ namespace EGN_Service_Management.Database
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatAttachment> ChatAttachments { get; set; }
-        public DbSet<Notification> Notifications { get; set; }
+        // public DbSet<Notification> Notifications { get; set; }
         public DbSet<TransferRequest> TransferRequests { get; set; }
         public DbSet<GnDivisionAssignment> GnDivisionAssignments { get; set; }
         
@@ -57,6 +61,7 @@ namespace EGN_Service_Management.Database
         public DbSet<GnAnnouncement> GnAnnouncements { get; set; }
         public DbSet<GnPollOption> GnPollOptions { get; set; }
         public DbSet<GnPollVote> GnPollVotes { get; set; }
+        public DbSet<CertificateTemplate> CertificateTemplates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -204,6 +209,36 @@ namespace EGN_Service_Management.Database
                 .WithOne(x => x.GnOfficer)
                 .HasForeignKey<GnOfficer>(x => x.GnDivisionId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<GnOfficer>()
+                .HasOne(x => x.DigitalDetails)
+                .WithOne(x => x.GnOfficer)
+                .HasForeignKey<GNOfficerDigitalDetails>(x => x.GNOfficerNIC)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DocumentVerification>()
+                .HasOne(x => x.Request)
+                .WithOne()
+                .HasForeignKey<DocumentVerification>(x => x.RequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DocumentVerification>()
+                .HasOne(x => x.MainAttachment)
+                .WithMany()
+                .HasForeignKey(x => x.MainAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentVerification>()
+                .HasOne(x => x.FinalVerifiedAttachment)
+                .WithMany()
+                .HasForeignKey(x => x.FinalVerifiedAttachmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentVerification>()
+                .HasOne(x => x.AssignedOfficer)
+                .WithMany()
+                .HasForeignKey(x => x.AssignedGNOfficerNIC)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<EgnServiceUser>()
                 .HasOne(x => x.CitizenMaster)
@@ -379,11 +414,11 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<Notification>()
+            /*modelBuilder.Entity<Notification>()
                 .HasOne(x => x.Recipient)
                 .WithMany(x => x.Notifications)
                 .HasForeignKey(x => x.RecipientNic)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Cascade);*/
 
             modelBuilder.Entity<TransferRequest>()
                 .HasOne(x => x.GnOfficer)
@@ -488,10 +523,13 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<RequestStatusHistory>()
+                .HasKey(x => x.Id);
+
             modelBuilder.Entity<UnifiedRequest>()
-                .HasOne(x => x.StatusHistory)
+                .HasMany(x => x.StatusHistories)
                 .WithOne(x => x.Request)
-                .HasForeignKey<RequestStatusHistory>(x => x.RequestId)
+                .HasForeignKey(x => x.RequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<RequestStatusHistory>()
@@ -523,6 +561,12 @@ namespace EGN_Service_Management.Database
                 .WithMany()
                 .HasForeignKey(x => x.VerifiedByGnOfficer)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<DocumentPlacementElement>()
+                .HasOne(x => x.Verification)
+                .WithMany()
+                .HasForeignKey(x => x.VerificationId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

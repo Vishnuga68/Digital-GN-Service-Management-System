@@ -107,16 +107,16 @@ namespace EGN_Service_Management.Repositories
             if (string.IsNullOrEmpty(nic)) return nic;
             nic = nic.Trim();
 
-            var officer = await _context.GnOfficers.FirstOrDefaultAsync(o => o.Nic == nic);
-            if (officer != null && !string.IsNullOrEmpty(officer.FullName))
-            {
-                return officer.FullName;
-            }
-
             var citizen = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == nic);
             if (citizen != null && !string.IsNullOrEmpty(citizen.FullName))
             {
                 return citizen.FullName;
+            }
+
+            var officer = await _context.GnOfficers.FirstOrDefaultAsync(o => o.Nic == nic);
+            if (officer != null && !string.IsNullOrEmpty(officer.FullName))
+            {
+                return officer.FullName;
             }
 
             return nic; // Fallback to NIC if not found

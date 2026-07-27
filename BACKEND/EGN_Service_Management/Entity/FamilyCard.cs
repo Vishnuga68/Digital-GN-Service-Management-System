@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace EGN_Service_Management.Entity
@@ -27,6 +27,9 @@ public class FamilyCard
     [Required]
     [MaxLength(20)]
     public string Status { get; set; } = "Active";
+
+    [MaxLength(20)]
+    public string? HouseNumber { get; set; }
 
     public CitizenMaster? HeadOfHousehold { get; set; }
     public GnDivision? GnDivision { get; set; }

@@ -69,9 +69,9 @@ namespace EGN_Service_Management.Mappings
             CreateMap<GnOfficer, GnOfficerRequestDTO>().ReverseMap();
             CreateMap<GnOfficer, GnOfficerResponseDTO>().ReverseMap();
 
-            // Notification Mappings
-            CreateMap<Notification, NotificationRequestDTO>().ReverseMap();
-            CreateMap<Notification, NotificationResponseDTO>().ReverseMap();
+            // Notification Mappings omitted
+            // CreateMap<Notification, NotificationRequestDTO>().ReverseMap();
+            // CreateMap<Notification, NotificationResponseDTO>().ReverseMap();
 
             // PollOption Mappings
             CreateMap<PollOption, PollOptionRequestDTO>().ReverseMap();

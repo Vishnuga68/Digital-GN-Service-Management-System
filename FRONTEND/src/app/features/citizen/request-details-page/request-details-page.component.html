@@ -28,10 +28,11 @@
       </div>
       <div class="header-right">
         <span class="status-badge" [ngClass]="{
-          'status-pending': requestDetails.status === 'Pending',
-          'status-in-progress': requestDetails.status === 'In Progress',
-          'status-approved': requestDetails.status === 'Approved',
-          'status-rejected': requestDetails.status === 'Rejected'
+          'status-pending': requestDetails.status === 'Pending' || requestDetails.status === 'Submitted',
+          'status-in-progress': requestDetails.status === 'In Progress' || requestDetails.status === 'Under Review' || requestDetails.status === 'Changes Requested' || requestDetails.status === 'Resubmitted',
+          'status-verified': requestDetails.status === 'Verified',
+          'status-approved': requestDetails.status === 'Approved' || requestDetails.status === 'Accepted',
+          'status-rejected': requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked'
         }">{{ requestDetails.status }}</span>
       </div>
     </header>
@@ -51,8 +52,8 @@
                     step.completed ? 'completed' : '', 
                     step.step === requestDetails.currentStep ? 'active' : '', 
                     !step.completed && step.step !== requestDetails.currentStep ? 'unreached' : '',
-                    requestDetails.status === 'Approved' ? 'is-approved' : '',
-                    requestDetails.status === 'Rejected' ? 'is-rejected' : '']">
+                    step.step === 4 && (requestDetails.status === 'Approved' || requestDetails.status === 'Accepted' || requestDetails.status === 'APPROVED' || requestDetails.status === 'ACCEPTED') ? 'is-approved' : '',
+                    step.step === 4 && (requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked' || requestDetails.status === 'REJECTED' || requestDetails.status === 'REVOKED') ? 'is-rejected' : '']">
                     <!-- Submitted (Step 1) -->
                     <svg *ngIf="step.step === 1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                     
@@ -68,20 +69,20 @@
                       <svg *ngIf="!step.completed" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="m9 14 2 2 4-4"></path></svg>
                       
                       <!-- Approved -->
-                      <svg *ngIf="step.completed && requestDetails.status === 'Approved'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                      <svg *ngIf="step.completed && (requestDetails.status === 'Approved' || requestDetails.status === 'Accepted' || requestDetails.status === 'APPROVED' || requestDetails.status === 'ACCEPTED')" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                       
                       <!-- Rejected -->
-                      <svg *ngIf="step.completed && requestDetails.status === 'Rejected'" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                      <svg *ngIf="step.completed && (requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked' || requestDetails.status === 'REJECTED' || requestDetails.status === 'REVOKED')" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </ng-container>
                   </div>
                   <div class="line" *ngIf="i < requestDetails.timeline.length - 1"></div>
                 </div>
                 <div class="step-content">
-                  <h4>{{ step.title }}</h4>
+                  <h4 [style.color]="step.title === 'Rejected' || step.title === 'Revoked' ? '#dc2626' : ''">{{ step.title }}</h4>
                   <span class="timestamp" *ngIf="step.timestamp">Completed on: {{ step.timestamp | date:'MMM d, y – h:mm a' }}</span>
                   <span class="timestamp pending-text" *ngIf="!step.timestamp">Pending...</span>
                   <div class="officer" *ngIf="step.officer">
-                     Handled by: {{ step.officer }}
+                     {{ step.title === 'Submitted' ? 'Submitted by: ' : 'Handled by: ' }}{{ step.officer }}
                   </div>
                 </div>
               </div>
@@ -153,32 +154,121 @@
         </div>
 
 
-        <!-- Document Section -->
-        <div class="section-container">
-          <h2 class="outside-header">Supporting Documents</h2>
-          <section class="card documents-card">
-            <div class="doc-list">
-              <div class="doc-item" *ngFor="let doc of requestDetails.documents">
-                <div class="doc-icon">
-                  <svg *ngIf="doc.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                  <svg *ngIf="doc.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        <!-- Document Verification Specific Section -->
+        <ng-container *ngIf="requestDetails.verificationDetails">
+          
+          <!-- Corrected Document Replacement Zone -->
+          <div class="section-container" *ngIf="requestDetails.status === 'CHANGES_REQUESTED'">
+            <h2 class="outside-header" style="color: #d97706;">Action Required: Resubmit Corrected Document</h2>
+            <section class="card documents-card" style="border: 2px dashed #f59e0b; background-color: #fffbeb;">
+              <div style="padding: 15px;">
+                <p style="font-weight: 500; font-size: 0.9rem; color: #b45309; margin-bottom: 12px;">
+                  The GN Officer requested changes for your document. Remarks: "<strong>{{ requestDetails.verificationDetails?.verificationRemarks }}</strong>"
+                </p>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                  <button class="btn-primary" (click)="replacementPicker.click()" [disabled]="isResubmitting" style="padding: 8px 16px; font-size: 0.875rem; border-radius: 6px; cursor: pointer; border: none; font-family: inherit; background: #2563eb; color: #fff;">
+                    {{ resubmitFile ? 'Change File' : 'Select Corrected Document' }}
+                  </button>
+                  <input type="file" #replacementPicker hidden (change)="onResubmitFileChange($event)">
+                  
+                  <button class="btn-primary outline" (click)="submitResubmission()" *ngIf="resubmitFile" [disabled]="isResubmitting" style="padding: 8px 16px; font-size: 0.875rem; border-radius: 6px; cursor: pointer; font-family: inherit; background: transparent; border: 1px solid #2563eb; color: #2563eb;">
+                    {{ isResubmitting ? 'Submitting...' : 'Upload & Resubmit' }}
+                  </button>
                 </div>
-                <div class="doc-info">
-                  <h4>{{ doc.name }}</h4>
-                  <span>{{ doc.size }} &bull; Uploaded on {{ doc.date | date:'MMM d' }}</span>
-                </div>
-                <div class="doc-actions">
-                  <a [href]="doc.url" target="_blank" class="btn-icon" title="Download">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                  </a>
+                <p *ngIf="resubmitFile" style="font-size: 0.85rem; color: #1e293b; margin-top: 8px; font-weight: 500;">
+                  Selected file: {{ resubmitFile.name }}
+                </p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Main Document to be Verified -->
+          <div class="section-container" *ngIf="requestDetails.mainDocument">
+            <h2 class="outside-header">Main Document to be Verified</h2>
+            <section class="card documents-card">
+              <div class="doc-list">
+                <div class="doc-item" style="border: 2px solid #bfdbfe; background-color: #f0f7ff;">
+                  <div class="doc-icon">
+                    <svg *ngIf="requestDetails.mainDocument.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg *ngIf="requestDetails.mainDocument.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  </div>
+                  <div class="doc-info">
+                    <h4 style="color: #1e40af;">{{ requestDetails.mainDocument.name }}</h4>
+                    <span>{{ requestDetails.mainDocument.size }} &bull; Uploaded on {{ requestDetails.mainDocument.date | date:'MMM d' }}</span>
+                    <div *ngIf="requestDetails.verificationDetails?.originalFileHash" style="font-family: monospace; font-size: 11px; color: #64748b; margin-top: 4px;">
+                      SHA-256 Hash: {{ requestDetails.verificationDetails.originalFileHash }}
+                    </div>
+                  </div>
+                  <div class="doc-actions" style="display: flex; gap: 8px;">
+                    <!-- Preview -->
+                    <a [href]="requestDetails.mainDocument.url" target="_blank" class="btn-icon" title="View Document" style="color: #2563eb;">
+                      <img src="/assets/icons/seen.png" alt="View" style="width: 16px; height: 16px; display: block;" />
+                    </a>
+                  </div>
                 </div>
               </div>
-              <div *ngIf="requestDetails.documents?.length === 0" class="no-remarks">
-                 <p>No documents uploaded.</p>
+            </section>
+          </div>
+ 
+          <!-- Supporting Documents list -->
+          <div class="section-container">
+            <h2 class="outside-header">Supporting Documents</h2>
+            <section class="card documents-card">
+              <div class="doc-list">
+                <div class="doc-item" *ngFor="let doc of requestDetails.supportingDocuments">
+                  <div class="doc-icon">
+                    <svg *ngIf="doc.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg *ngIf="doc.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  </div>
+                  <div class="doc-info">
+                    <h4 [style.text-decoration]="!doc.isActive ? 'line-through' : ''" [style.color]="!doc.isActive ? '#94a3b8' : ''">{{ doc.name }} <span *ngIf="!doc.isActive">(Replaced)</span></h4>
+                    <span>{{ doc.size }} &bull; Uploaded on {{ doc.date | date:'MMM d' }}</span>
+                  </div>
+                  <div class="doc-actions" *ngIf="doc.isActive" style="display: flex; gap: 8px;">
+                    <!-- Preview -->
+                    <a [href]="doc.url" target="_blank" class="btn-icon" title="View Document">
+                      <img src="/assets/icons/seen.png" alt="View" style="width: 16px; height: 16px; display: block;" />
+                    </a>
+                  </div>
+                </div>
+                <div *ngIf="requestDetails.supportingDocuments?.length === 0" class="no-remarks">
+                   <p>No supporting documents uploaded.</p>
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
+            </section>
+          </div>
+ 
+        </ng-container>
+ 
+        <!-- Standard Display fallback -->
+        <ng-container *ngIf="!requestDetails.verificationDetails">
+          <div class="section-container">
+            <h2 class="outside-header">Supporting Documents</h2>
+            <section class="card documents-card">
+              <div class="doc-list">
+                <div class="doc-item" *ngFor="let doc of requestDetails.documents">
+                  <div class="doc-icon">
+                    <svg *ngIf="doc.type === 'pdf'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <svg *ngIf="doc.type === 'image'" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                  </div>
+                  <div class="doc-info">
+                    <h4>{{ doc.name }}</h4>
+                    <span>{{ doc.size }} &bull; Uploaded on {{ doc.date | date:'MMM d' }}</span>
+                  </div>
+                  <div class="doc-actions" style="display: flex; gap: 8px;">
+                    <!-- Preview -->
+                    <a [href]="doc.url" target="_blank" class="btn-icon" title="View Document">
+                      <img src="/assets/icons/seen.png" alt="View" style="width: 16px; height: 16px; display: block;" />
+                    </a>
+                  </div>
+                </div>
+                <div *ngIf="requestDetails.documents?.length === 0" class="no-remarks">
+                   <p>No documents uploaded.</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </ng-container>
       </div>
 
       <!-- Sidebar Column -->
@@ -201,12 +291,86 @@
             </a>
           </section>
         </div>
+
+        <!-- Generated Certificate Section (Service 4) -->
+        <div class="section-container" *ngIf="generatedCertificate">
+          <h2 class="outside-header">Issued Certificate</h2>
+          <section class="card final-doc-card" style="padding: 16px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div class="doc-icon" style="background: #f0fdf4; color: #16a34a; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div style="min-width: 0; flex: 1;">
+                  <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="generatedCertificate.name">
+                    {{ generatedCertificate.name }}
+                  </h4>
+                  <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #64748b;">
+                    {{ generatedCertificate.date | date:'MMM d, y, h:mm a' }}
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <a [href]="generatedCertificate.url" target="_blank" class="preview-btn-icon" title="View Document" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; cursor: pointer; transition: all 0.2s;">
+                  <img src="/assets/icons/seen.png" alt="View Document" style="width: 16px; height: 16px; display: block;" />
+                </a>
+                <button (click)="downloadFinalVerifiedDocument()" class="preview-btn-icon" title="Download Document" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; cursor: pointer; transition: all 0.2s; color: #64748b;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </button>
+              </div>
+            </div>
+            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+              <span style="color: #64748b;">Verification Status:</span>
+              <span style="font-weight: 600; padding: 2px 8px; border-radius: 12px; background: #f0fdf4; color: #16a34a;">
+                PUBLISHED
+              </span>
+            </div>
+          </section>
+        </div>
+
+        <!-- Final Verified Document Section -->
+        <div class="section-container" *ngIf="finalVerifiedDocument">
+          <h2 class="outside-header">Final Verified Document</h2>
+          <section class="card final-doc-card" style="padding: 16px 20px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div class="doc-icon" style="background: #f0fdf4; color: #16a34a; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </div>
+                <div style="min-width: 0; flex: 1;">
+                  <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [title]="finalVerifiedDocument.name">
+                    {{ finalVerifiedDocument.name }}
+                  </h4>
+                  <p style="margin: 2px 0 0 0; font-size: 0.75rem; color: #64748b;">
+                    {{ finalVerifiedDocument.date | date:'MMM d, y, h:mm a' }}
+                  </p>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <a [href]="finalVerifiedDocument.url" target="_blank" class="preview-btn-icon" title="View Document" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; cursor: pointer; transition: all 0.2s;">
+                  <img src="/assets/icons/seen.png" alt="View Document" style="width: 16px; height: 16px; display: block;" />
+                </a>
+                <button (click)="downloadFinalVerifiedDocument()" class="preview-btn-icon" title="Download Document" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; cursor: pointer; transition: all 0.2s; color: #64748b;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </button>
+              </div>
+            </div>
+            <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+              <span style="color: #64748b;">Verification:</span>
+              <span style="font-weight: 600; padding: 2px 8px; border-radius: 12px;" 
+                    [style.background]="requestDetails.verificationDetails?.verificationStatus === 'PUBLISHED' ? '#f0fdf4' : '#eff6ff'"
+                    [style.color]="requestDetails.verificationDetails?.verificationStatus === 'PUBLISHED' ? '#16a34a' : '#1d4ed8'">
+                {{ requestDetails.verificationDetails?.verificationStatus === 'PUBLISHED' ? 'PUBLISHED' : 'GENERATED' }}
+                  </span>
+            </div>
+          </section>
+        </div>
         
         <!-- Result / Feedback Details -->
-        <div class="section-container" *ngIf="requestDetails.status === 'Rejected' || requestDetails.status === 'Approved'">
+        <div class="section-container" *ngIf="requestDetails.status === 'Rejected' || requestDetails.status === 'REJECTED' || requestDetails.status === 'Approved' || requestDetails.status === 'APPROVED' || requestDetails.status === 'Accepted' || requestDetails.status === 'ACCEPTED' || requestDetails.status === 'Revoked' || requestDetails.status === 'REVOKED'">
           <h2 class="outside-header">Final Outcome</h2>
           <section class="card result-card">
-             <div class="outcome-box rejected" *ngIf="requestDetails.status === 'Rejected'">
+             <div class="outcome-box rejected" *ngIf="requestDetails.status === 'Rejected' || requestDetails.status === 'REJECTED'">
                 <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></span>
                 <h3>Request Rejected</h3>
                 
@@ -215,24 +379,51 @@
                   <div class="detail-row"><span>Handled by:</span> <strong>GN Officer - {{ requestDetails.timeline?.[3]?.officer || 'Unknown' }}</strong></div>
                   <div class="detail-row"><span>Decision Date:</span> <strong>{{ requestDetails.rejectedDate | date:'MMM d, y, h:mm a' }}</strong></div>
                   <div class="detail-row" *ngIf="requestDetails.rejectionReason"><span>Remarks:</span> <strong>{{ requestDetails.rejectionReason }}</strong></div>
-                  <div class="detail-row"><span>Expected Result:</span> <strong>Request Closed</strong></div>
                 </div>
 
                 <button class="btn btn-primary outline" routerLink="/citizen/service-requests/new" style="margin-top: 16px;">Submit New Request</button>
              </div>
 
-             <div class="outcome-box approved" *ngIf="requestDetails.status === 'Approved'">
+             <div class="outcome-box approved" *ngIf="requestDetails.status === 'Approved' || requestDetails.status === 'Accepted' || requestDetails.status === 'APPROVED' || requestDetails.status === 'ACCEPTED'">
                 <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></span>
                 <h3>Request Approved</h3>
                 
                 <div class="outcome-details">
                   <div class="detail-row"><span>Final Status:</span> <strong>Approved</strong></div>
                   <div class="detail-row"><span>Handled by:</span> <strong>GN Officer - {{ requestDetails.timeline?.[3]?.officer || 'Unknown' }}</strong></div>
-                  <div class="detail-row"><span>Decision Date:</span> <strong>{{ requestDetails.approvedDate | date:'MMM d, y, h:mm a' }}</strong></div>
-                  <div class="detail-row"><span>Expected Result:</span> <strong>Document Ready for Collection/Download</strong></div>
+                  <div class="detail-row"><span>Decision Date:</span> <strong>{{ (requestDetails.approvedDate || requestDetails.lastUpdated) | date:'MMM d, y, h:mm a' }}</strong></div>
+                  <div class="detail-row" *ngIf="!isSimpleRequestFlow"><span>Expected Result:</span> <strong>Document Ready for Collection/Download</strong></div>
                 </div>
 
-                <button class="btn btn-primary" (click)="requestDetails.finalDocumentUrl ? null : null" style="margin-top: 16px;">Download Document</button>
+                <button class="btn btn-primary" (click)="downloadFinalVerifiedDocument()" *ngIf="!isSimpleRequestFlow" style="margin-top: 16px;">Download Document</button>
+             </div>
+
+             <div class="outcome-box approved" *ngIf="requestDetails.status === 'Verified'">
+                  <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg></span>
+                  <h3>Document Verified</h3>
+                  
+                  <div class="outcome-details">
+                    <div class="detail-row"><span>Final Status:</span> <strong>Verified</strong></div>
+                    <div class="detail-row"><span>Verified On:</span> <strong>{{ requestDetails.verificationDetails?.verifiedDate | date:'MMM d, y, h:mm a' }}</strong></div>
+                    <div class="detail-row" *ngIf="requestDetails.verificationDetails?.verificationRemarks"><span>Remarks:</span> <strong>{{ requestDetails.verificationDetails.verificationRemarks }}</strong></div>
+                    <div class="detail-row" *ngIf="requestDetails.verificationDetails?.finalFileHash"><span>SHA-256 Fingerprint:</span> <strong style="font-family: monospace; font-size: 10px; display: block; word-break: break-all;">{{ requestDetails.verificationDetails.finalFileHash }}</strong></div>
+                  </div>
+
+                  <div style="display: flex; gap: 10px; margin-top: 16px; width: 100%;" *ngIf="finalVerifiedDocument">
+                    <button class="btn btn-primary" (click)="downloadFinalVerifiedDocument()" style="flex: 1; margin: 0;">Download PDF</button>
+                    <a [href]="getFinalVerifiedDocUrl()" target="_blank" class="btn btn-primary text-center" style="flex: 1; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; margin: 0;">View PDF</a>
+                  </div>
+               </div>
+
+             <div class="outcome-box rejected" *ngIf="requestDetails.status === 'Revoked' || requestDetails.status === 'REVOKED'">
+                <span class="outcome-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg></span>
+                <h3>Verification Revoked</h3>
+                
+                <div class="outcome-details">
+                  <div class="detail-row"><span>Final Status:</span> <strong style="color: #dc2626;">Revoked</strong></div>
+                  <div class="detail-row" *ngIf="requestDetails.verificationDetails?.revokedDate"><span>Revocation Date:</span> <strong>{{ requestDetails.verificationDetails.revokedDate | date:'MMM d, y, h:mm a' }}</strong></div>
+                  <div class="detail-row" *ngIf="requestDetails.verificationDetails?.revocationReason"><span>Reason:</span> <strong style="color: #b91c1c;">{{ requestDetails.verificationDetails.revocationReason }}</strong></div>
+                </div>
              </div>
           </section>
         </div>
@@ -251,7 +442,14 @@
                           <span class="role">{{ remark.role }}</span>
                         </div>
                      </div>
-                     <span class="date">{{ remark.date | date:'MMM d, h:mm a' }}</span>
+                     <div style="display: flex; align-items: center; gap: 8px;">
+                       <span *ngIf="remark.status" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
+                             [style.background]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#f0fdf4' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#fdf2f2' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#f1f5f9' : '#eff6ff'"
+                             [style.color]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#16a34a' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#de3535' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#0f172a' : '#1d4ed8'">
+                         {{ remark.status }}
+                       </span>
+                       <span class="date">{{ remark.date | date:'MMM d, h:mm a' }}</span>
+                     </div>
                   </div>
                   <div class="remark-body">
                      <p>{{ remark.text }}</p>

@@ -242,7 +242,22 @@
         &.step-1 { background: #3b82f6 !important; border-color: #3b82f6 !important; box-shadow: 0 0 0 4px rgba(#3b82f6, 0.2); }
         &.step-2 { background: #f59e0b !important; border-color: #f59e0b !important; box-shadow: 0 0 0 4px rgba(#f59e0b, 0.2); }
         &.step-3 { background: #8b5cf6 !important; border-color: #8b5cf6 !important; box-shadow: 0 0 0 4px rgba(#8b5cf6, 0.2); }
-        &.step-4 { background: #10b981 !important; border-color: #10b981 !important; box-shadow: 0 0 0 4px rgba(#10b981, 0.2); }
+        &.step-4 { 
+          background: #10b981 !important; 
+          border-color: #10b981 !important; 
+          box-shadow: 0 0 0 4px rgba(#10b981, 0.2); 
+
+          &.is-approved { 
+            background: #16a34a !important; 
+            border-color: #16a34a !important; 
+            box-shadow: 0 0 0 4px rgba(#16a34a, 0.2); 
+          }
+          &.is-rejected { 
+            background: #ef4444 !important; 
+            border-color: #ef4444 !important; 
+            box-shadow: 0 0 0 4px rgba(#ef4444, 0.2); 
+          }
+        }
       }
       .step-content h4 {
         color: #1e293b;

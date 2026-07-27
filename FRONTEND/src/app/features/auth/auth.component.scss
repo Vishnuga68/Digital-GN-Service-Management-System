@@ -50,16 +50,16 @@ $success: #10b981;
 }
 
 .card-header {
-  padding: 2.5rem 2rem 1rem;
+  padding: 1.5rem 1rem 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
+}
 
-  .logo-img {
-    max-width: 180px;
-    height: auto;
-    object-fit: contain;
-  }
+.logo-img {
+  width: 400px;     
+  height: 100px;     
+  object-fit: contain;
 }
 
 .card-body {

@@ -24,5 +24,7 @@ public class GnOfficer
     public ICollection<Announcement> Announcements { get; set; } = new List<Announcement>();
     public ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();
     public ICollection<TransferRequest> TransferRequests { get; set; } = new List<TransferRequest>();
+    
+    public GNOfficerDigitalDetails? DigitalDetails { get; set; }
 }
 }

@@ -31,6 +31,8 @@ export const routes: Routes = [
       { path: 'notifications', loadComponent: () => import('./features/citizen/notifications-page/notifications-page.component').then(m => m.NotificationsPageComponent) },
       { path: 'requests', loadComponent: () => import('./features/gn-officer/service-requests-page/service-requests-page.component').then(m => m.ServiceRequestsPageComponent) },
       { path: 'requests/:id', loadComponent: () => import('./features/gn-officer/request-details-page/request-details-page.component').then(m => m.RequestDetailsPageComponent) },
+      { path: 'requests/:id/verification-editor', loadComponent: () => import('./features/gn-officer/verification-editor-page/verification-editor-page.component').then(m => m.VerificationEditorPageComponent) },
+      { path: 'requests/:id/certificate-editor', loadComponent: () => import('./features/gn-officer/certificate-editor-page/certificate-editor-page.component').then(m => m.CertificateEditorPageComponent) },
       { path: 'appointments', loadComponent: () => import('./features/gn-officer/appointments-page/appointments-page.component').then(m => m.AppointmentsPageComponent) },
       { path: 'availability', loadComponent: () => import('./features/gn-officer/availability-page/availability-page.component').then(m => m.AvailabilityPageComponent) },
       { path: 'announcements', loadComponent: () => import('./features/gn-officer/announcements-page/announcements-page.component').then(m => m.AnnouncementsPageComponent) },
@@ -53,5 +55,6 @@ export const routes: Routes = [
       { path: 'registration', loadComponent: () => import('./features/ds-officer/gn-registration-page/gn-registration-page.component').then(m => m.GnRegistrationPageComponent) },
       { path: 'transfers', loadComponent: () => import('./features/ds-officer/gn-transfers-page/gn-transfers-page.component').then(m => m.GnTransfersPageComponent) }
     ]
-  }
+  },
+  { path: 'verify-document/:token', loadComponent: () => import('./features/public/verify-document-page/verify-document-page.component').then(m => m.VerifyDocumentPageComponent) }
 ];
