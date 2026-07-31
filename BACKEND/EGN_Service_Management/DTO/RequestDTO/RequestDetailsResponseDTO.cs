@@ -6,6 +6,7 @@ namespace EGN_Service_Management.DTO.RequestDTO
     public class RequestDetailsResponseDTO
     {
         public string RequestId { get; set; }
+        public int RequestDbId { get; set; }
         public string ServiceType { get; set; }
         public string Category { get; set; }
         public int CategoryId { get; set; }
@@ -16,6 +17,7 @@ namespace EGN_Service_Management.DTO.RequestDTO
         public string RejectedDate { get; set; }
         public string AssignedOfficerNic { get; set; }
         public string? GnDivision { get; set; }
+        public string? AssignedOfficerName { get; set; }
         
         public ApplicantDTO Applicant { get; set; }
         

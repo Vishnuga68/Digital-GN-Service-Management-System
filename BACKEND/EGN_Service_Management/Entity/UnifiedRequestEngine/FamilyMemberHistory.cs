@@ -24,6 +24,33 @@ namespace EGN_Service_Management.Entity
 
         public string Reason { get; set; }
 
+        [MaxLength(50)]
+        public string? PreviousFamilyCard { get; set; }
+
+        [MaxLength(50)]
+        public string? PreviousGnDivision { get; set; }
+
+        [MaxLength(50)]
+        public string? DestinationGnDivision { get; set; }
+
+        [MaxLength(50)]
+        public string? PreviousRelationship { get; set; }
+
+        [MaxLength(50)]
+        public string? NewRelationship { get; set; }
+
+        public int? RequestId { get; set; }
+
+        [MaxLength(50)]
+        public string? ActionType { get; set; }
+
+        [MaxLength(100)]
+        public string? ChangedBy { get; set; }
+
+        public DateTime? ChangedDate { get; set; }
+
+        public string? Remarks { get; set; }
+
         // Navigation properties
         [ForeignKey("CitizenNic")]
         public virtual CitizenMaster Citizen { get; set; }

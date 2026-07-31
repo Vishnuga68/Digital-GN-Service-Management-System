@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 export interface ChatMessage {
   id: string;
@@ -26,7 +27,9 @@ export interface Conversation {
   lastMessageTime: Date;
   unreadCount: number;
   isOnline: boolean;
-  requestId?: string; // If associated with a specific request
+  requestId?: string;
+  requestNumber?: string;
+  canSendMessages: boolean;
   messages: ChatMessage[];
 }
 
@@ -49,8 +52,8 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
   isUploading = false;
   showEmojiPicker = false;
   activeFilter: 'all' | 'common' | 'request' = 'all';
+  selectedFile: File | null = null;
   
-  // Quick replies for GN
   quickReplies = [
     'Your document is ready for collection.',
     'Please visit the office to verify your NIC.',
@@ -58,42 +61,44 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
     'Could you provide more details regarding your request?'
   ];
 
-  constructor(private route: ActivatedRoute) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+
+  private getHeaders(): HttpHeaders {
+    const token = sessionStorage.getItem('token');
+    return new HttpHeaders().set('Authorization', `Bearer ${token}`);
+  }
 
   ngOnInit(): void {
-    this.loadMockConversations();
-    this.filterConversations();
-    
-    // Check if we navigated from a request details page
-    this.route.queryParams.subscribe(params => {
-      const citizenNIC = params['citizenNIC'];
-      const requestId = params['requestId'];
+    this.loadConversations(() => {
+      this.route.queryParams.subscribe(params => {
+        const citizenNIC = params['citizenNIC'];
+        const requestId = params['requestId'];
 
-      if (citizenNIC && requestId) {
-        // Find specific request-based conversation for this citizen
-        const conv = this.conversations.find(c => 
-          c.citizenNIC === citizenNIC && c.requestId === requestId
-        );
-        if (conv) {
-          this.activeFilter = 'request';
-          this.selectConversation(conv);
-          this.filterConversations();
+        if (citizenNIC && requestId) {
+          const conv = this.conversations.find(c => 
+            c.citizenNIC === citizenNIC && c.requestId === requestId
+          );
+          if (conv) {
+            this.activeFilter = 'request';
+            this.selectConversation(conv);
+            this.filterConversations();
+          }
+        } else if (requestId) {
+          const conv = this.conversations.find(c => c.requestId === requestId);
+          if (conv) {
+            this.activeFilter = 'request';
+            this.selectConversation(conv);
+            this.filterConversations();
+          }
+        } else if (citizenNIC) {
+          const conv = this.conversations.find(c => c.citizenNIC === citizenNIC && !c.requestId);
+          if (conv) {
+            this.activeFilter = 'common';
+            this.selectConversation(conv);
+            this.filterConversations();
+          }
         }
-      } else if (requestId) {
-        const conv = this.conversations.find(c => c.requestId === requestId);
-        if (conv) {
-          this.activeFilter = 'request';
-          this.selectConversation(conv);
-          this.filterConversations();
-        }
-      } else if (citizenNIC) {
-        const conv = this.conversations.find(c => c.citizenNIC === citizenNIC && !c.requestId);
-        if (conv) {
-          this.activeFilter = 'common';
-          this.selectConversation(conv);
-          this.filterConversations();
-        }
-      }
+      });
     });
   }
 
@@ -101,76 +106,51 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
     this.scrollToBottom();
   }
 
-  loadMockConversations() {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    this.conversations = [
-      {
-        id: 'c1',
-        citizenName: 'Nimal Perera',
-        citizenNIC: '199012345678',
-        avatar: 'N',
-        lastMessage: 'Thank you for the update.',
-        lastMessageTime: new Date(today.getTime() - 1000 * 60 * 5),
-        unreadCount: 1,
-        isOnline: true,
-        requestId: 'REQ-2023-001',
-        messages: [
-          { id: 'm1', sender: 'citizen', text: 'Good morning sir, is my income certificate ready?', time: new Date(today.getTime() - 1000 * 60 * 60), isRead: true, status: 'read' },
-          { id: 'm2', sender: 'gn-officer', text: 'Yes, it has been approved. You can collect it tomorrow.', time: new Date(today.getTime() - 1000 * 60 * 30), isRead: true, status: 'read' },
-          { id: 'm3', sender: 'citizen', text: 'Thank you for the update.', time: new Date(today.getTime() - 1000 * 60 * 5), isRead: false, status: 'delivered' }
-        ]
-      },
-      {
-        id: 'c2',
-        citizenName: 'Nimali Perera',
-        citizenNIC: '199012345679',
-        avatar: 'N',
-        lastMessage: 'I have attached the required document.',
-        lastMessageTime: new Date(today.getTime() - 1000 * 60 * 60 * 2),
-        unreadCount: 0,
-        isOnline: false,
-        messages: [
-          { id: 'm1', sender: 'gn-officer', text: 'Please send a clear photo of your NIC back.', time: yesterday, isRead: true, status: 'read' },
-          { id: 'm2', sender: 'citizen', text: 'I have attached the required document.', time: new Date(today.getTime() - 1000 * 60 * 60 * 2), isRead: true, status: 'read', attachment: { name: 'NIC_Back.jpg', type: 'image', url: '#' } }
-        ]
-      },
-      {
-        id: 'c3',
-        citizenName: 'Ruwan Silva',
-        citizenNIC: '197823456789',
-        avatar: 'R',
-        lastMessage: 'When are you visiting?',
-        lastMessageTime: yesterday,
-        unreadCount: 0,
-        isOnline: false,
-        requestId: 'REQ-2023-003',
-        messages: [
-           { id: 'm1', sender: 'citizen', text: 'When are you visiting?', time: yesterday, isRead: true, status: 'read' }
-        ]
-      }
-    ];
+  loadConversations(callback?: () => void) {
+    this.http.get<any>('http://localhost:5058/api/Chat/conversations', { headers: this.getHeaders() })
+      .subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            this.conversations = res.data.map((c: any) => ({
+              id: c.conversationId.toString(),
+              citizenName: c.citizenName || 'Citizen',
+              citizenNIC: c.citizenNic,
+              avatar: (c.citizenName || 'C').charAt(0).toUpperCase(),
+              lastMessage: c.lastMessage || '',
+              lastMessageTime: new Date(c.lastMessageDate),
+              unreadCount: c.unreadCount,
+              isOnline: false,
+              requestId: c.requestId ? c.requestId.toString() : undefined,
+              requestNumber: c.requestNumber,
+              canSendMessages: c.canSendMessages,
+              messages: []
+            }));
+            this.filterConversations();
+            if (callback) callback();
+          }
+        },
+        error: (err) => {
+          console.error('[Chat loadConversations Error]', err);
+        }
+      });
   }
 
   filterConversations() {
     let result = [...this.conversations];
 
-    // Filter by type (Request vs Common)
     if (this.activeFilter === 'common') {
        result = result.filter(c => !c.requestId);
     } else if (this.activeFilter === 'request') {
        result = result.filter(c => !!c.requestId);
     }
 
-    // Filter by search query
     if (this.searchQuery) {
        const query = this.searchQuery.toLowerCase();
        result = result.filter(c => 
           c.citizenName.toLowerCase().includes(query) || 
           c.citizenNIC.includes(query) ||
-          (c.requestId && c.requestId.toLowerCase().includes(query))
+          (c.requestId && c.requestId.toLowerCase().includes(query)) ||
+          (c.requestNumber && c.requestNumber.toLowerCase().includes(query))
        );
     }
 
@@ -184,12 +164,41 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
 
   selectConversation(conv: Conversation) {
     this.activeConversation = conv;
-    // Mark as read
-    conv.unreadCount = 0;
-    conv.messages.forEach(m => {
-      if (m.sender === 'citizen') m.isRead = true;
-    });
-    this.scrollToBottom();
+    this.http.get<any>(`http://localhost:5058/api/Chat/conversations/${conv.id}/messages?page=1&pageSize=100`, { headers: this.getHeaders() })
+      .subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            conv.messages = res.data.map((m: any) => ({
+              id: m.messageId.toString(),
+              sender: m.senderRole.toLowerCase() === 'gnofficer' ? 'gn-officer' : 'citizen',
+              text: m.messageText || '',
+              time: new Date(m.sentDate),
+              isRead: m.isRead,
+              status: m.isRead ? 'read' : 'delivered',
+              attachment: m.attachments && m.attachments.length > 0 ? {
+                name: m.attachments[0].originalFileName,
+                type: m.attachments[0].contentType.includes('image') ? 'image' : 'file',
+                url: 'http://localhost:5058' + m.attachments[0].relativeFilePath
+              } : undefined
+            }));
+            this.markAsRead(conv);
+          }
+          this.scrollToBottom();
+        },
+        error: (err) => {
+          console.error('[Chat selectConversation Error]', err);
+        }
+      });
+  }
+
+  markAsRead(conv: Conversation) {
+    this.http.put<any>(`http://localhost:5058/api/Chat/conversations/${conv.id}/read`, {}, { headers: this.getHeaders() })
+      .subscribe({
+        next: () => {
+          conv.unreadCount = 0;
+        },
+        error: (err) => console.error('[Chat markAsRead Error]', err)
+      });
   }
 
   scrollToBottom(): void {
@@ -201,32 +210,97 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
   }
 
   sendMessage() {
-    if ((!this.newMessage.trim() && !this.isUploading) || !this.activeConversation) return;
+    if ((!this.newMessage.trim() && !this.selectedFile) || !this.activeConversation || !this.activeConversation.canSendMessages) return;
 
-    const msg: ChatMessage = {
-      id: Date.now().toString(),
-      sender: 'gn-officer',
-      text: this.newMessage.trim(),
-      time: new Date(),
-      isRead: false,
-      status: 'sent'
+    this.isUploading = this.selectedFile ? true : false;
+    const fileToUpload = this.selectedFile;
+    this.selectedFile = null;
+
+    const messageText = this.newMessage.trim() || `Sent an attachment: ${fileToUpload?.name}`;
+    const body = {
+      messageText: messageText
     };
 
-    this.activeConversation.messages.push(msg);
-    this.activeConversation.lastMessage = msg.text;
-    this.activeConversation.lastMessageTime = msg.time;
-    
-    // Sort conversations to bring latest to top
-    this.conversations.sort((a,b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
-    this.filterConversations();
+    const conv = this.activeConversation;
 
-    this.newMessage = '';
-    this.showEmojiPicker = false;
-    this.scrollToBottom();
+    this.http.post<any>(`http://localhost:5058/api/Chat/conversations/${conv.id}/messages`, body, { headers: this.getHeaders() })
+      .subscribe({
+        next: (res) => {
+          if (res && res.success && res.data) {
+            const m = res.data;
+            const msg: ChatMessage = {
+              id: m.messageId.toString(),
+              sender: 'gn-officer',
+              text: m.messageText || '',
+              time: new Date(m.sentDate),
+              isRead: m.isRead,
+              status: 'sent',
+              attachment: m.attachments && m.attachments.length > 0 ? {
+                name: m.attachments[0].originalFileName,
+                type: m.attachments[0].contentType.includes('image') ? 'image' : 'file',
+                url: 'http://localhost:5058' + m.attachments[0].relativeFilePath
+              } : undefined
+            };
 
-    // Auto update status to delivered/read for mock
-    setTimeout(() => { msg.status = 'delivered'; }, 1000);
-    setTimeout(() => { msg.status = 'read'; }, 3000);
+            if (fileToUpload) {
+              const formData = new FormData();
+              formData.append('file', fileToUpload);
+
+              this.http.post<any>(`http://localhost:5058/api/Chat/conversations/${conv.id}/messages/${m.messageId}/attachments`, formData, { headers: this.getHeaders() })
+                .subscribe({
+                  next: (attachRes) => {
+                    this.isUploading = false;
+                    if (attachRes && attachRes.success && attachRes.data) {
+                      msg.attachment = {
+                        name: attachRes.data.originalFileName,
+                        type: attachRes.data.contentType.includes('image') ? 'image' : 'file',
+                        url: 'http://localhost:5058' + attachRes.data.relativeFilePath
+                      };
+                    }
+                    conv.messages.push(msg);
+                    conv.lastMessage = msg.text || '[Attachment]';
+                    conv.lastMessageTime = msg.time;
+                    this.conversations.sort((a,b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
+                    this.filterConversations();
+
+                    this.newMessage = '';
+                    this.showEmojiPicker = false;
+                    this.scrollToBottom();
+                  },
+                  error: (err) => {
+                    console.error('[Chat uploadFile Error]', err);
+                    this.isUploading = false;
+                    conv.messages.push(msg);
+                    conv.lastMessage = msg.text || '[Attachment]';
+                    conv.lastMessageTime = msg.time;
+                    this.conversations.sort((a,b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
+                    this.filterConversations();
+
+                    this.newMessage = '';
+                    this.showEmojiPicker = false;
+                    this.scrollToBottom();
+                  }
+                });
+            } else {
+              conv.messages.push(msg);
+              conv.lastMessage = msg.text || '[Attachment]';
+              conv.lastMessageTime = msg.time;
+              this.conversations.sort((a,b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime());
+              this.filterConversations();
+
+              this.newMessage = '';
+              this.showEmojiPicker = false;
+              this.scrollToBottom();
+            }
+          } else {
+            this.isUploading = false;
+          }
+        },
+        error: (err) => {
+          console.error('[Chat sendMessage Error]', err);
+          this.isUploading = false;
+        }
+      });
   }
 
   sendQuickReply(reply: string) {
@@ -235,28 +309,15 @@ export class ChatPageComponent implements OnInit, AfterViewChecked {
   }
 
   handleFileInput(event: any) {
-    if(event.target.files.length > 0 && this.activeConversation) {
-      this.isUploading = true;
-      const file = event.target.files[0];
-      
-      setTimeout(() => {
-        const msg: ChatMessage = {
-          id: Date.now().toString(),
-          sender: 'gn-officer',
-          text: '',
-          time: new Date(),
-          isRead: false,
-          status: 'sent',
-          attachment: {
-            name: file.name,
-            type: file.type.includes('image') ? 'image' : 'file',
-            url: '#'
-          }
-        };
-        this.activeConversation!.messages.push(msg);
-        this.isUploading = false;
-        this.scrollToBottom();
-      }, 1500);
+    const conv = this.activeConversation;
+    if (!conv) return;
+
+    if (event.target.files.length > 0 && conv.canSendMessages) {
+      this.selectedFile = event.target.files[0];
     }
+  }
+
+  clearSelectedFile() {
+    this.selectedFile = null;
   }
 }

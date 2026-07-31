@@ -19,7 +19,6 @@ namespace EGN_Service_Management.Database
         public DbSet<CitizenMaster> CitizenMasters { get; set; }
         public DbSet<EgnServiceUser> EgnServiceUsers { get; set; }
         public DbSet<FamilyCard> FamilyCards { get; set; }
-        public DbSet<CitizenSpecialStatus> CitizenSpecialStatuses { get; set; }
         
         public DbSet<GNOfficerDigitalDetails> GNOfficerDigitalDetails { get; set; }
         public DbSet<DocumentVerification> DocumentVerifications { get; set; }
@@ -53,6 +52,9 @@ namespace EGN_Service_Management.Database
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatAttachment> ChatAttachments { get; set; }
+        public DbSet<EGN_Service_Management.Entity.NewChat.ChatConversation> ChatConversations { get; set; }
+        public DbSet<EGN_Service_Management.Entity.NewChat.ChatMessage> NewChatMessages { get; set; }
+        public DbSet<EGN_Service_Management.Entity.NewChat.ChatAttachment> NewChatAttachments { get; set; }
         // public DbSet<Notification> Notifications { get; set; }
         public DbSet<TransferRequest> TransferRequests { get; set; }
         public DbSet<GnDivisionAssignment> GnDivisionAssignments { get; set; }
@@ -276,11 +278,6 @@ namespace EGN_Service_Management.Database
                 .HasForeignKey(x => x.GnDivisionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<CitizenSpecialStatus>()
-                .HasOne(x => x.CitizenMaster)
-                .WithOne(x => x.SpecialStatus)
-                .HasForeignKey<CitizenSpecialStatus>(x => x.CitizenNic)
-                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Appointment>()
                 .HasOne(x => x.Citizen)
@@ -567,6 +564,171 @@ namespace EGN_Service_Management.Database
                 .WithMany()
                 .HasForeignKey(x => x.VerificationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure new chat tables
+            modelBuilder.Entity<EGN_Service_Management.Entity.NewChat.ChatConversation>(entity =>
+            {
+                entity.ToTable("Chat_Conversations");
+
+                entity.HasKey(c => c.ConversationId);
+
+                entity.Property(c => c.ChatType)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(c => c.CitizenNic)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(c => c.GnOfficerNic)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(c => c.CreatedByNic)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(c => c.IsActive)
+                    .HasDefaultValue(true);
+
+                entity.Property(c => c.IsClosed)
+                    .HasDefaultValue(false);
+
+                // Individual indexes as requested
+                entity.HasIndex(c => c.CitizenNic);
+                entity.HasIndex(c => c.GnOfficerNic);
+                entity.HasIndex(c => c.RequestId);
+                entity.HasIndex(c => c.LastMessageDate);
+                entity.HasIndex(c => c.ChatType);
+
+                // Uniqueness constraints
+                entity.HasIndex(c => new { c.CitizenNic, c.GnOfficerNic, c.ChatType })
+                    .IsUnique()
+                    .HasFilter("[RequestId] IS NULL");
+
+                entity.HasIndex(c => new { c.RequestId, c.ChatType })
+                    .IsUnique()
+                    .HasFilter("[RequestId] IS NOT NULL");
+
+                // Relationships (restricted / no-action delete)
+                entity.HasOne(c => c.Citizen)
+                    .WithMany()
+                    .HasForeignKey(c => c.CitizenNic)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.GnOfficer)
+                    .WithMany()
+                    .HasForeignKey(c => c.GnOfficerNic)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(c => c.Request)
+                    .WithMany()
+                    .HasForeignKey(c => c.RequestId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EGN_Service_Management.Entity.NewChat.ChatMessage>(entity =>
+            {
+                entity.ToTable("Chat_Messages");
+
+                entity.HasKey(m => m.MessageId);
+
+                entity.Property(m => m.SenderNic)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(m => m.SenderRole)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(m => m.MessageType)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(m => m.IsRead)
+                    .HasDefaultValue(false);
+
+                entity.Property(m => m.IsDeleted)
+                    .HasDefaultValue(false);
+
+                // Indexes
+                entity.HasIndex(m => m.ConversationId);
+                entity.HasIndex(m => m.SenderNic);
+                entity.HasIndex(m => m.SentDate);
+                entity.HasIndex(m => m.IsRead);
+
+                // Relationships
+                entity.HasOne(m => m.Conversation)
+                    .WithMany(c => c.ChatMessages)
+                    .HasForeignKey(m => m.ConversationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<EGN_Service_Management.Entity.NewChat.ChatAttachment>(entity =>
+            {
+                entity.ToTable("Chat_Attachments");
+
+                entity.HasKey(a => a.AttachmentId);
+
+                entity.Property(a => a.OriginalFileName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(a => a.StoredFileName)
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.Property(a => a.RelativeFilePath)
+                    .IsRequired()
+                    .HasMaxLength(500);
+
+                entity.Property(a => a.FileExtension)
+                    .IsRequired()
+                    .HasMaxLength(10);
+
+                entity.Property(a => a.ContentType)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(a => a.UploadedByNic)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.Property(a => a.AddedToRequestByNic)
+                    .HasMaxLength(20);
+
+                entity.Property(a => a.IsActive)
+                    .HasDefaultValue(true);
+
+                // Indexes
+                entity.HasIndex(a => a.MessageId);
+                entity.HasIndex(a => a.ConversationId);
+                entity.HasIndex(a => a.RequestId);
+                entity.HasIndex(a => a.UploadedByNic);
+                entity.HasIndex(a => a.IsSupportingDocument);
+                entity.HasIndex(a => a.IsAddedToRequest);
+
+                // Relationships
+                entity.HasOne(a => a.Message)
+                    .WithMany(m => m.Attachments)
+                    .HasForeignKey(a => a.MessageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Conversation)
+                    .WithMany(c => c.ChatAttachments)
+                    .HasForeignKey(a => a.ConversationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.Request)
+                    .WithMany()
+                    .HasForeignKey(a => a.RequestId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(a => a.ExistingRequestAttachment)
+                    .WithMany()
+                    .HasForeignKey(a => a.ExistingRequestAttachmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }

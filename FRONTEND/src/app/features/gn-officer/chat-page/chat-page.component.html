@@ -19,10 +19,9 @@
       
       <div class="contact-list custom-scroll">
          <div class="contact-item" *ngFor="let c of filteredConversations" [class.active]="activeConversation?.id === c.id" (click)="selectConversation(c)">
-            <div class="avatar-wrapper">
-               <div class="avatar bg-blue">{{ c.avatar }}</div>
-               <div class="status-dot" [class.online]="c.isOnline"></div>
-            </div>
+             <div class="avatar-wrapper">
+                <div class="avatar bg-blue">{{ c.avatar }}</div>
+             </div>
             <div class="contact-info">
                <div class="contact-top">
                   <span class="name">{{ c.citizenName }}</span>
@@ -32,11 +31,11 @@
                    <span class="preview" [class.unread]="c.unreadCount > 0">{{ c.lastMessage }}</span>
                    <span class="unread-badge" *ngIf="c.unreadCount > 0">{{ c.unreadCount }}</span>
                </div>
-               <div class="request-tag-container" *ngIf="c.requestId">
-                  <span class="request-tag">{{ c.requestId }}</span>
+               <div class="request-tag-container" *ngIf="c.requestNumber">
+                  <span class="request-tag">{{ c.requestNumber }}</span>
                   <span class="request-label" [style.color]="'#2563eb'">Request Chat</span>
                </div>
-               <div class="common-tag" *ngIf="!c.requestId">
+               <div class="common-tag" *ngIf="!c.requestNumber">
                   <span class="common-label">Common Chat</span>
                </div>
             </div>
@@ -56,16 +55,15 @@
                <span class="badge-role" *ngIf="!activeConversation.requestId">Common</span>
                <span class="badge-role request" *ngIf="activeConversation.requestId">Request</span>
             </div>
-            <span class="status-text">
-              <span class="dot" [class.online]="activeConversation.isOnline"></span>
-              {{ activeConversation.isOnline ? 'Active Now' : 'Offline' }} &bull; NIC: {{ activeConversation.citizenNIC }}
-            </span>
+             <span class="status-text">
+               NIC: {{ activeConversation.citizenNIC }}
+             </span>
           </div>
         </div>
         <div class="header-actions">
-            <a class="btn-icon" *ngIf="activeConversation.requestId" [routerLink]="['/gn-officer/requests', activeConversation.requestId]" title="View Request Details">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            </a>
+             <a class="btn-icon" *ngIf="activeConversation.requestNumber" [routerLink]="['/gn-officer/requests', activeConversation.requestNumber]" title="View Request Details">
+               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+             </a>
         </div>
       </header>
 
@@ -86,9 +84,9 @@
               <div class="attachment" *ngIf="msg.attachment">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                 <span class="file-name">{{ msg.attachment.name }}</span>
-                <button class="btn-download" title="Download">
+                <a [href]="msg.attachment.url" target="_blank" class="btn-download" title="Download">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </button>
+                </a>
               </div>
             </div>
             <span class="timestamp">{{ msg.time | date:'h:mm a' }}</span>
@@ -107,9 +105,21 @@
            <div class="spinner"></div> <span>Preparing attachment...</span>
         </div>
 
-        <div class="input-form">
+        <!-- Selected File Preview -->
+        <div class="selected-file-preview fade-in" *ngIf="selectedFile" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; background-color: #f1f5f9; border-radius: 8px; margin: 0.5rem 1rem; border: 1px solid #cbd5e1;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #334155; font-size: 0.875rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #64748b;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span style="font-weight: 500; text-overflow: ellipsis; overflow: hidden; max-width: 250px; white-space: nowrap;">{{ selectedFile.name }}</span>
+            <span style="color: #94a3b8; font-size: 0.75rem;">({{ (selectedFile.size / 1024).toFixed(1) }} KB)</span>
+          </div>
+          <button (click)="clearSelectedFile()" style="background: none; border: none; cursor: pointer; color: #ef4444; display: flex; align-items: center; padding: 4px;" title="Remove file">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div class="input-form" *ngIf="activeConversation.canSendMessages">
           <button class="btn-attach" (click)="fileInput.click()" title="Attach file">
-            <input type="file" #fileInput multiple (change)="handleFileInput($event)" style="display: none;">
+            <input type="file" #fileInput (change)="handleFileInput($event)" style="display: none;">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
           </button>
           
@@ -122,9 +132,12 @@
             [disabled]="isUploading"
           >
           
-          <button class="btn-send" [class.active]="newMessage.trim().length > 0" (click)="sendMessage()" [disabled]="!newMessage.trim() || isUploading">
+          <button class="btn-send" [class.active]="newMessage.trim().length > 0 || selectedFile" (click)="sendMessage()" [disabled]="(!newMessage.trim() && !selectedFile) || isUploading">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
           </button>
+        </div>
+        <div class="chat-closed-message" *ngIf="!activeConversation.canSendMessages" style="padding: 1.5rem; text-align: center; color: #ff5252; font-weight: 500; font-size: 0.95rem; background-color: rgba(255,82,82,0.05); border: 1px solid rgba(255,82,82,0.15); border-radius: 8px; margin: 0.5rem 1rem;">
+          This chat is read-only because the associated service request is finalized.
         </div>
       </footer>
     </main>

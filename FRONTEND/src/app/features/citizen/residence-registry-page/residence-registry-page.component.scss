@@ -329,6 +329,124 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     padding: 0;
     &:hover { text-decoration: underline; }
   }
+
+  /* Welfare Cards styling */
+  .welfare-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .welfare-card {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid $border-color;
+    transition: all 0.2s ease-in-out;
+    background: $white;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .welfare-card-content {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .welfare-card-icon {
+      width: 32px;
+      height: 32px;
+      padding: 6px;
+      border-radius: 0.5rem;
+      background: $bg-light;
+      object-fit: contain;
+    }
+
+    .welfare-card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .welfare-card-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: $text-dark;
+    }
+
+    .welfare-status-text {
+      font-size: 0.75rem;
+      font-weight: 700;
+      width: fit-content;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    /* Soft Color States per Program */
+    &.card-aswesuma {
+      background: #fff7ed;
+      border-color: #ffedd5;
+      .welfare-card-icon { background: #ffedd5; }
+    }
+    &.card-public {
+      background: #f0f9ff;
+      border-color: #e0f2fe;
+      .welfare-card-icon { background: #e0f2fe; }
+    }
+    &.card-elderly {
+      background: #f0fdf4;
+      border-color: #dcfce7;
+      .welfare-card-icon { background: #dcfce7; }
+    }
+    &.card-disability {
+      background: #faf5ff;
+      border-color: #f3e8ff;
+      .welfare-card-icon { background: #f3e8ff; }
+    }
+    &.card-kidney {
+      background: #fff1f2;
+      border-color: #ffe4e6;
+      .welfare-card-icon { background: #ffe4e6; }
+    }
+    &.card-pregnant {
+      background: #fdf2f8;
+      border-color: #fce7f3;
+      .welfare-card-icon { background: #fce7f3; }
+    }
+    &.card-housing {
+      background: #f0fdfa;
+      border-color: #ccfbf1;
+      .welfare-card-icon { background: #ccfbf1; }
+    }
+    &.card-voter {
+      background: #fffbeb;
+      border-color: #fef3c7;
+      .welfare-card-icon { background: #fef3c7; }
+    }
+
+    /* Status Text Colors & Card Opacity */
+    &.status-eligible {
+      .welfare-status-text { color: #10b981; }
+    }
+    &.status-suggested {
+      .welfare-status-text { color: #3b82f6; }
+    }
+    &.status-not-eligible {
+      filter: grayscale(0.6);
+      opacity: 0.65;
+      background: #f8fafc !important;
+      border-color: #e2e8f0 !important;
+      .welfare-card-icon { background: #e2e8f0 !important; }
+      .welfare-status-text { color: #94a3b8; }
+    }
+  }
 }
 
 /* Fallback/Common Icons logic via CSS pseudo-elements if needed */

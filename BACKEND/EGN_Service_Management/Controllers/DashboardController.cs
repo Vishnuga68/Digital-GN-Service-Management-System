@@ -45,12 +45,14 @@ namespace EGN_Service_Management.Controllers
                                 cm.[PastFamilyCardNumber], fc.[FamilyCardNumber], fc.[Address], fc.[Status] AS FamilyCardStatus,
                                 gd.[Id] AS GnDivisionId, gd.[Name] AS GnDivisionName,
                                 dd.[Id] AS DsDivisionId, dd.[Name] AS DsDivisionName,
-                                a.[Email], a.[Phone]
+                                a.[Email], a.[Phone],
+                                gno.[FullName] AS GnOfficerName
                             FROM [Citizen_Master] cm
                             LEFT JOIN [accounts] a ON cm.[Nic] = a.[Nic]
                             LEFT JOIN [family_cards] fc ON cm.[FamilyCardNumber] = fc.[FamilyCardNumber]
-                            LEFT JOIN [gn_divisions] gd ON fc.[GnDivisionId] = gd.[Id]
+                            LEFT JOIN [gn_divisions] gd ON COALESCE(fc.[GnDivisionId], cm.[GnDivisionId]) = gd.[Id]
                             LEFT JOIN [ds_divisions] dd ON gd.[DsDivisionId] = dd.[Id]
+                            LEFT JOIN [gn_officers] gno ON gd.[Id] = gno.[GnDivisionId]
                             WHERE cm.[Nic] = @Nic";
 
                         var param = command.CreateParameter();

@@ -12,7 +12,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         Back to Request
       </button>
-      <h1 class="title">{{ categoryId === 1 ? 'Family Card Editor' : 'Certificate Generator' }} <span class="request-id">{{ requestNumber }}</span></h1>
+      <h1 class="title">{{ isFamilyCardCategory ? 'Family Card Editor' : 'Certificate Generator' }} <span class="request-id">{{ requestNumber }}</span></h1>
     </div>
   </header>
 
@@ -45,8 +45,8 @@
     <aside class="sidebar-panel">
       <div class="sidebar-header">
         <h2>Placeholders Editor</h2>
-        <p class="subtitle" *ngIf="categoryId !== 1">Modify the fields below to customize the certificate. Updates are reflected instantly in the A4 live preview.</p>
-        <p class="subtitle" *ngIf="categoryId === 1">All family card values are database-driven and read-only. Updates will be finalized upon release.</p>
+        <p class="subtitle" *ngIf="!isFamilyCardCategory">Modify the fields below to customize the certificate. Updates are reflected instantly in the A4 live preview.</p>
+        <p class="subtitle" *ngIf="isFamilyCardCategory">All family card values are database-driven and read-only. Updates will be finalized upon release.</p>
       </div>
 
       <!-- Error message banner -->
@@ -60,144 +60,144 @@
         <!-- {{CertificateName}} / {{CertificateTitle}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{CertificateName}}') || templateContent?.includes('{{CertificateTitle}}') || templateName?.toLowerCase()?.includes('other')">
           <label for="certificateName">Certificate Name / Title</label>
-          <input type="text" id="certificateName" name="certificateName" class="form-control" [(ngModel)]="editableValues.certificateName" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="certificateName" name="certificateName" class="form-control" [(ngModel)]="editableValues.certificateName" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{CitizenFullName}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{CitizenFullName}}')">
           <label for="citizenFullName">Citizen Full Name</label>
-          <textarea id="citizenFullName" name="citizenFullName" rows="2" class="form-control" [(ngModel)]="editableValues.citizenFullName" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1"></textarea>
+          <textarea id="citizenFullName" name="citizenFullName" rows="2" class="form-control" [(ngModel)]="editableValues.citizenFullName" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <!-- {{CitizenNIC}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{CitizenNIC}}')">
           <label for="citizenNic">Citizen NIC Number</label>
-          <input type="text" id="citizenNic" name="citizenNic" class="form-control" [(ngModel)]="editableValues.citizenNic" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="citizenNic" name="citizenNic" class="form-control" [(ngModel)]="editableValues.citizenNic" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{ResidentialAddress}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{ResidentialAddress}}')">
           <label for="residentialAddress">Residential Address</label>
-          <textarea id="residentialAddress" name="residentialAddress" rows="3" class="form-control" [(ngModel)]="editableValues.residentialAddress" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1"></textarea>
+          <textarea id="residentialAddress" name="residentialAddress" rows="3" class="form-control" [(ngModel)]="editableValues.residentialAddress" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <!-- {{ResidenceFromDate}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{ResidenceFromDate}}')">
           <label for="residenceFromDate">Resident From Date</label>
-          <input type="text" id="residenceFromDate" name="residenceFromDate" class="form-control" [(ngModel)]="editableValues.residenceFromDate" (ngModelChange)="updatePreview()" placeholder="e.g. 2021-04-12" [readonly]="categoryId === 1" />
+          <input type="text" id="residenceFromDate" name="residenceFromDate" class="form-control" [(ngModel)]="editableValues.residenceFromDate" (ngModelChange)="updatePreview()" placeholder="e.g. 2021-04-12" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{ResidencePeriod}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{ResidencePeriod}}')">
           <label for="residencePeriod">Residence Period</label>
-          <input type="text" id="residencePeriod" name="residencePeriod" class="form-control" [(ngModel)]="editableValues.residencePeriod" (ngModelChange)="updatePreview()" placeholder="e.g. 5 Years" [readonly]="categoryId === 1" />
+          <input type="text" id="residencePeriod" name="residencePeriod" class="form-control" [(ngModel)]="editableValues.residencePeriod" (ngModelChange)="updatePreview()" placeholder="e.g. 5 Years" [readonly]="isFamilyCardCategory" />
         </div>
 
 
         <!-- {{TemporaryAddress}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{TemporaryAddress}}')">
           <label for="temporaryAddress">Temporary Address</label>
-          <textarea id="temporaryAddress" name="temporaryAddress" rows="3" class="form-control" [(ngModel)]="editableValues.temporaryAddress" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1"></textarea>
+          <textarea id="temporaryAddress" name="temporaryAddress" rows="3" class="form-control" [(ngModel)]="editableValues.temporaryAddress" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <!-- {{TemporaryFromDate}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{TemporaryFromDate}}')">
           <label for="temporaryFromDate">Temporary Resident From Date</label>
-          <input type="text" id="temporaryFromDate" name="temporaryFromDate" class="form-control" [(ngModel)]="editableValues.temporaryFromDate" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="temporaryFromDate" name="temporaryFromDate" class="form-control" [(ngModel)]="editableValues.temporaryFromDate" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{TemporaryToDate}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{TemporaryToDate}}')">
           <label for="temporaryToDate">Temporary Resident To Date</label>
-          <input type="text" id="temporaryToDate" name="temporaryToDate" class="form-control" [(ngModel)]="editableValues.temporaryToDate" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="temporaryToDate" name="temporaryToDate" class="form-control" [(ngModel)]="editableValues.temporaryToDate" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{TemporaryResidenceReason}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{TemporaryResidenceReason}}')">
           <label for="temporaryResidenceReason">Temporary Residence Reason</label>
-          <input type="text" id="temporaryResidenceReason" name="temporaryResidenceReason" class="form-control" [(ngModel)]="editableValues.temporaryResidenceReason" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="temporaryResidenceReason" name="temporaryResidenceReason" class="form-control" [(ngModel)]="editableValues.temporaryResidenceReason" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{DeceasedFullName}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{DeceasedFullName}}')">
           <label for="deceasedFullName">Deceased Full Name</label>
-          <textarea id="deceasedFullName" name="deceasedFullName" rows="2" class="form-control" [(ngModel)]="editableValues.deceasedFullName" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1"></textarea>
+          <textarea id="deceasedFullName" name="deceasedFullName" rows="2" class="form-control" [(ngModel)]="editableValues.deceasedFullName" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <!-- {{DeceasedNic}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{DeceasedNic}}')">
           <label for="deceasedNic">Deceased NIC Number</label>
-          <input type="text" id="deceasedNic" name="deceasedNic" class="form-control" [(ngModel)]="editableValues.deceasedNic" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="deceasedNic" name="deceasedNic" class="form-control" [(ngModel)]="editableValues.deceasedNic" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{DeceasedAddress}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{DeceasedAddress}}')">
           <label for="deceasedAddress">Deceased Address</label>
-          <textarea id="deceasedAddress" name="deceasedAddress" rows="3" class="form-control" [(ngModel)]="editableValues.deceasedAddress" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1"></textarea>
+          <textarea id="deceasedAddress" name="deceasedAddress" rows="3" class="form-control" [(ngModel)]="editableValues.deceasedAddress" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <!-- {{DateOfDeath}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{DateOfDeath}}')">
           <label for="dateOfDeath">Date of Death</label>
-          <input type="text" id="dateOfDeath" name="dateOfDeath" class="form-control" [(ngModel)]="editableValues.dateOfDeath" (ngModelChange)="updatePreview()" placeholder="e.g. October 15, 2025" [readonly]="categoryId === 1" />
+          <input type="text" id="dateOfDeath" name="dateOfDeath" class="form-control" [(ngModel)]="editableValues.dateOfDeath" (ngModelChange)="updatePreview()" placeholder="e.g. October 15, 2025" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{PlaceOfDeath}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{PlaceOfDeath}}')">
           <label for="placeOfDeath">Place of Death</label>
-          <input type="text" id="placeOfDeath" name="placeOfDeath" class="form-control" [(ngModel)]="editableValues.placeOfDeath" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="placeOfDeath" name="placeOfDeath" class="form-control" [(ngModel)]="editableValues.placeOfDeath" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{ReasonOfDeath}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{ReasonOfDeath}}')">
           <label for="reasonOfDeath">Reason of Death</label>
-          <input type="text" id="reasonOfDeath" name="reasonOfDeath" class="form-control" [(ngModel)]="editableValues.reasonOfDeath" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="reasonOfDeath" name="reasonOfDeath" class="form-control" [(ngModel)]="editableValues.reasonOfDeath" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{Occupation}} / {{CitizenOccupation}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{Occupation}}') || templateContent?.includes('{{CitizenOccupation}}')">
           <label for="occupation">Occupation</label>
-          <input type="text" id="occupation" name="occupation" class="form-control" [(ngModel)]="editableValues.occupation" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="occupation" name="occupation" class="form-control" [(ngModel)]="editableValues.occupation" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
 
         <!-- {{MonthlyIncome}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{MonthlyIncome}}')">
           <label for="monthlyIncome">Monthly Income</label>
-          <input type="text" id="monthlyIncome" name="monthlyIncome" class="form-control" [(ngModel)]="editableValues.monthlyIncome" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="monthlyIncome" name="monthlyIncome" class="form-control" [(ngModel)]="editableValues.monthlyIncome" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{AnnualIncome}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{AnnualIncome}}')">
           <label for="annualIncome">Annual Income</label>
-          <input type="text" id="annualIncome" name="annualIncome" class="form-control" [(ngModel)]="editableValues.annualIncome" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="annualIncome" name="annualIncome" class="form-control" [(ngModel)]="editableValues.annualIncome" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{RequiredFor}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{RequiredFor}}')">
           <label for="requiredFor">Required For (Purpose)</label>
-          <input type="text" id="requiredFor" name="requiredFor" class="form-control" [(ngModel)]="editableValues.requiredFor" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="requiredFor" name="requiredFor" class="form-control" [(ngModel)]="editableValues.requiredFor" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{IssuedDate}} -->
         <div class="form-group" *ngIf="templateContent?.includes('{{IssuedDate}}')">
           <label for="issuedDate">Date of Issue</label>
-          <input type="text" id="issuedDate" name="issuedDate" class="form-control" [(ngModel)]="editableValues.issuedDate" (ngModelChange)="updatePreview()" [readonly]="categoryId === 1" />
+          <input type="text" id="issuedDate" name="issuedDate" class="form-control" [(ngModel)]="editableValues.issuedDate" (ngModelChange)="updatePreview()" [readonly]="isFamilyCardCategory" />
         </div>
 
         <!-- {{CertificateBody}} / Other customized editor -->
         <div class="form-group" *ngIf="templateContent?.includes('{{CertificateBody}}') || templateName?.toLowerCase()?.includes('other')">
           <label for="certificateBody">Custom Certificate Body Text</label>
-          <textarea id="certificateBody" name="certificateBody" rows="8" class="form-control" [(ngModel)]="editableValues.certificateBody" (ngModelChange)="updatePreview()" placeholder="Type custom body paragraph content here..." [readonly]="categoryId === 1"></textarea>
+          <textarea id="certificateBody" name="certificateBody" rows="8" class="form-control" [(ngModel)]="editableValues.certificateBody" (ngModelChange)="updatePreview()" placeholder="Type custom body paragraph content here..." [readonly]="isFamilyCardCategory"></textarea>
         </div>
 
         <div class="action-buttons-group">
-          <button class="btn btn-outline-secondary" type="button" (click)="resetFields()" [disabled]="isSubmitting || categoryId === 1">
+          <button class="btn btn-outline-secondary" type="button" (click)="resetFields()" [disabled]="isSubmitting || isFamilyCardCategory">
             Reset Values
           </button>
           <button class="btn btn-success" type="button" (click)="generateCertificate()" [disabled]="isSubmitting">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-            {{ isSubmitting ? 'Generating...' : (categoryId === 1 ? 'Generate Family Card' : 'Generate Certificate') }}
+            {{ isSubmitting ? 'Generating...' : (isFamilyCardCategory ? 'Generate Family Card' : 'Generate Certificate') }}
           </button>
         </div>
       </form>
@@ -229,8 +229,8 @@
       <button class="btn-close" (click)="showConfirmGenerateModal = false">✕</button>
     </div>
     <div class="custom-modal-body text-center-modal">
-      <p style="font-weight: 500; font-size: 0.95rem; margin-bottom: 8px;">Are you sure you want to generate the official signed PDF {{ categoryId === 1 ? 'family card' : 'certificate' }}?</p>
-      <p class="modal-subtext" style="color: #64748b; font-size: 0.85rem; margin-bottom: 16px;">This will seal the {{ categoryId === 1 ? 'family card' : 'certificate' }} details. Once generated, this action cannot be undone.</p>
+      <p style="font-weight: 500; font-size: 0.95rem; margin-bottom: 8px;">Are you sure you want to generate the official signed PDF {{ isFamilyCardCategory ? 'family card' : 'certificate' }}?</p>
+      <p class="modal-subtext" style="color: #64748b; font-size: 0.85rem; margin-bottom: 16px;">This will seal the {{ isFamilyCardCategory ? 'family card' : 'certificate' }} details. Once generated, this action cannot be undone.</p>
       <div style="text-align: left; margin-top: 12px; margin-bottom: 8px;">
         <label style="display: block; font-weight: 600; font-size: 0.825rem; color: #475569; margin-bottom: 6px;">Generation Remarks (Optional)</label>
         <textarea class="form-control" rows="2" [(ngModel)]="generateRemarks" placeholder="Add remarks for this generation..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px; font-size: 0.875rem; box-sizing: border-box; resize: none;"></textarea>

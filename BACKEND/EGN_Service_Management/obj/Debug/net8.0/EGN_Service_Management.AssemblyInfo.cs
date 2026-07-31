@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("EGN_Service_Management")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+870f797a52969f6c22d54935e9259e8d87b99622")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6f3083428d6fcb5be4c77476def5f9902bb6ade0")]
 [assembly: System.Reflection.AssemblyProductAttribute("EGN_Service_Management")]
 [assembly: System.Reflection.AssemblyTitleAttribute("EGN_Service_Management")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,8 +1,11 @@
-using EGN_Service_Management.DTO.RequestDTO;
-using EGN_Service_Management.DTO.ResponseDTO;
-using EGN_Service_Management.Entity;
-using EGN_Service_Management.IServices;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using EGN_Service_Management.Database;
+using EGN_Service_Management.Entity;
+using System.Threading.Tasks;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EGN_Service_Management.Controllers
 {
@@ -10,110 +13,182 @@ namespace EGN_Service_Management.Controllers
     [ApiController]
     public class CitizenSpecialStatusController : ControllerBase
     {
-        private readonly ICitizenSpecialStatusService _citizenSpecialStatusService;
+        private readonly EgnDbContext _context;
 
-        public CitizenSpecialStatusController(ICitizenSpecialStatusService citizenSpecialStatusService)
+        public CitizenSpecialStatusController(EgnDbContext context)
         {
-            _citizenSpecialStatusService = citizenSpecialStatusService;
+            _context = context;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllCitizenSpecialStatusRecords()
+        [HttpGet("{nic}")]
+        public async Task<IActionResult> GetWelfareAndSuggestions(string nic)
         {
-            var records = await _citizenSpecialStatusService.GetAllAsync();
-            return Ok(records.Select(MapToResponseDTO));
-        }
+            var citizen = await _context.CitizenMasters
+                .FirstOrDefaultAsync(c => c.Nic == nic);
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetCitizenSpecialStatusById(string id)
-        {
-            try
+            if (citizen == null)
             {
-                var record = await _citizenSpecialStatusService.GetByIdAsync(id);
-                return Ok(MapToResponseDTO(record));
+                return NotFound(new { success = false, message = "Citizen not found" });
             }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "CitizenSpecialStatus not found." });
-            }
-        }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateCitizenSpecialStatus([FromBody] CitizenSpecialStatusRequestDTO requestDTO)
-        {
-            try
-            {
-                var record = await _citizenSpecialStatusService.CreateAsync(MapToEntity(requestDTO));
-                return CreatedAtAction(nameof(GetCitizenSpecialStatusById), new { id = record.CitizenNic }, MapToResponseDTO(record));
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            int age = today.Year - citizen.Dob.Year;
+            if (citizen.Dob > today.AddYears(-age)) age--;
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateCitizenSpecialStatus(string id, [FromBody] CitizenSpecialStatusRequestDTO requestDTO)
-        {
-            try
-            {
-                var entity = MapToEntity(requestDTO);
-                entity.CitizenNic = id;
-                var record = await _citizenSpecialStatusService.UpdateAsync(id, entity);
-                return Ok(MapToResponseDTO(record));
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "CitizenSpecialStatus not found." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+            var welfare = await _context.CitizenWelfareStatuses
+                .FirstOrDefaultAsync(w => w.CitizenNic == nic && w.IsActive);
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCitizenSpecialStatus(string id)
-        {
-            try
-            {
-                await _citizenSpecialStatusService.DeleteAsync(id);
-                return NoContent();
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "CitizenSpecialStatus not found." });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
-        }
+            var suggestions = new List<object>();
+            var confirmedWelfare = new List<object>();
 
-        private static CitizenSpecialStatus MapToEntity(CitizenSpecialStatusRequestDTO requestDTO)
-        {
-            return new CitizenSpecialStatus
+            // 1. Confirmed Welfare Mapping
+            if (welfare != null)
             {
-                CitizenNic = requestDTO.CitizenNic,
-                IsNalanpuri = requestDTO.IsNalanpuri,
-                HasKidneyDisease = requestDTO.HasKidneyDisease,
-                HasCancer = requestDTO.HasCancer,
-                HasElderlyEligible = requestDTO.HasElderlyEligible,
-                WelfareDetails = requestDTO.WelfareDetails,
-            };
-        }
+                if (welfare.IsAswesuma)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Aswesuma Welfare Benefit Scheme",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsPublicAssistanceEligible)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Public Assistance Programme",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsElderlyEligible)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Elderly Allowance",
+                        statusText = "Confirmed",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsDisabilityEligible)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Disability Allowance",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsKidneyPatient)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Kidney Disease Allowance",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsPregnantMotherEligible)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Pregnant Mother (Poshana Malla)",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+                if (welfare.IsHousingAssistanceEligible)
+                {
+                    confirmedWelfare.Add(new
+                    {
+                        programName = "Housing Assistance Programmes",
+                        statusText = "Currently Receiving",
+                        lastVerifiedDate = welfare.LastVerifiedDate?.ToString("yyyy-MM-dd"),
+                        verifiedBy = welfare.VerifiedByGnOfficer
+                    });
+                }
+            }
 
-        private static CitizenSpecialStatusResponseDTO MapToResponseDTO(CitizenSpecialStatus entity)
-        {
-            return new CitizenSpecialStatusResponseDTO
+            // 2. Suggestions Mapping (only when citizen is Alive)
+            if (citizen.LifeStatus.Equals("Alive", StringComparison.OrdinalIgnoreCase))
             {
-                CitizenNic = entity.CitizenNic,
-                IsNalanpuri = entity.IsNalanpuri,
-                HasKidneyDisease = entity.HasKidneyDisease,
-                HasCancer = entity.HasCancer,
-                HasElderlyEligible = entity.HasElderlyEligible,
-                WelfareDetails = entity.WelfareDetails,
-            };
+                // A. Voter Registration Suggestion
+                // Conditions: age >= 18, LifeStatus is Alive, and not registered in voter registration registry.
+                // Since there is no voter table, we treat isRegisteredVoter as false (always suggest if >= 18).
+                bool isRegisteredVoter = false; 
+                if (age >= 18 && !isRegisteredVoter)
+                {
+                    suggestions.Add(new
+                    {
+                        type = "Voter",
+                        title = "Eligible for Voter Registration Review",
+                        reason = $"Voter Registration Review – Citizen is {age} years old and not registered."
+                    });
+                }
+
+                // B. Elderly Allowance Suggestion
+                // Conditions: age >= 60, not already receiving confirmed Elderly Allowance.
+                bool alreadyReceivingElderly = welfare != null && welfare.IsElderlyEligible;
+                if (age >= 60 && !alreadyReceivingElderly)
+                {
+                    suggestions.Add(new
+                    {
+                        type = "Elderly",
+                        title = "Eligible for Elderly Allowance Review",
+                        reason = $"Elderly Allowance Review – Citizen is {age} years old."
+                    });
+                }
+
+                // C. Low-Income Family Suggestion
+                // Conditions: is official head of household, total family monthly income < 30000.
+                if (!string.IsNullOrEmpty(citizen.FamilyCardNumber))
+                {
+                    var familyCard = await _context.FamilyCards
+                        .FirstOrDefaultAsync(f => f.FamilyCardNumber == citizen.FamilyCardNumber);
+
+                    if (familyCard != null && string.Equals(familyCard.HeadOfHouseholdNic.Trim(), citizen.Nic.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Calculate total income for alive family members
+                        var familyMembersIncome = await _context.CitizenMasters
+                            .Where(c => c.FamilyCardNumber == citizen.FamilyCardNumber && c.LifeStatus == "Alive")
+                            .Select(c => c.MonthlyIncome ?? 0)
+                            .ToListAsync();
+
+                        decimal totalFamilyIncome = familyMembersIncome.Sum();
+
+                        if (totalFamilyIncome < 30000)
+                        {
+                            bool alreadyReceivingWelfare = welfare != null && (welfare.IsAswesuma || welfare.IsPublicAssistanceEligible);
+                            suggestions.Add(new
+                            {
+                                type = "LowIncome",
+                                title = "Eligible for Low-Income Assistance Review",
+                                reason = alreadyReceivingWelfare 
+                                    ? "Low-Income Family Review (Household already receiving welfare support)"
+                                    : "Low-Income Family Review",
+                                details = $"Total recorded family monthly income: Rs. {totalFamilyIncome:N2}"
+                            });
+                        }
+                    }
+                }
+            }
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    suggestions,
+                    confirmedWelfare
+                }
+            });
         }
     }
 }

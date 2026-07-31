@@ -33,9 +33,6 @@ namespace EGN_Service_Management.Mappings
             CreateMap<CitizenMaster, CitizenMasterRequestDTO>().ReverseMap();
             CreateMap<CitizenMaster, CitizenMasterResponseDTO>().ReverseMap();
 
-            // CitizenSpecialStatus Mappings
-            CreateMap<CitizenSpecialStatus, CitizenSpecialStatusRequestDTO>().ReverseMap();
-            CreateMap<CitizenSpecialStatus, CitizenSpecialStatusResponseDTO>().ReverseMap();
 
             // Conversation Mappings
             CreateMap<Conversation, ConversationRequestDTO>().ReverseMap();

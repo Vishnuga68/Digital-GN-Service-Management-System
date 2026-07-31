@@ -26,6 +26,15 @@ namespace EGN_Service_Management.Entity
         [Required]
         public bool IsPregnantMotherEligible { get; set; }
 
+        [Required]
+        public bool IsPublicAssistanceEligible { get; set; }
+
+        [Required]
+        public bool IsHousingAssistanceEligible { get; set; }
+
+        [Required]
+        public bool IsActive { get; set; } = true;
+
         public DateTime? LastVerifiedDate { get; set; }
 
         [MaxLength(20)]

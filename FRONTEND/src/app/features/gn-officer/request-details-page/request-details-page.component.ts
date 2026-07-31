@@ -95,6 +95,7 @@ export class RequestDetailsPageComponent implements OnInit {
       next: (data: any) => {
         this.requestDetails = data;
         this.requestDetails.id = data.requestId;
+        this.requestDetails.requestDbId = data.requestDbId;
         
         // Map the backend status to display status and step number
         const status = this.requestDetails.currentStatus;
@@ -200,22 +201,25 @@ export class RequestDetailsPageComponent implements OnInit {
         }
 
         // Map Applicant Type to Applicant Category for GN Officer Display
+        // Also sanitize all field values: parse JSON arrays, clean empty arrays
         if (this.requestDetails.dynamicFields) {
           this.requestDetails.dynamicFields = this.requestDetails.dynamicFields.map((field: any) => {
+            let sanitizedValue = this.sanitizeDynamicFieldValue(field.value);
+
             if (field.label && field.label.trim().toLowerCase() === 'applicant type') {
-              let mappedValue = field.value;
-              if (field.value && field.value.trim().toLowerCase() === 'myself') {
-                mappedValue = 'Account Holder';
-              } else if (field.value && (field.value.trim().toLowerCase() === 'child under 18' || field.value.trim().toLowerCase() === 'child')) {
-                mappedValue = 'Minor Child (Under 18)';
+              const valLower = sanitizedValue.trim().toLowerCase();
+              if (valLower === 'myself') {
+                sanitizedValue = 'Account Holder';
+              } else if (valLower === 'child under 18' || valLower === 'child') {
+                sanitizedValue = 'Minor Child (Under 18)';
               }
               return {
                 ...field,
                 label: 'Applicant Category',
-                value: mappedValue
+                value: sanitizedValue
               };
             }
-            return field;
+            return { ...field, value: sanitizedValue };
           });
         }
 
@@ -240,9 +244,15 @@ export class RequestDetailsPageComponent implements OnInit {
         }
         
         // Detect reassignment warning
+        this.hasReassignmentWarning = false;
         if (this.requestDetails.timeline) {
           this.hasReassignmentWarning = this.requestDetails.timeline.some((t: any) => 
             t.remarks && t.remarks.toLowerCase().includes('reassigned from gn division')
+          );
+        }
+        if (!this.hasReassignmentWarning && this.requestDetails.remarks) {
+          this.hasReassignmentWarning = this.requestDetails.remarks.some((r: any) => 
+            r.text && r.text.toLowerCase().includes('reassigned from gn division')
           );
         }
 
@@ -579,6 +589,14 @@ export class RequestDetailsPageComponent implements OnInit {
 
   confirmRelease() {
     this.showReleaseConfirmModal = false;
+    if (this.requestDetails && (this.requestDetails.categoryId >= 1 && this.requestDetails.categoryId <= 6)) {
+      this.executeReleaseCertificate();
+    } else {
+      this.executeReleaseVerification();
+    }
+  }
+
+  executeReleaseVerification() {
     this.isProcessing = true;
     const token = sessionStorage.getItem('token');
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
@@ -606,6 +624,68 @@ export class RequestDetailsPageComponent implements OnInit {
           this.showNotificationModal = true;
         }
       });
+  }
+
+  executeReleaseCertificate() {
+    if (!this.requestId) return;
+    this.isProcessing = true;
+    const token = sessionStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const body = { remarks: this.newRemark || 'Family Card updated and released.' };
+
+    this.http.post(`http://localhost:5058/api/CitizenRequest/certificate/release/${this.requestId}`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isProcessing = false;
+        this.notificationTitle = 'Family Card Released';
+        this.notificationMessage = 'The updated Family Card has been successfully published and released to the citizen.';
+        this.notificationType = 'success';
+        this.showNotificationModal = true;
+        this.newRemark = '';
+        this.fetchRequestDetails(this.requestId!);
+      },
+      error: (err) => {
+        console.error('Failed to release family card', err);
+        this.isProcessing = false;
+        this.notificationTitle = 'Release Failed';
+        this.notificationMessage = err.error?.message || 'Failed to release the Family Card.';
+        this.notificationType = 'error';
+        this.showNotificationModal = true;
+      }
+    });
+  }
+
+  /**
+   * Sanitize a dynamic field value coming from Request_Data JSON.
+   * Handles:
+   *  - JSON array strings like '["Elderly Assistance Allowance"]' → 'Elderly Assistance Allowance'
+   *  - Empty array strings '[]' → 'Not provided'
+   *  - Already-parsed arrays → joined comma-separated string
+   *  - Plain strings → returned as-is (trimmed)
+   *  - null / undefined → 'Not provided'
+   */
+  sanitizeDynamicFieldValue(value: any): string {
+    if (value === null || value === undefined) return 'Not provided';
+
+    // If it's already an array (parsed earlier)
+    if (Array.isArray(value)) {
+      return value.length === 0 ? 'No documents uploaded' : value.join(', ');
+    }
+
+    const str = String(value).trim();
+
+    // Try to parse if it looks like a JSON array
+    if (str.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed.length === 0 ? 'Not provided' : parsed.join(', ');
+        }
+      } catch {
+        // Not valid JSON – fall through and return as plain string
+      }
+    }
+
+    return str || 'Not provided';
   }
 
   goBack() {
@@ -646,7 +726,7 @@ export class RequestDetailsPageComponent implements OnInit {
     }
     else {
       this.showVerifyButton = false;
-      this.isDocumentRequest = (this.requestDetails?.serviceType?.toLowerCase().includes('request') || this.requestDetails?.categoryId === 1) || false;
+      this.isDocumentRequest = (this.requestDetails?.serviceType?.toLowerCase().includes('request') || (this.requestDetails?.categoryId >= 1 && this.requestDetails?.categoryId <= 6)) || false;
 
       if (this.isDocumentRequest) {
         const hasCert = (vStatus === 'GENERATED' || vStatus === 'PUBLISHED') || !!this.generatedCertificate;
@@ -785,31 +865,7 @@ export class RequestDetailsPageComponent implements OnInit {
   }
 
   releaseCertificate() {
-    if (!this.requestId) return;
-    this.isProcessing = true;
-    const token = sessionStorage.getItem('token');
-    const headers = { 'Authorization': `Bearer ${token}` };
-    const body = { remarks: this.newRemark };
-
-    this.http.post(`http://localhost:5058/api/CitizenRequest/certificate/release/${this.requestId}`, body, { headers }).subscribe({
-      next: (res: any) => {
-        this.isProcessing = false;
-        this.notificationTitle = 'Certificate Released';
-        this.notificationMessage = 'The certificate has been successfully published and released to the citizen.';
-        this.notificationType = 'success';
-        this.showNotificationModal = true;
-        this.newRemark = '';
-        this.fetchRequestDetails(this.requestId!);
-      },
-      error: (err) => {
-        console.error('Failed to release certificate', err);
-        this.isProcessing = false;
-        this.notificationTitle = 'Release Failed';
-        this.notificationMessage = err.error?.message || 'Failed to release the certificate.';
-        this.notificationType = 'error';
-        this.showNotificationModal = true;
-      }
-    });
+    this.promptReleaseConfirm();
   }
 
   startEditRemark(remark: any) {

@@ -45,7 +45,9 @@ export class ResidenceRegistryPageComponent implements OnInit {
       hasElderlyEligible: false,
       hasVoterId: false,
       lifeStatus: ''
-    }
+    },
+    confirmedWelfare: [] as any[],
+    suggestions: [] as any[]
   };
 
   familyData: any = {
@@ -172,20 +174,13 @@ export class ResidenceRegistryPageComponent implements OnInit {
         }));
       }
 
-      // Process Special Status
+      // Process Special Status / Confirmed Welfare
       if (results.specialStatus) {
-        // Assume API returns DTO directly or wrapped in response
         const statusData = results.specialStatus.data || results.specialStatus;
-        if (statusData) {
-          const isAlive = this.myData.specialStatus.lifeStatus === 'Alive';
-          this.myData.specialStatus = {
-            ...this.myData.specialStatus,
-            isNalanpuri: isAlive ? !!(statusData.isNalanpuri || statusData.IsNalanpuri) : false,
-            hasKidneyDisease: isAlive ? !!(statusData.hasKidneyDisease || statusData.HasKidneyDisease) : false,
-            hasCancer: isAlive ? !!(statusData.hasCancer || statusData.HasCancer) : false,
-            hasElderlyEligible: isAlive ? !!(statusData.hasElderlyEligible || statusData.HasElderlyEligible) : false,
-            hasVoterId: isAlive ? !!(statusData.hasVoterId || statusData.HasVoterId) : false
-          };
+        if (statusData && statusData.success !== false) {
+          const innerData = statusData.data || statusData;
+          this.myData.confirmedWelfare = innerData.confirmedWelfare || [];
+          this.myData.suggestions = innerData.suggestions || [];
         }
       }
 
@@ -298,5 +293,88 @@ export class ResidenceRegistryPageComponent implements OnInit {
     const isAlive = lifeStatus !== undefined ? (lifeStatus === 'Alive' || lifeStatus === 'Active') : (this.myData.specialStatus?.lifeStatus === 'Alive');
     if (!isAlive) return false;
     return this.calculateAge(dob) >= 60;
+  }
+
+  getWelfarePrograms(): any[] {
+    const confirmedWelfare = this.myData.confirmedWelfare || [];
+    const suggestions = this.myData.suggestions || [];
+    
+    const findConfirmed = (nameSub: string) => confirmedWelfare.some((w: any) => w.programName?.toLowerCase().includes(nameSub.toLowerCase()));
+    const findSuggestion = (typeKey: string) => suggestions.some((s: any) => s.type === typeKey);
+    const isVoter = this.isVoterEligible(this.myData.dob);
+
+    const programs = [
+      {
+        name: 'Aswesuma Welfare Benefit',
+        icon: '/assets/icons/family.png',
+        status: findConfirmed('aswesuma') ? 'Eligible' : (findSuggestion('LowIncome') ? 'Suggested' : 'Not Eligible'),
+        cardClass: 'card-aswesuma'
+      },
+      {
+        name: 'Public Assistance',
+        icon: '/assets/icons/social-services.png',
+        status: findConfirmed('public') ? 'Eligible' : (findSuggestion('LowIncome') ? 'Suggested' : 'Not Eligible'),
+        cardClass: 'card-public'
+      },
+      {
+        name: 'Elderly Assistance',
+        icon: '/assets/icons/elder.png',
+        status: findConfirmed('elderly') ? 'Eligible' : (findSuggestion('Elderly') ? 'Suggested' : 'Not Eligible'),
+        cardClass: 'card-elderly'
+      },
+      {
+        name: 'Disability Assistance',
+        icon: '/assets/icons/diffable.png',
+        status: findConfirmed('disability') ? 'Eligible' : 'Not Eligible',
+        cardClass: 'card-disability'
+      },
+      {
+        name: 'Kidney Patient Assistance',
+        icon: '/assets/icons/kidney.png',
+        status: findConfirmed('kidney') ? 'Eligible' : 'Not Eligible',
+        cardClass: 'card-kidney'
+      },
+      {
+        name: 'Pregnant Mother Assistance',
+        icon: '/assets/icons/baby.png',
+        status: findConfirmed('pregnant') || findConfirmed('poshana') ? 'Eligible' : 'Not Eligible',
+        cardClass: 'card-pregnant'
+      },
+      {
+        name: 'Housing Assistance',
+        icon: '/assets/icons/home.png',
+        status: findConfirmed('housing') ? 'Eligible' : 'Not Eligible',
+        cardClass: 'card-housing'
+      },
+      {
+        name: 'Voter Registration',
+        icon: '/assets/icons/vote.png',
+        status: findSuggestion('Voter') ? 'Suggested' : (isVoter ? 'Eligible' : 'Not Eligible'),
+        cardClass: 'card-voter'
+      }
+    ];
+
+    return programs.map(p => {
+      let statusClass = 'status-not-eligible';
+      if (p.status === 'Eligible') statusClass = 'status-eligible';
+      else if (p.status === 'Suggested') statusClass = 'status-suggested';
+
+      return { ...p, statusClass };
+    });
+  }
+
+  hasActiveWelfare(): boolean {
+    return this.getWelfarePrograms().some(p => p.status === 'Eligible');
+  }
+
+
+  getCommonVerificationDetails(confirmedWelfare: any[]): { date: string; officer: string } | null {
+    if (!confirmedWelfare) return null;
+    const item = confirmedWelfare.find((w: any) => w.lastVerifiedDate || w.verifiedBy);
+    if (!item) return null;
+    return {
+      date: item.lastVerifiedDate || '',
+      officer: item.verifiedBy || ''
+    };
   }
 }

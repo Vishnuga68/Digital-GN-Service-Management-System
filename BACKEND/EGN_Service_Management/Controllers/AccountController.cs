@@ -840,7 +840,9 @@ namespace EGN_Service_Management.Controllers
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during transaction: {ex.Message}"));
+                    var innerMsg = ex.InnerException != null ? ex.InnerException.Message : "";
+                    if (ex.InnerException?.InnerException != null) innerMsg += " | " + ex.InnerException.InnerException.Message;
+                    return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during transaction: {ex.Message} (Inner: {innerMsg})"));
                 }
             }
 
@@ -848,6 +850,15 @@ namespace EGN_Service_Management.Controllers
             if (existingUsername != null)
             {
                 return Ok(ApiResponse<object>.ErrorResponse($"Username '{dto.Username}' is already taken."));
+            }
+
+            if (!string.IsNullOrEmpty(dto.Email))
+            {
+                var existingEmail = await _context.Accounts.FirstOrDefaultAsync(x => x.Email == dto.Email);
+                if (existingEmail != null)
+                {
+                    return Ok(ApiResponse<object>.ErrorResponse($"Email '{dto.Email}' is already registered with another account."));
+                }
             }
 
             if (dto.FamilyCardNumber != null)
@@ -907,7 +918,7 @@ namespace EGN_Service_Management.Controllers
                 // 4. Insert the user role mapping into [user_roles] table
                 await _context.Database.ExecuteSqlRawAsync(
                     "INSERT INTO [user_roles] ([Nic], [RoleId]) VALUES ({0}, {1})", 
-                    dto.Nic, 1
+                    dto.Nic, citizenRoleId
                 );
 
                 await transactionNew.CommitAsync();
@@ -922,7 +933,9 @@ namespace EGN_Service_Management.Controllers
             catch (Exception ex)
             {
                 await transactionNew.RollbackAsync();
-                return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during transaction: {ex.Message}"));
+                var innerMsg = ex.InnerException != null ? ex.InnerException.Message : "";
+                if (ex.InnerException?.InnerException != null) innerMsg += " | " + ex.InnerException.InnerException.Message;
+                return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during transaction: {ex.Message} (Inner: {innerMsg})"));
             }
         }
     }

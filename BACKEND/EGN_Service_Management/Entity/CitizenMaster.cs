@@ -53,7 +53,6 @@ public class CitizenMaster
     public GnDivision? GnDivision { get; set; }
     public FamilyCard? FamilyCard { get; set; }
     public EgnServiceUser? EgnServiceUser { get; set; }
-    public CitizenSpecialStatus? SpecialStatus { get; set; }
     public ICollection<FamilyCard> HeadedFamilyCards { get; set; } = new List<FamilyCard>();
     public ICollection<AnnouncementTargetCitizen> AnnouncementTargets { get; set; } = new List<AnnouncementTargetCitizen>();
 }

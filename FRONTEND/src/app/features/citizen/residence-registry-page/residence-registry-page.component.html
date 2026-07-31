@@ -86,71 +86,42 @@
           </div>
         </div>
 
-        <!-- Eligibility Section -->
-        <div class="info-section">
-          <div class="section-title">Eligibility Status</div>
-          
-          <div class="eligibility-box">
-            <div class="elig-info">
-              <h4>Voter Eligibility</h4>
-              <p>Based on electoral roll criteria (Age ≥ 18)</p>
-            </div>
-            <div class="status-pill" [class.eligible]="isVoterEligible(myData.dob)">
-              <span class="symbol">{{ isVoterEligible(myData.dob) ? '✓' : '✕' }}</span>
-              <span>{{ isVoterEligible(myData.dob) ? 'Eligible' : 'Not Eligible' }}</span>
-            </div>
-          </div>
+      </div>
+    </div>
 
-          <div class="special-status-grid">
-            <div class="status-card" *ngIf="myData.specialStatus.hasVoterId" [class.active]="myData.specialStatus.hasVoterId">
-              <div class="card-icon">
-                <img src="/assets/icons/family.png" alt="voter" class="status-ic">
-              </div>
-              <div class="card-info">
-                <span class="status-title">Registered Voter</span>
-                <span class="status-value">{{ myData.specialStatus.hasVoterId ? 'Verified ID' : 'No ID Registered' }}</span>
-              </div>
-            </div>
-            <div class="status-card" *ngIf="myData.specialStatus.isNalanpuri" [class.active]="myData.specialStatus.isNalanpuri">
-              <div class="card-icon">
-                <img src="/assets/icons/nalanpuri.png" alt="nalanpuri" class="status-ic">
-              </div>
-              <div class="card-info">
-                <span class="status-title">Nalanpuri Recipient</span>
-                <span class="status-value">{{ myData.specialStatus.isNalanpuri ? 'Verified' : 'Not Enrolled' }}</span>
-              </div>
-            </div>
-            <div class="status-card" *ngIf="myData.specialStatus.hasElderlyEligible" [class.active]="myData.specialStatus.hasElderlyEligible">
-              <div class="card-icon">
-                <img src="/assets/icons/elder.png" alt="elder" class="status-ic">
-              </div>
-              <div class="card-info">
-                <span class="status-title">Elderly Status</span>
-                <span class="status-value">{{ myData.specialStatus.hasElderlyEligible ? 'Verified (60+)' : 'Standard' }}</span>
-              </div>
-            </div>
-            <div class="status-card" *ngIf="myData.specialStatus.hasKidneyDisease" [class.active]="myData.specialStatus.hasKidneyDisease">
-              <div class="card-icon">
-                <img src="/assets/icons/kidney.png" alt="kidney" class="status-ic">
-              </div>
-              <div class="card-info">
-                <span class="status-title">Medical Assistant (Kidney)</span>
-                <span class="status-value">{{ myData.specialStatus.hasKidneyDisease ? 'Recipient' : 'None' }}</span>
-              </div>
-            </div>
-            <div class="status-card" *ngIf="myData.specialStatus.hasCancer" [class.active]="myData.specialStatus.hasCancer">
-              <div class="card-icon">
-                <img src="/assets/icons/cancer.png" alt="cancer" class="status-ic">
-              </div>
-              <div class="card-info">
-                <span class="status-title">Medical Assistant (Cancer)</span>
-                <span class="status-value">{{ myData.specialStatus.hasCancer ? 'Recipient' : 'None' }}</span>
-              </div>
-            </div>
-          </div>
+    <!-- NEW PANEL: Eligibility Suggestions & Welfare Assistance -->
+    <div class="registry-panel welfare-panel" *ngIf="!isLoading">
+      <div class="panel-header">
+        <div class="title-with-icon">
+          <img src="/assets/icons/registry.png" alt="Welfare Details">
+          <h3>Welfare Assistance</h3>
+        </div>
+      </div>
+      
+      <div class="panel-body">
+        <!-- Common Verification info if it exists -->
+        <div *ngIf="getCommonVerificationDetails(myData.confirmedWelfare || []) as verification" 
+             style="margin-bottom: 1.5rem; padding: 1rem; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.85rem; color: #475569; display: flex; gap: 2rem; flex-wrap: wrap;">
+          <span *ngIf="verification.date"><strong>Last Verified Date:</strong> {{ verification.date }}</span>
+          <span *ngIf="verification.officer"><strong>Verified By GN Officer NIC:</strong> {{ verification.officer }}</span>
         </div>
 
-        <div class="footer-actions">
+        <!-- Confirmed Welfare Cards Grid -->
+        <div class="welfare-cards-grid" *ngIf="hasActiveWelfare()">
+          <ng-container *ngFor="let prog of getWelfarePrograms()">
+            <div *ngIf="prog.status === 'Eligible'" class="welfare-card" [ngClass]="[prog.cardClass, prog.statusClass]">
+              <div class="welfare-card-content">
+                <img [src]="prog.icon" class="welfare-card-icon" alt="icon">
+                <div class="welfare-card-text">
+                  <span class="welfare-card-title">{{ prog.name }}</span>
+                  <span class="welfare-status-text">{{ prog.status }}</span>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+        <div *ngIf="!hasActiveWelfare()" style="font-size: 0.85rem; color: #94a3b8; font-style: italic; padding: 0.5rem 0;">
+          No active welfare benefits registered.
         </div>
       </div>
     </div>

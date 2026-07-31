@@ -137,8 +137,8 @@
                           <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                           
                           <!-- Dropdown -->
-                          <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
-                            <option value="" disabled selected>Select {{ field.fieldLabel }}</option>
+                          <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" [multiple]="field.parsedValidationRules?.multiple">
+                            <option value="" selected *ngIf="!field.parsedValidationRules?.multiple">Select {{ field.fieldLabel }}</option>
                             <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
                           </select>
                           
@@ -238,8 +238,8 @@
                       <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                       
                       <!-- Dropdown -->
-                      <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
-                        <option value="" disabled selected>Select {{ field.fieldLabel }}</option>
+                      <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" [multiple]="field.parsedValidationRules?.multiple">
+                        <option value="" selected *ngIf="!field.parsedValidationRules?.multiple">Select {{ field.fieldLabel }}</option>
                         <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
                       </select>
                       

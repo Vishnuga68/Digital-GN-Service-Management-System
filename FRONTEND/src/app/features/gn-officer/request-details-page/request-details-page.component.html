@@ -26,7 +26,7 @@
     <!-- Reassignment Banner -->
     <div class="alert alert-warning" *ngIf="hasReassignmentWarning" style="background-color: #fff3cd; color: #856404; padding: 12px 16px; border-radius: 8px; border-left: 4px solid #ffeeba; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; font-weight: 500;">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
-      <span>⚠️ This request was reassigned after the citizen's GN division changed. The previously generated document was not published and has been invalidated. Please review the request and generate a new document.</span>
+      <span>This request was reassigned after the citizen's GN division changed. The previously generated document was not published and has been invalidated. Please review the request and generate a new document.</span>
     </div>
     
     <!-- Header Section -->
@@ -124,6 +124,14 @@
               <div class="info-group">
                 <label>Current Status</label>
                 <p>{{ requestDetails.status }}</p>
+              </div>
+              <div class="info-group">
+                <label>GN Division</label>
+                <p>{{ requestDetails.gnDivision }}</p>
+              </div>
+              <div class="info-group">
+                <label>Assigned GN Officer</label>
+                <p>{{ requestDetails.assignedOfficerName || 'Unassigned' }}</p>
               </div>
               <div class="info-group">
                 <label>Submitted Date</label>
@@ -269,7 +277,7 @@
                 <p>Chat directly with the citizen regarding this request.</p>
               </div>
             </div>
-            <a class="btn btn-primary w-full text-center block" [routerLink]="['/gn-officer/messages']" [queryParams]="{ citizenNIC: requestDetails.citizenNIC, citizenName: requestDetails.citizenName, requestId: requestDetails.id }">
+            <a class="btn btn-primary w-full text-center block" [routerLink]="['/gn-officer/messages']" [queryParams]="{ citizenNIC: requestDetails.citizenNIC, citizenName: requestDetails.citizenName, requestId: requestDetails.requestDbId }">
               Chat with Citizen
             </a>
             <a class="btn btn-secondary w-full text-center block" style="margin-top: 8px;" [routerLink]="['/gn-officer/registry']" [queryParams]="{ nic: requestDetails.citizenNIC }">
@@ -435,7 +443,7 @@
                            *ngIf="showReleaseCertificateButton"
                            [disabled]="isProcessing || isNotAssignedToMe()"
                            style="width: 100%; grid-column: span 2; background-color: #10b981; border-color: #10b981; color: white; margin-top: 8px;">
-                     Release Certificate
+                       {{ (requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6) ? 'Release Family Card' : 'Release Certificate' }}
                    </button>
                 </div>
 
@@ -694,7 +702,8 @@
         <h3>Confirm Release</h3>
       </div>
       <div class="custom-modal-body">
-        <p>Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
+        <p *ngIf="requestDetails.categoryId < 1 || requestDetails.categoryId > 6">Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
+        <p *ngIf="requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6">Are you sure you want to release the updated Family Card to the citizen? This will publish the final signed Family Card and mark the request as Accepted.</p>
         <p class="modal-subtext">Do you want to continue?</p>
       </div>
       <div class="custom-modal-footer">

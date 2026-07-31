@@ -31,6 +31,8 @@ export class DashboardPageComponent implements OnInit {
   citizenPhone = '';
   citizenPassword = '••••••••'; // Sample masked password
   userImageUrl = ''; // Default profile image if empty
+  gnDivision = 'Loading...';
+  gnOfficer = 'Loading...';
 
   updateProfile(profile: any) {
     this.citizenName = profile.FullName || profile.fullName || 'Citizen';
@@ -38,6 +40,8 @@ export class DashboardPageComponent implements OnInit {
     this.citizenAddress = profile.Address || profile.address || 'No Address Listed';
     this.citizenEmail = profile.Email || profile.email || 'No Email';
     this.citizenPhone = profile.Phone || profile.phone || 'No Phone';
+    this.gnDivision = profile.GnDivisionId || profile.gnDivisionId || 'Unknown Division';
+    this.gnOfficer = profile.GnOfficerName || profile.gnOfficerName || 'Unassigned';
   }
 
   updateStats(stats: any) {

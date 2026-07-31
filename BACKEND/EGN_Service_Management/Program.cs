@@ -86,7 +86,6 @@ builder.Services.AddScoped<IAnnouncementTargetCitizenRepository, AnnouncementTar
 builder.Services.AddScoped<IChatAttachmentRepository, ChatAttachmentRepository>();
 builder.Services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
 builder.Services.AddScoped<ICitizenMasterRepository, CitizenMasterRepository>();
-builder.Services.AddScoped<ICitizenSpecialStatusRepository, CitizenSpecialStatusRepository>();
 builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IGNDocumentRepository, GNDocumentRepository>();
 builder.Services.AddScoped<IDocumentVaultRepository, DocumentVaultRepository>();
@@ -107,16 +106,18 @@ builder.Services.AddScoped<IRequestTimelineRepository, RequestTimelineRepository
 builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
 builder.Services.AddScoped<ISurveyResponseRepository, SurveyResponseRepository>();
 builder.Services.AddScoped<ITransferRequestRepository, TransferRequestRepository>();
+builder.Services.AddScoped<IChatRepository, ChatRepository>();
 
 // Service registrations
 builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+builder.Services.AddScoped<INewChatAttachmentService, NewChatAttachmentService>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
 builder.Services.AddScoped<IAnnouncementTargetCitizenService, AnnouncementTargetCitizenService>();
 
 builder.Services.AddScoped<IChatAttachmentService, ChatAttachmentService>();
 builder.Services.AddScoped<IChatMessageService, ChatMessageService>();
 builder.Services.AddScoped<ICitizenMasterService, CitizenMasterService>();
-builder.Services.AddScoped<ICitizenSpecialStatusService, CitizenSpecialStatusService>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IGNDocumentService, GNDocumentService>();
 builder.Services.AddScoped<IDocumentVaultService, DocumentVaultService>();
@@ -269,6 +270,37 @@ using (var scope = app.Services.CreateScope())
                     CONSTRAINT [PK_Document_Placement_Elements] PRIMARY KEY ([ElementId]),
                     CONSTRAINT [FK_Document_Placement_Elements_Document_Verifications_VerificationId] FOREIGN KEY ([VerificationId]) REFERENCES [Document_Verifications] ([VerificationId]) ON DELETE CASCADE
                 );
+            END
+
+            -- Add IsActive column to Citizen_Welfare_Status if it does not exist
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Citizen_Welfare_Status]') AND name = N'IsActive')
+            BEGIN
+                ALTER TABLE [Citizen_Welfare_Status] ADD [IsActive] bit NOT NULL DEFAULT 1;
+            END
+
+            -- Add IsPublicAssistanceEligible column to Citizen_Welfare_Status if it does not exist
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Citizen_Welfare_Status]') AND name = N'IsPublicAssistanceEligible')
+            BEGIN
+                ALTER TABLE [Citizen_Welfare_Status] ADD [IsPublicAssistanceEligible] bit NOT NULL DEFAULT 0;
+            END
+
+            -- Add IsHousingAssistanceEligible column to Citizen_Welfare_Status if it does not exist
+            IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[Citizen_Welfare_Status]') AND name = N'IsHousingAssistanceEligible')
+            BEGIN
+                ALTER TABLE [Citizen_Welfare_Status] ADD [IsHousingAssistanceEligible] bit NOT NULL DEFAULT 0;
+            END
+
+            -- Safely Drop citizen_special_statuses table if it exists
+            IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[citizen_special_statuses]') AND type in (N'U'))
+            BEGIN
+                DROP TABLE [citizen_special_statuses];
+            END
+
+            -- Insert the newFamilyHead field for Category 3 if it does not exist
+            IF NOT EXISTS (SELECT * FROM [Service_Form_Schema] WHERE [CategoryId] = 3 AND [FieldName] = 'newFamilyHead')
+            BEGIN
+                INSERT INTO [Service_Form_Schema] (CategoryId, FieldName, FieldLabel, FieldType, DropdownOptions, IsRequired, ValidationRules, DisplayOrder)
+                VALUES (3, 'newFamilyHead', 'New Family Head', 'dropdown', NULL, 0, '{{""dataSource"": ""FamilyMembers"", ""filterCriteria"": {{""minAge"": 18}}, ""displayField"": ""fullName"", ""valueField"": ""nic""}}', 14);
             END
         ";
         context.Database.ExecuteSqlRaw(sql);

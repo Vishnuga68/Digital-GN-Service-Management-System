@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormControl } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
@@ -82,8 +82,9 @@ export class ServiceFormPageComponent implements OnInit {
   familyMembersData: any[] = [];
 
   currentProfile: any = null;
+  originalGuidelineText: string = '';
 
-  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private http: HttpClient, private authService: AuthService) {
+  constructor(private fb: FormBuilder, private router: Router, private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private cdr: ChangeDetectorRef) {
     this.requestForm = this.fb.group({
       // Top Level Dropdown for Category Selection
       categoryId: [''],
@@ -119,6 +120,7 @@ export class ServiceFormPageComponent implements OnInit {
         const cat = this.selectedService.categories.find(c => c.categoryId == catId);
         if (cat) {
           this.selectedCategory = cat;
+          this.originalGuidelineText = cat.guidelineText || '';
           this.loadFormSchema(cat.categoryId);
         }
       }
@@ -213,9 +215,16 @@ export class ServiceFormPageComponent implements OnInit {
         this.formSchema = res.map(f => {
           f.isVisible = true; // default
           if (f.validationRules) {
-            try {
-              f.parsedValidationRules = JSON.parse(f.validationRules);
-            } catch (e) {}
+            if (typeof f.validationRules === 'string') {
+              try {
+                f.parsedValidationRules = JSON.parse(f.validationRules);
+              } catch (e) {
+                console.error(`Failed to parse validationRules for ${f.fieldName}:`, e);
+                f.parsedValidationRules = null;
+              }
+            } else {
+              f.parsedValidationRules = f.validationRules;
+            }
           }
           if (f.dropdownOptions) {
             if (f.dropdownOptions.startsWith('api:')) {
@@ -236,13 +245,20 @@ export class ServiceFormPageComponent implements OnInit {
                 f.parsedOptions = [];
               }
             }
-          } else if ((f.fieldType === 'dropdown' || f.fieldType === 'checkbox') && f.parsedValidationRules?.dataSource === 'FamilyMembers') {
+          } else if ((f.fieldType === 'dropdown' || f.fieldType === 'checkbox') && (f.parsedValidationRules?.dataSource === 'FamilyMembers' || f.parsedValidationRules?.dataSource === 'CurrentFamilyCardMembers')) {
              // Handle dropdown options from new JSON ValidationRules configuration
-             let members = this.familyMembersData;
-             
-             // Apply any filtering
-             if (f.parsedValidationRules.filterCriteria?.excludeApplicant) {
-                 // Intentionally left empty: Requirement dictates all family members must be included.
+              let members = this.familyMembersData.filter(m => 
+                (m.lifeStatus || m.LifeStatus || 'Alive').toLowerCase() === 'alive' &&
+                m.isActive !== false && m.IsActive !== false &&
+                (m.status || m.Status || 'Active').toLowerCase() === 'active'
+              );
+              
+              // Apply any filtering
+             if (f.parsedValidationRules.filterCriteria?.excludeApplicant || (this.selectedCategory?.categoryId === 3 && f.fieldName === 'affectedPerson')) {
+                 const applicantNic = this.currentProfile?.Nic || this.currentProfile?.nic;
+                 if (applicantNic) {
+                     members = members.filter(m => (m.nic || m.Nic || m.nicNumber || m.NicNumber) !== applicantNic);
+                 }
              }
              if (f.parsedValidationRules.filterCriteria?.minAge) {
                  members = members.filter(m => new Date(m.dob || m.Dob).getFullYear() <= new Date().getFullYear() - f.parsedValidationRules.filterCriteria.minAge);
@@ -254,27 +270,34 @@ export class ServiceFormPageComponent implements OnInit {
                  });
              }
 
-             const displayField = f.parsedValidationRules.displayField || 'fullName';
-             const valueField = 'nic'; // Force NIC as value
+              const displayField = f.parsedValidationRules.displayField || 'fullName';
+              const valueField = 'nic'; // Force NIC as value
+              const isMembersToMove = f.fieldName === 'familyMembersToMove' || f.parsedValidationRules?.dataSource === 'CurrentFamilyCardMembers';
 
-             f.parsedOptions = members.map(m => {
-                 let label = m[displayField] || m[displayField.charAt(0).toUpperCase() + displayField.slice(1)];
-                 if (displayField === 'fullName-nic') {
-                     label = (m.fullName || m.FullName) + ' - ' + (m.nic || m.Nic);
-                 }
-                 return {
-                     label: label,
-                     value: m[valueField] || m[valueField.charAt(0).toUpperCase() + valueField.slice(1)]
-                 };
-             });
-          } else if (f.parsedValidationRules?.dataSource && f.parsedValidationRules.dataSource !== 'FamilyMembers') {
-             // It's an external API dropdown. If it has no dependsOn, load it immediately.
-             if (!f.parsedValidationRules.dependsOn) {
-               this.fetchDropdownData(f);
-             } else {
-               f.parsedOptions = [];
-             }
-          }
+              f.parsedOptions = members.map(m => {
+                  let label = m[displayField] || m[displayField.charAt(0).toUpperCase() + displayField.slice(1)];
+                  if (displayField === 'fullName-nic') {
+                      label = (m.fullName || m.FullName) + ' - ' + (m.nic || m.Nic);
+                  }
+                  if (isMembersToMove) {
+                      const name = m.fullName || m.FullName;
+                      const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
+                      const rel = m.relationshipToHead || m.RelationshipToHead || 'Member';
+                      label = `${name} - ${nic} (${rel})`;
+                  }
+                  return {
+                      label: label,
+                      value: m[valueField] || m[valueField.charAt(0).toUpperCase() + valueField.slice(1)]
+                  };
+              });
+           } else if (f.parsedValidationRules?.dataSource && f.parsedValidationRules.dataSource !== 'FamilyMembers' && f.parsedValidationRules.dataSource !== 'CurrentFamilyCardMembers') {
+              // It's an external API dropdown. If it has no dependsOn, load it immediately.
+              if (!f.parsedValidationRules.dependsOn) {
+                this.fetchDropdownData(f);
+              } else {
+                f.parsedOptions = [];
+              }
+           }
           return f;
         });
 
@@ -308,13 +331,22 @@ export class ServiceFormPageComponent implements OnInit {
 
     const dynamicGroup = this.fb.group({});
 
+    if (this.selectedCategory?.categoryId === 3) {
+      const newHeadField = this.formSchema.find(f => f.fieldName === 'newFamilyHead');
+      if (newHeadField) {
+        newHeadField.isVisible = false;
+      }
+    }
+
     // Add new dynamic controls
     this.formSchema.forEach(field => {
       const validators = [];
       if (field.isRequired) validators.push(Validators.required);
       
-      let initialValue = '';
-      if (field.parsedValidationRules?.defaultValue) {
+      let initialValue: any = '';
+      if (field.parsedValidationRules?.multiple || field.fieldType === 'checkbox') {
+        initialValue = [];
+      } else if (field.parsedValidationRules?.defaultValue) {
         initialValue = field.parsedValidationRules.defaultValue;
       } else if (field.fieldName === 'transferFamilyMembers') {
         initialValue = 'No'; // hardcoded default as per requirements
@@ -330,13 +362,102 @@ export class ServiceFormPageComponent implements OnInit {
 
     this.requestForm.setControl('dynamicData', dynamicGroup);
 
+    if (this.selectedCategory?.categoryId === 5) {
+      const spouseNicControl = dynamicGroup.get('spouseNic');
+      if (spouseNicControl) {
+        const spouseNicSub = spouseNicControl.valueChanges.subscribe(() => {
+          this.clearSpouseData(dynamicGroup);
+        });
+        this.dynamicSubscriptions.push(spouseNicSub);
+      }
+
+      const requestTypeControl = dynamicGroup.get('requestType');
+      if (requestTypeControl) {
+        const requestTypeSub = requestTypeControl.valueChanges.subscribe((type) => {
+          if (type !== 'Marriage') {
+            this.clearSpouseData(dynamicGroup);
+          }
+          this.evaluateVisibility();
+        });
+        this.dynamicSubscriptions.push(requestTypeSub);
+      }
+
+      const familyMembersToMoveControl = dynamicGroup.get('familyMembersToMove');
+      if (familyMembersToMoveControl) {
+        const familyMembersSub = familyMembersToMoveControl.valueChanges.subscribe((selectedNics: string[] | string) => {
+          const nicsArr = Array.isArray(selectedNics) ? selectedNics : (selectedNics ? [selectedNics] : []);
+          const newHeadField = this.formSchema.find(f => f.fieldName === 'newHeadOfHousehold');
+          const newHeadControl = dynamicGroup.get('newHeadOfHousehold') as any;
+
+          if (newHeadField && newHeadControl) {
+            const selectedMembers = this.familyMembersData.filter(m => {
+              const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
+              return nicsArr.includes(nic);
+            });
+
+            newHeadField.parsedOptions = selectedMembers.map(m => {
+              const name = m.fullName || m.FullName;
+              const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
+              return {
+                label: `${name} - ${nic}`,
+                value: nic
+              };
+            });
+
+            const currentHeadVal = newHeadControl.value;
+            if (currentHeadVal && !nicsArr.includes(currentHeadVal)) {
+              newHeadControl.setValue('', { emitEvent: false });
+            }
+          }
+        });
+        this.dynamicSubscriptions.push(familyMembersSub);
+      }
+
+      const sameGnDivisionControl = dynamicGroup.get('sameGnDivision');
+      if (sameGnDivisionControl) {
+        const sameGnSub = sameGnDivisionControl.valueChanges.subscribe(val => {
+          const valStr = ((val as any) || '').toString().trim().toLowerCase();
+          if (valStr === 'yes' || valStr === 'y') {
+            // Clear previously selected location values
+            (dynamicGroup.get('province') as any)?.patchValue('', { emitEvent: false });
+            (dynamicGroup.get('district') as any)?.patchValue('', { emitEvent: false });
+            (dynamicGroup.get('dsDivision') as any)?.patchValue('', { emitEvent: false });
+            (dynamicGroup.get('newGnDivision') as any)?.patchValue('', { emitEvent: false });
+            this.evaluateVisibility();
+          } else if (valStr === 'no' || valStr === 'n') {
+            this.clearNewResidenceHierarchy(dynamicGroup);
+            this.evaluateVisibility();
+          }
+        });
+        this.dynamicSubscriptions.push(sameGnSub);
+      }
+    }
+
     this.evaluateVisibility();
 
-    // Setup value change listeners for auto-population and visibility
-    const visSub = dynamicGroup.valueChanges.subscribe(val => {
-       this.evaluateVisibility();
+    // Setup value change listeners for controlling fields to re-evaluate visibility
+    const controllingFields = new Set<string>();
+    this.formSchema.forEach(field => {
+      const rules = field.parsedValidationRules;
+      if (rules) {
+        if (rules.conditionalVisibility?.field) {
+          controllingFields.add(rules.conditionalVisibility.field);
+        }
+        if (rules.dependsOn) {
+          controllingFields.add(rules.dependsOn);
+        }
+      }
     });
-    this.dynamicSubscriptions.push(visSub);
+
+    controllingFields.forEach(fieldName => {
+      const control = dynamicGroup.get(fieldName);
+      if (control) {
+        const sub = control.valueChanges.subscribe(() => {
+          this.evaluateVisibility();
+        });
+        this.dynamicSubscriptions.push(sub);
+      }
+    });
 
     // Setup specific valueChanges for autoPopulate
     this.formSchema.forEach(field => {
@@ -447,6 +568,161 @@ export class ServiceFormPageComponent implements OnInit {
       }
 
     });
+
+    // Category 3: Removal of Deceased Family Member (Conditional display of New Family Head)
+    const affectedPersonControl = dynamicGroup.get('affectedPerson');
+    if (this.selectedCategory?.categoryId === 3 && affectedPersonControl) {
+      const affectedPersonSub = affectedPersonControl.valueChanges.subscribe(selectedNic => {
+        const newHeadField = this.formSchema.find(f => f.fieldName === 'newFamilyHead');
+        const newHeadControl = dynamicGroup.get('newFamilyHead') as any;
+
+        if (newHeadField && newHeadControl) {
+          if (selectedNic) {
+            const selectedMember = (this.familyMembersData || []).find(m => (m.nic || m.Nic || m.nicNumber || m.NicNumber) === selectedNic);
+            const isDeceasedHead = selectedMember && (selectedMember.relationshipToHead === 'Head' || selectedMember.RelationshipToHead === 'Head' || selectedMember.relationshipToHead === 'Self' || selectedMember.RelationshipToHead === 'Self');
+            const activeMembersCount = (this.familyMembersData || []).length;
+
+            if (isDeceasedHead && activeMembersCount > 1) {
+              newHeadField.isVisible = true;
+              newHeadControl.setValidators([Validators.required]);
+
+              // Populate eligible members: alive, active, >= 18, and not the deceased person
+              const eligibleMembers = (this.familyMembersData || []).filter(m => {
+                const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
+                if (nic === selectedNic) return false;
+
+                const lifeStatus = m.lifeStatus || m.LifeStatus || 'Alive';
+                if (lifeStatus.toLowerCase() !== 'alive') return false;
+
+                // Check age: 18+
+                const dob = m.dob || m.Dob || m.dateOfBirth || m.DateOfBirth;
+                if (!dob) return false;
+                const dobYear = new Date(dob).getFullYear();
+                const currentYear = new Date().getFullYear();
+                return (currentYear - dobYear) >= 18;
+              });
+
+              newHeadField.parsedOptions = eligibleMembers.map(m => ({
+                label: m.fullName || m.FullName,
+                value: m.nic || m.Nic || m.nicNumber || m.NicNumber
+              }));
+            } else {
+              newHeadField.isVisible = false;
+              newHeadControl.clearValidators();
+              newHeadControl.setValue('');
+            }
+          } else {
+            newHeadField.isVisible = false;
+            newHeadControl.clearValidators();
+            newHeadControl.setValue('');
+          }
+          newHeadControl.updateValueAndValidity({ emitEvent: false });
+          this.evaluateVisibility();
+        }
+      });
+      this.dynamicSubscriptions.push(affectedPersonSub);
+    }
+  }
+
+  populateSpouseData(citizen: any, divisionName: string, dynamicGroup: FormGroup) {
+    const fullName = citizen.fullName || citizen.FullName || '';
+    const gender = citizen.gender || citizen.Gender || '';
+    (dynamicGroup.get('spouseFullName') as any)?.patchValue(fullName);
+    (dynamicGroup.get('spouseGender') as any)?.patchValue(gender);
+    (dynamicGroup.get('spouseGnDivision') as any)?.patchValue(divisionName);
+
+    dynamicGroup.get('spouseFullName')?.disable({ emitEvent: false });
+    dynamicGroup.get('spouseGender')?.disable({ emitEvent: false });
+    dynamicGroup.get('spouseGnDivision')?.disable({ emitEvent: false });
+
+    const loggedNic = this.currentProfile?.Nic || this.currentProfile?.nic || '';
+    const loggedGender = (this.currentProfile?.gender || this.currentProfile?.Gender || 'Male').toLowerCase();
+    const spouseNic = citizen.nic || citizen.Nic || '';
+    const spouseGenderLower = gender.toLowerCase();
+
+    let newHeadOfHousehold = '';
+    if (loggedGender === 'male' && spouseGenderLower === 'female') {
+      newHeadOfHousehold = loggedNic;
+    } else if (spouseGenderLower === 'male' && loggedGender === 'female') {
+      newHeadOfHousehold = spouseNic;
+    }
+
+    if (newHeadOfHousehold) {
+      (dynamicGroup.get('newHeadOfHousehold') as any)?.patchValue(newHeadOfHousehold, { emitEvent: false });
+    }
+  }
+
+  clearSpouseData(dynamicGroup: FormGroup) {
+    dynamicGroup.get('spouseFullName')?.enable({ emitEvent: false });
+    dynamicGroup.get('spouseGender')?.enable({ emitEvent: false });
+    dynamicGroup.get('spouseGnDivision')?.enable({ emitEvent: false });
+
+    (dynamicGroup.get('spouseFullName') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('spouseGender') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('spouseGnDivision') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('newHeadOfHousehold') as any)?.patchValue('', { emitEvent: false });
+  }
+
+  populateNewResidenceHierarchy(gnDivisionId: string, dynamicGroup: FormGroup) {
+    this.http.get<any>(`http://localhost:5058/api/GnDivision/${gnDivisionId}`).subscribe(gn => {
+      this.http.get<any>(`http://localhost:5058/api/DsDivision/${gn.dsDivisionId}`).subscribe(ds => {
+        this.http.get<any[]>(`http://localhost:5058/api/Districts`).subscribe(districts => {
+          const district = districts.find(d => d.id == ds.districtId);
+          if (district) {
+            this.http.get<any[]>(`http://localhost:5058/api/Provinces`).subscribe(provinces => {
+              const province = provinces.find(p => p.id == district.provinceId);
+              if (province) {
+                const provinceField = this.formSchema.find(f => f.fieldName === 'province');
+                if (provinceField) provinceField.parsedOptions = [{ label: province.name, value: province.id }];
+                
+                const districtField = this.formSchema.find(f => f.fieldName === 'district');
+                if (districtField) districtField.parsedOptions = [{ label: district.name, value: district.id }];
+                
+                const dsField = this.formSchema.find(f => f.fieldName === 'dsDivision');
+                if (dsField) dsField.parsedOptions = [{ label: ds.name, value: ds.id }];
+                
+                const gnField = this.formSchema.find(f => f.fieldName === 'newGnDivision');
+                if (gnField) gnField.parsedOptions = [{ label: gn.name, value: gn.id }];
+
+                dynamicGroup.get('province')?.patchValue(province.id, { emitEvent: false });
+                dynamicGroup.get('district')?.patchValue(district.id, { emitEvent: false });
+                dynamicGroup.get('dsDivision')?.patchValue(ds.id, { emitEvent: false });
+                dynamicGroup.get('newGnDivision')?.patchValue(gn.id, { emitEvent: false });
+
+                dynamicGroup.get('province')?.disable({ emitEvent: false });
+                dynamicGroup.get('district')?.disable({ emitEvent: false });
+                dynamicGroup.get('dsDivision')?.disable({ emitEvent: false });
+                dynamicGroup.get('newGnDivision')?.disable({ emitEvent: false });
+              }
+            });
+          }
+        });
+      });
+    });
+  }
+
+  clearNewResidenceHierarchy(dynamicGroup: FormGroup) {
+    dynamicGroup.get('province')?.enable({ emitEvent: false });
+    dynamicGroup.get('district')?.enable({ emitEvent: false });
+    dynamicGroup.get('dsDivision')?.enable({ emitEvent: false });
+    dynamicGroup.get('newGnDivision')?.enable({ emitEvent: false });
+
+    (dynamicGroup.get('province') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('district') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('dsDivision') as any)?.patchValue('', { emitEvent: false });
+    (dynamicGroup.get('newGnDivision') as any)?.patchValue('', { emitEvent: false });
+
+    const provinceField = this.formSchema.find(f => f.fieldName === 'province');
+    if (provinceField) {
+      provinceField.parsedOptions = [];
+      this.fetchDropdownData(provinceField);
+    }
+    const districtField = this.formSchema.find(f => f.fieldName === 'district');
+    if (districtField) districtField.parsedOptions = [];
+    const dsField = this.formSchema.find(f => f.fieldName === 'dsDivision');
+    if (dsField) dsField.parsedOptions = [];
+    const gnField = this.formSchema.find(f => f.fieldName === 'newGnDivision');
+    if (gnField) gnField.parsedOptions = [];
   }
 
   fetchDropdownData(field: FormSchemaField, parentValue?: any) {
@@ -454,26 +730,33 @@ export class ServiceFormPageComponent implements OnInit {
      const source = field.parsedValidationRules?.dataSource;
      const filterField = field.parsedValidationRules?.filterField;
      
-     if (source === 'province') {
+     const sourceLower = source?.toLowerCase();
+     if (sourceLower === 'province' || sourceLower === 'provinces') {
         url = 'http://localhost:5058/api/Provinces';
-     } else if (source === 'districts') {
+     } else if (sourceLower === 'districts' || sourceLower === 'district') {
         url = `http://localhost:5058/api/Districts?${filterField || 'provinceId'}=${parentValue}`;
-     } else if (source === 'ds_divisions') {
+     } else if (sourceLower === 'ds_divisions' || sourceLower === 'dsdivisions' || sourceLower === 'dsdivision') {
         url = `http://localhost:5058/api/DsDivision?${filterField || 'districtId'}=${parentValue}`;
-     } else if (source === 'gn_divisions') {
+     } else if (sourceLower === 'gn_divisions' || sourceLower === 'gndivisions' || sourceLower === 'gndivision') {
         url = `http://localhost:5058/api/GnDivision?${filterField || 'dsDivisionId'}=${parentValue}`;
      }
 
-     if (url) {
-        this.http.get<any[]>(url).subscribe(res => {
-           const displayField = field.parsedValidationRules?.displayField || 'name';
-           const valueField = field.parsedValidationRules?.valueField || 'id';
-           field.parsedOptions = res.map(r => ({
-              label: r[displayField] || r[displayField.charAt(0).toUpperCase() + displayField.slice(1)],
-              value: r[valueField] || r[valueField.charAt(0).toUpperCase() + valueField.slice(1)]
-           }));
-        }, err => console.error(`Failed to load data for ${field.fieldName}`, err));
-     }
+      if (url) {
+         this.http.get<any>(url).subscribe(res => {
+            const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
+            const displayField = field.parsedValidationRules?.displayField || field.parsedValidationRules?.labelField || 'name';
+            const valueField = field.parsedValidationRules?.valueField || 'id';
+            
+            field.parsedOptions = rawList.map((r: any) => {
+               const val = r[valueField] !== undefined ? r[valueField] : (r['id'] !== undefined ? r['id'] : (r['Id'] !== undefined ? r['Id'] : ''));
+               const lbl = r[displayField] !== undefined ? r[displayField] : (r['name'] !== undefined ? r['name'] : (r['Name'] !== undefined ? r['Name'] : ''));
+               return {
+                  label: lbl,
+                  value: val
+               };
+            });
+         }, err => console.error(`Failed to load data for ${field.fieldName}`, err));
+      }
   }
 
   loadCurrentGnHierarchy(gnDivisionId: string) {
@@ -505,52 +788,93 @@ export class ServiceFormPageComponent implements OnInit {
     if (!dynamicGroup) return;
 
     this.formSchema.forEach(field => {
-      let isVisible = true;
-
-      if (field.parsedValidationRules?.conditionalVisibility) {
-        const rule = field.parsedValidationRules.conditionalVisibility;
-        let targetValue: any;
-        if (rule.field === 'applicantType') {
-            targetValue = this.applicantType;
-        } else {
-            targetValue = dynamicGroup.get(rule.field)?.value;
-        }
-        
-        if (rule.in && Array.isArray(rule.in)) {
-           isVisible = rule.in.includes(targetValue);
-        } else {
-           isVisible = targetValue === rule.value || targetValue === rule.equals;
-        }
-      } else if (field.parsedValidationRules?.dependsOnValue !== undefined && field.parsedValidationRules?.dependsOn) {
-        let targetValue: any;
-        if (field.parsedValidationRules.dependsOn === 'applicantType') {
-            targetValue = this.applicantType;
-        } else {
-            targetValue = dynamicGroup.get(field.parsedValidationRules.dependsOn)?.value;
-        }
-        isVisible = targetValue === field.parsedValidationRules.dependsOnValue;
+      // Category 3 special handling: newFamilyHead visibility is evaluated inside rebuilt controls subscription
+      if (this.selectedCategory?.categoryId === 3 && field.fieldName === 'newFamilyHead') {
+        return;
       }
 
-      // Check if visibility changed
-      if (field.isVisible !== isVisible) {
-        field.isVisible = isVisible;
-        const control = dynamicGroup.get(field.fieldName);
-        
-        if (isVisible) {
-          control?.enable({ emitEvent: false });
-          if (field.isRequired) {
-             control?.setValidators([Validators.required]);
-          }
+      let isVisible = true;
+
+      // 1. Evaluate conditionalVisibility if present
+      if (field.parsedValidationRules?.conditionalVisibility) {
+        const rule = field.parsedValidationRules.conditionalVisibility;
+        let targetValue: any = undefined;
+        if (rule.field === 'applicantType') {
+          targetValue = this.applicantType;
         } else {
-          control?.disable({ emitEvent: false });
-          control?.clearValidators();
-          if (field.fieldType === 'checkbox' || field.parsedValidationRules?.multiple) {
-            (control as any)?.patchValue([], { emitEvent: false });
-          } else {
-            (control as any)?.patchValue('', { emitEvent: false });
-          }
+          targetValue = dynamicGroup.get(rule.field)?.value;
         }
-        control?.updateValueAndValidity({ emitEvent: false });
+
+        const targetValueStr = targetValue !== undefined && targetValue !== null ? targetValue.toString().trim() : '';
+
+        if (rule.values && Array.isArray(rule.values)) {
+          isVisible = rule.values.some((val: any) => val?.toString().trim() === targetValueStr);
+        } else if (rule.in && Array.isArray(rule.in)) {
+          isVisible = rule.in.some((val: any) => val?.toString().trim() === targetValueStr);
+        } else {
+          const expectedValue = rule.value !== undefined ? rule.value : rule.equals;
+          const expectedValueStr = expectedValue !== undefined && expectedValue !== null ? expectedValue.toString().trim() : '';
+          isVisible = targetValueStr === expectedValueStr;
+        }
+      }
+
+      // 2. Evaluate dependsOn if present (cascade visibility)
+      if (isVisible && field.parsedValidationRules?.dependsOn) {
+        const parentField = field.parsedValidationRules.dependsOn;
+        let parentValue: any = undefined;
+        if (parentField === 'applicantType') {
+          parentValue = this.applicantType;
+        } else {
+          parentValue = dynamicGroup.get(parentField)?.value;
+        }
+
+        const dependsOnValue = field.parsedValidationRules.dependsOnValue;
+        if (dependsOnValue !== undefined && dependsOnValue !== null) {
+          isVisible = parentValue?.toString().trim() === dependsOnValue.toString().trim();
+        } else {
+          const isEmpty = Array.isArray(parentValue) ? parentValue.length === 0 : (!parentValue || parentValue.toString().trim() === '');
+          isVisible = !isEmpty;
+        }
+      }
+
+      field.isVisible = isVisible;
+      const control = dynamicGroup.get(field.fieldName);
+
+      if (control) {
+        if (isVisible) {
+          // Restore validators & enable control
+          const isReadOnly = !!(field.parsedValidationRules?.readOnly || field.parsedValidationRules?.readonly);
+          if (isReadOnly) {
+            control.disable({ emitEvent: false });
+          } else {
+            control.enable({ emitEvent: false });
+          }
+
+          if (field.isRequired) {
+            control.setValidators([Validators.required]);
+          } else {
+            control.clearValidators();
+          }
+          control.updateValueAndValidity({ emitEvent: false });
+        } else {
+          // Hide and clear unrelated field values, validation errors, and required validators
+          control.disable({ emitEvent: false });
+          control.clearValidators();
+          control.setErrors(null);
+
+          const currentValue = control.value;
+          const isArrayVal = Array.isArray(currentValue);
+          const isEmpty = isArrayVal ? (currentValue.length === 0) : (currentValue === '' || currentValue === null || currentValue === undefined);
+
+          if (!isEmpty) {
+            if (field.fieldType === 'checkbox' || field.parsedValidationRules?.multiple) {
+              control.patchValue([], { emitEvent: false });
+            } else {
+              control.patchValue('', { emitEvent: false });
+            }
+          }
+          control.updateValueAndValidity({ emitEvent: false });
+        }
       }
 
       // Check for dynamic guideline mapping
@@ -560,9 +884,15 @@ export class ServiceFormPageComponent implements OnInit {
             if (this.selectedCategory) {
                this.selectedCategory.guidelineText = field.parsedValidationRules.guidelineMap[val];
             }
+         } else {
+            if (this.selectedCategory) {
+               this.selectedCategory.guidelineText = this.originalGuidelineText;
+            }
          }
       }
     });
+
+    this.cdr.detectChanges();
   }
 
   applyAutoPopulateMappings(sourceData: any, mappings: any, dynamicGroup: FormGroup) {
@@ -628,6 +958,66 @@ export class ServiceFormPageComponent implements OnInit {
 
     const field = this.formSchema.find(f => f.fieldName === fieldName);
     if (!field) return;
+
+    if (fieldName === 'spouseNic') {
+      const applicantNic = this.currentProfile?.Nic || this.currentProfile?.nic;
+      if (nicValue === applicantNic) {
+        this.errorModalMessage = 'You cannot select your own NIC as the spouse NIC.';
+        this.isErrorModalOpen = true;
+        this.clearSpouseData(dynamicGroup);
+        return;
+      }
+
+      const isAlreadyInCard = this.familyMembersData.some(m => (m.nic || m.Nic || m.nicNumber || m.NicNumber) === nicValue);
+      if (isAlreadyInCard) {
+        this.errorModalMessage = 'The selected spouse is already a member of your current family card.';
+        this.isErrorModalOpen = true;
+        this.clearSpouseData(dynamicGroup);
+        return;
+      }
+
+      this.isUploading = true;
+      this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nicValue}`)
+        .subscribe({
+          next: (res) => {
+            const citizen = res.data || res.Data || res;
+            if (citizen && (citizen.fullName || citizen.FullName)) {
+              const divId = citizen.gnDivisionId || citizen.GnDivisionId || '';
+              if (divId) {
+                this.http.get<any>(`http://localhost:5058/api/GnDivision/${divId}`)
+                  .subscribe({
+                    next: (divRes) => {
+                      this.isUploading = false;
+                      const division = divRes.data || divRes.Data || divRes;
+                      const divisionName = division?.name || division?.Name || divId;
+                      this.populateSpouseData(citizen, divisionName, dynamicGroup);
+                    },
+                    error: () => {
+                      this.isUploading = false;
+                      this.populateSpouseData(citizen, divId, dynamicGroup);
+                    }
+                  });
+              } else {
+                this.isUploading = false;
+                this.populateSpouseData(citizen, 'Unknown', dynamicGroup);
+              }
+            } else {
+              this.isUploading = false;
+              this.errorModalMessage = `No citizen found with NIC: ${nicValue} in the system.`;
+              this.isErrorModalOpen = true;
+              this.clearSpouseData(dynamicGroup);
+            }
+          },
+          error: (err) => {
+            this.isUploading = false;
+            console.error('Spouse NIC lookup failed', err);
+            this.errorModalMessage = `No citizen found with NIC: ${nicValue} in the system.`;
+            this.isErrorModalOpen = true;
+            this.clearSpouseData(dynamicGroup);
+          }
+        });
+      return;
+    }
 
     if (fieldName === 'deceasedNic') {
       this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nicValue}`)
@@ -852,9 +1242,22 @@ export class ServiceFormPageComponent implements OnInit {
         
         // Convert short codes to display labels for dropdowns, radios, and checkboxes
         if (field.fieldType === 'dropdown' || field.fieldType === 'radio') {
-            const option = field.parsedOptions?.find((o: any) => o.value === val);
-            if (option) {
-                val = option.label;
+            const isCategory5 = this.selectedCategory?.categoryId === 5;
+            const isLocationOrCategory5Dropdown = isCategory5 || 
+                ['province', 'district', 'dsDivision', 'newGnDivision'].includes(field.fieldName);
+
+            if (!isLocationOrCategory5Dropdown &&
+                field.parsedValidationRules?.dataSource !== 'FamilyMembers' && 
+                field.parsedValidationRules?.dataSource !== 'CurrentFamilyCardMembers' && 
+                field.parsedValidationRules?.dataSource !== 'SelectedFamilyMembers' && 
+                field.fieldName !== 'newFamilyHead' && 
+                field.fieldName !== 'affectedPerson' && 
+                field.fieldName !== 'newHeadOfHousehold' && 
+                field.fieldName !== 'familyMembersToMove') {
+                const option = field.parsedOptions?.find((o: any) => o.value === val);
+                if (option) {
+                    val = option.label;
+                }
             }
         } else if (field.fieldType === 'checkbox' && Array.isArray(val)) {
             val = val.map((v: any) => {
@@ -875,7 +1278,14 @@ export class ServiceFormPageComponent implements OnInit {
       const formData = new FormData();
       formData.append('CitizenNic', citizenNic);
       
-      const gnId = this.currentProfile?.GnDivisionId || this.currentProfile?.gnDivisionId || '';
+      let gnId = this.currentProfile?.GnDivisionId || this.currentProfile?.gnDivisionId || '';
+      const sameGnVal = dynamicGroup.get('sameGnDivision')?.value;
+      if (sameGnVal === 'No') {
+        const selectedNewGn = dynamicGroup.get('newGnDivision')?.value;
+        if (selectedNewGn) {
+          gnId = selectedNewGn;
+        }
+      }
       formData.append('GnDivisionId', gnId);
       formData.append('ServiceId', this.selectedService.serviceId.toString());
       formData.append('CategoryId', this.selectedCategory.categoryId.toString());
@@ -884,6 +1294,33 @@ export class ServiceFormPageComponent implements OnInit {
       
       const desc = dynamicData.description || dynamicData.subject || this.selectedCategory.categoryName;
       formData.append('Description', desc);
+      if (this.selectedCategory.categoryId === 5) {
+        const reqType = dynamicData['requestType'];
+        if (reqType === 'Marriage') {
+          const loggedNic = this.currentProfile?.Nic || this.currentProfile?.nic || '';
+          const spouseNic = dynamicGroup.get('spouseNic')?.value || '';
+          
+          if (spouseNic === loggedNic) {
+            alert('You cannot select your own NIC as the spouse NIC.');
+            return;
+          }
+
+          const loggedGender = (this.currentProfile?.gender || this.currentProfile?.Gender || 'Male').toLowerCase();
+          const spouseGenderControl = dynamicGroup.get('spouseGender');
+          const spouseGender = spouseGenderControl ? (spouseGenderControl.value || '').toLowerCase() : '';
+
+          let newHead = '';
+          if (loggedGender === 'male' && spouseGender === 'female') {
+            newHead = loggedNic;
+          } else if (spouseGender === 'male' && loggedGender === 'female') {
+            newHead = spouseNic;
+          }
+          if (newHead) {
+            dynamicData['newHeadOfHousehold'] = newHead;
+          }
+        }
+      }
+
       formData.append('JsonData', JSON.stringify(dynamicData));
 
       // Append files

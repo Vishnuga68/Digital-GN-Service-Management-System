@@ -35,6 +35,30 @@ export class RequestDetailsPageComponent implements OnInit {
       next: (data: any) => {
         this.requestDetails = data;
         this.requestDetails.id = data.requestId;
+        this.requestDetails.requestDbId = data.requestDbId;
+
+        // Map Applicant Type to Applicant Category for Display
+        // Also sanitize all field values: parse JSON arrays, clean empty arrays
+        if (this.requestDetails.dynamicFields) {
+          this.requestDetails.dynamicFields = this.requestDetails.dynamicFields.map((field: any) => {
+            let sanitizedValue = this.sanitizeDynamicFieldValue(field.value);
+
+            if (field.label && field.label.trim().toLowerCase() === 'applicant type') {
+              const valLower = sanitizedValue.trim().toLowerCase();
+              if (valLower === 'myself') {
+                sanitizedValue = 'Account Holder';
+              } else if (valLower === 'child under 18' || valLower === 'child') {
+                sanitizedValue = 'Minor Child (Under 18)';
+              }
+              return {
+                ...field,
+                label: 'Applicant Category',
+                value: sanitizedValue
+              };
+            }
+            return { ...field, value: sanitizedValue };
+          });
+        }
         
         this.isSimpleRequestFlow = [44, 45, 46].includes(data.categoryId);
 
@@ -210,6 +234,29 @@ export class RequestDetailsPageComponent implements OnInit {
   get generatedCertificate(): any {
     if (!this.requestDetails || !this.requestDetails.documents) return null;
     return this.requestDetails.documents.find((d: any) => d.documentRole === 'GENERATED_CERTIFICATE');
+  }
+
+  sanitizeDynamicFieldValue(value: any): string {
+    if (value === null || value === undefined) return 'Not provided';
+
+    if (Array.isArray(value)) {
+      return value.length === 0 ? 'No documents uploaded' : value.join(', ');
+    }
+
+    const str = String(value).trim();
+
+    if (str.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(str);
+        if (Array.isArray(parsed)) {
+          return parsed.length === 0 ? 'Not provided' : parsed.join(', ');
+        }
+      } catch {
+        // Not valid JSON
+      }
+    }
+
+    return str || 'Not provided';
   }
 
   goBack() {

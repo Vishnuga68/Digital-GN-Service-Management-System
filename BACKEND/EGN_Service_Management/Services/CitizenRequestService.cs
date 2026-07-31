@@ -74,9 +74,33 @@ namespace EGN_Service_Management.Services
                      category.CategoryName.Contains("Document Verification", StringComparison.OrdinalIgnoreCase) ||
                      (category.Service != null && category.Service.ServiceName.Contains("Document Verification", StringComparison.OrdinalIgnoreCase)));
 
+                var gnDivisionId = requestDto.GnDivisionId;
+                if (requestDto.CategoryId == 2)
+                {
+                    var submitterCitizen = await _dbContext.CitizenMasters
+                        .FirstOrDefaultAsync(c => c.Nic == currentUserId);
+                    if (submitterCitizen == null)
+                    {
+                        throw new ArgumentException("Submitter citizen record not found.");
+                    }
+                    if (string.IsNullOrEmpty(submitterCitizen.FamilyCardNumber))
+                    {
+                        throw new ArgumentException("Submitter does not belong to a family card.");
+                    }
+                    var submitterFamilyCard = await _dbContext.FamilyCards
+                        .FirstOrDefaultAsync(fc => fc.FamilyCardNumber == submitterCitizen.FamilyCardNumber && fc.Status == "Active");
+                    if (submitterFamilyCard == null)
+                    {
+                        throw new ArgumentException("Submitter's active family card is not found or inactive.");
+                    }
+                    gnDivisionId = submitterFamilyCard.GnDivisionId;
+                    requestDto.CitizenNic = currentUserId;
+                    requestDto.GnDivisionId = gnDivisionId;
+                }
+
                 // Get GN Officer NIC for the division
                 var gnOfficerNic = await _dbContext.GnOfficers
-                    .Where(g => g.GnDivisionId == requestDto.GnDivisionId)
+                    .Where(g => g.GnDivisionId == gnDivisionId)
                     .Select(g => g.Nic)
                     .FirstOrDefaultAsync();
 
@@ -275,14 +299,8 @@ namespace EGN_Service_Management.Services
             }
         }
 
-        public async Task HandleCitizenGnDivisionChangeAsync(string citizenNic, string oldGnDivisionId, string newGnDivisionId, string oldFamilyCardNumber, string newGnOfficerNic, string triggeredBy)
+        public async Task HandleCitizenGnDivisionChangeAsync(string citizenNic, string oldGnDivisionId, string newGnDivisionId, string oldFamilyCardNumber, string newGnOfficerNic, string triggeredBy, int? excludeRequestId = null)
         {
-            if (oldGnDivisionId == newGnDivisionId)
-            {
-                // No division change occurred, open requests stay with the same GN division
-                return;
-            }
-
             if (!string.IsNullOrEmpty(oldFamilyCardNumber))
             {
                 var remainingAliveMembers = await _dbContext.CitizenMasters
@@ -299,13 +317,22 @@ namespace EGN_Service_Management.Services
                 }
             }
 
+            if (oldGnDivisionId == newGnDivisionId)
+            {
+                // No division change occurred, open requests stay with the same GN division
+                // Return from the GN reassignment part of the reusable method after the family-card check is completed.
+                await _dbContext.SaveChangesAsync();
+                return;
+            }
+
             var openRequests = await _dbContext.UnifiedRequests
                 .Where(r => r.CitizenNic == citizenNic &&
                             (r.CurrentStatus == "Submitted" || r.CurrentStatus == "SUBMITTED" ||
                              r.CurrentStatus == "Pending" || r.CurrentStatus == "PENDING" ||
                              r.CurrentStatus == "Under Review" || r.CurrentStatus == "UNDER_REVIEW" ||
                              r.CurrentStatus == "Verified" || r.CurrentStatus == "VERIFIED") &&
-                             r.GnDivision != newGnDivisionId)
+                             r.GnDivision != newGnDivisionId &&
+                             (!excludeRequestId.HasValue || r.RequestId != excludeRequestId.Value))
                 .ToListAsync();
 
             foreach (var req in openRequests)
@@ -316,12 +343,12 @@ namespace EGN_Service_Management.Services
 
                 var statusRemark = $"Request reassigned from GN division {oldGnDivisionId ?? "Unknown"} to {newGnDivisionId} due to citizen GN division transfer.";
 
-                if (req.CurrentStatus == "Verified" || req.CurrentStatus == "VERIFIED")
-                {
-                    var verification = await _dbContext.DocumentVerifications
-                        .FirstOrDefaultAsync(v => v.RequestId == req.RequestId);
+                var verification = await _dbContext.DocumentVerifications
+                    .FirstOrDefaultAsync(v => v.RequestId == req.RequestId);
 
-                    if (verification != null && verification.VerificationStatus == "GENERATED")
+                if (verification != null)
+                {
+                    if ((req.CurrentStatus == "Verified" || req.CurrentStatus == "VERIFIED") && verification.VerificationStatus == "GENERATED")
                     {
                         if (verification.FinalVerifiedAttachmentId.HasValue)
                         {
@@ -353,18 +380,7 @@ namespace EGN_Service_Management.Services
 
                         statusRemark = $"Request reassigned from GN division {oldGnDivisionId ?? "Unknown"} to {newGnDivisionId}. Previously generated document was not published and has been invalidated. Re-verification and regeneration are required by the newly assigned GN Officer.";
                     }
-                    else if (verification != null && (verification.VerificationStatus == "UNDER_REVIEW" || verification.VerificationStatus == "PENDING"))
-                    {
-                        verification.AssignedGNOfficerNIC = newGnOfficerNic;
-                        verification.UpdatedDate = GetSriLankanTime();
-                        _dbContext.DocumentVerifications.Update(verification);
-                    }
-                }
-                else if (req.CurrentStatus == "Under Review" || req.CurrentStatus == "UNDER_REVIEW")
-                {
-                    var verification = await _dbContext.DocumentVerifications
-                        .FirstOrDefaultAsync(v => v.RequestId == req.RequestId);
-                    if (verification != null)
+                    else
                     {
                         verification.AssignedGNOfficerNIC = newGnOfficerNic;
                         verification.UpdatedDate = GetSriLankanTime();

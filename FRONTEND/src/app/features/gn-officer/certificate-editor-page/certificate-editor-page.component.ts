@@ -62,8 +62,11 @@ export class CertificateEditorPageComponent implements OnInit {
   dsDivisionName = '';
   districtName = '';
 
-  // Family Card Category ID 1 variables
+  // Family Card Category ID 1 & 2 variables
   categoryId = 0;
+  get isFamilyCardCategory(): boolean {
+    return this.categoryId >= 1 && this.categoryId <= 6;
+  }
   familyCardNumber = '';
   headOfHouseholdName = '';
   headOfHouseholdNic = '';
@@ -285,7 +288,7 @@ export class CertificateEditorPageComponent implements OnInit {
     html = html.replace(/{{CertificateBody}}/gi, this.escapeHtml(this.editableValues.certificateBody || ''));
     html = html.replace(/<!-- Certificate content will be generated here -->/gi, this.escapeHtml(this.editableValues.certificateBody || ''));
 
-    if (this.categoryId === 1) {
+    if (this.isFamilyCardCategory) {
       html = html.replace(/{{FamilyCardNumber}}/gi, this.escapeHtml(this.familyCardNumber));
       html = html.replace(/{{HeadOfHouseholdName}}/gi, this.escapeHtml(this.headOfHouseholdName));
       html = html.replace(/{{HeadOfHouseholdNic}}/gi, this.escapeHtml(this.headOfHouseholdNic));
