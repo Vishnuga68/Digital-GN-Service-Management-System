@@ -37,7 +37,7 @@ namespace EGN_Service_Management.Entity
         public DateTime LastUpdated { get; set; }
 
         [MaxLength(20)]
-        public string AssignedGnOfficerNic { get; set; }
+        public string? AssignedGnOfficerNic { get; set; }
 
         [MaxLength(100)]
         public string? GnDivision { get; set; }

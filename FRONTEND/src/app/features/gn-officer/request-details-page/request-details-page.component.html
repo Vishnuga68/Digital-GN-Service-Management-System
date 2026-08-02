@@ -41,17 +41,35 @@
       <div class="header-right">
         <span class="status-badge" [ngClass]="{
           'status-pending': requestDetails.status === 'Pending' || requestDetails.status === 'Submitted',
-          'status-in-progress': requestDetails.status === 'In Progress' || requestDetails.status === 'Under Review' || requestDetails.status === 'Changes Requested' || requestDetails.status === 'Resubmitted',
+          'status-in-progress': requestDetails.status === 'In Progress' || requestDetails.status === 'Under Review' || requestDetails.status === 'Changes Requested' || requestDetails.status === 'Resubmitted' || requestDetails.status === 'Returned',
           'status-verified': requestDetails.status === 'Verified',
           'status-approved': requestDetails.status === 'Approved' || requestDetails.status === 'Accepted',
-          'status-rejected': requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked'
-        }">{{ requestDetails.status }}</span>
+          'status-rejected': requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked',
+          'status-forwarded': requestDetails.status === 'ForwardedToDestinationGn'
+        }">{{ requestDetails.status === 'ForwardedToDestinationGn' ? 'To Destination GN' : requestDetails.status }}</span>
       </div>
     </header>
 
     <div class="grid-layout">
       <!-- Main Content Column -->
       <div class="main-column">
+        <!-- Forwarded info banner -->
+        <div *ngIf="requestDetails.status === 'ForwardedToDestinationGn'" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px;">
+          <ng-container *ngIf="isStage2()">
+            <div style="display: flex; align-items: center; gap: 8px; color: #1e40af; font-weight: 600; font-size: 0.95rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Forwarded Request
+            </div>
+            <p style="margin: 0; color: #1e3a8a; font-size: 0.9rem; line-height: 1.5;">This request was reviewed and forwarded by the previous GN Officer. You are the destination GN Officer responsible for reviewing and making the final decision.</p>
+          </ng-container>
+          <ng-container *ngIf="!isStage2()">
+            <div style="display: flex; align-items: center; gap: 8px; color: #1e40af; font-weight: 600; font-size: 0.95rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+              Request Forwarded
+            </div>
+            <p style="margin: 0; color: #1e3a8a; font-size: 0.9rem; line-height: 1.5;">This request has been forwarded to the destination GN Officer. The destination GN Officer will complete the final review and decision.</p>
+          </ng-container>
+        </div>
         
         <!-- Progress Timeline Section (NOW IN MAIN COLUMN) -->
         <div class="section-container">
@@ -123,7 +141,7 @@
               </div>
               <div class="info-group">
                 <label>Current Status</label>
-                <p>{{ requestDetails.status }}</p>
+                <p>{{ requestDetails.status === 'ForwardedToDestinationGn' ? 'Forwarded to GN' : requestDetails.status }}</p>
               </div>
               <div class="info-group">
                 <label>GN Division</label>
@@ -421,30 +439,49 @@
                 
                 <!-- Document Request Workflow Buttons -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;" *ngIf="isDocumentRequest">
-                   <button class="btn btn-update" (click)="promptStartReview()" 
-                           *ngIf="showStartReviewButton"
-                           [disabled]="isProcessing || isNotAssignedToMe()"
-                           style="width: 100%; grid-column: span 2; margin-top: 0;">
-                      Start Review
-                   </button>
-                   <button class="btn btn-update" (click)="rejectVerificationRequest()" 
-                           *ngIf="showRejectButton"
-                           [disabled]="isProcessing || isNotAssignedToMe()"
-                           style="width: 100%; background-color: #dc2626; border-color: #dc2626; margin-top: 0; color: white;">
-                     Reject
-                   </button>
-                   <button class="btn btn-update" (click)="navigateToCertificateEditor()" 
-                           *ngIf="showGenerateCertificateButton"
-                           [disabled]="isProcessing || isNotAssignedToMe()"
-                           style="width: 100%; background-color: #10b981; border-color: #10b981; color: white; margin-top: 0;">
-                     Accept
-                   </button>
-                   <button class="btn btn-update" (click)="releaseCertificate()" 
-                           *ngIf="showReleaseCertificateButton"
-                           [disabled]="isProcessing || isNotAssignedToMe()"
-                           style="width: 100%; grid-column: span 2; background-color: #10b981; border-color: #10b981; color: white; margin-top: 8px;">
-                       {{ (requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6) ? 'Release Family Card' : 'Release Certificate' }}
-                   </button>
+                    <button class="btn btn-update" (click)="promptStartReview()" 
+                            *ngIf="showStartReviewButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; grid-column: span 2; margin-top: 0;">
+                       Start Review
+                    </button>
+                    <button class="btn btn-update" (click)="rejectVerificationRequest()" 
+                            *ngIf="showRejectButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; background-color: #dc2626; border-color: #dc2626; margin-top: 0; color: white;">
+                      Reject
+                    </button>
+                    <button class="btn btn-update" (click)="verifyRequest()" 
+                            *ngIf="showVerifyButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            [style.grid-column]="(requestDetails.categoryId === 5 || requestDetails.categoryId === 42) ? 'span 2' : ''"
+                            style="width: 100%; background-color: #10b981; border-color: #10b981; color: white; margin-top: 0;">
+                      Verify
+                    </button>
+                    <button class="btn btn-update" (click)="forwardRequest()" 
+                            *ngIf="showForwardButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; background-color: #3b82f6; border-color: #3b82f6; color: white; margin-top: 0;">
+                      Forward to Destination GN Officer
+                    </button>
+                    <button class="btn btn-update" (click)="requestDetails.categoryId === 42 ? promptReleaseConfirm() : navigateToCertificateEditor()" 
+                            *ngIf="showAcceptButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; background-color: #10b981; border-color: #10b981; color: white; margin-top: 0;">
+                      Accept
+                    </button>
+                    <button class="btn btn-update" (click)="navigateToCertificateEditor()" 
+                            *ngIf="showGenerateCertificateButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; background-color: #10b981; border-color: #10b981; color: white; margin-top: 0;">
+                      Accept
+                    </button>
+                    <button class="btn btn-update" (click)="releaseCertificate()" 
+                            *ngIf="showReleaseCertificateButton"
+                            [disabled]="isProcessing || isNotAssignedToMe()"
+                            style="width: 100%; grid-column: span 2; background-color: #10b981; border-color: #10b981; color: white; margin-top: 8px;">
+                        {{ (requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6 || requestDetails.categoryId === 42) ? 'Release Family Card' : 'Release Certificate' }}
+                    </button>
                 </div>
 
                 <!-- Document Verification Workflow Buttons -->
@@ -555,11 +592,11 @@
                         </div>
                      </div>
                      <div style="display: flex; align-items: center; gap: 8px;">
-                       <span *ngIf="remark.status" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
-                             [style.background]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#f0fdf4' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#fdf2f2' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#f1f5f9' : '#eff6ff'"
-                             [style.color]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#16a34a' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#de3535' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#0f172a' : '#1d4ed8'">
-                         {{ remark.status }}
-                       </span>
+                        <span *ngIf="remark.status" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
+                              [style.background]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#f0fdf4' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#fdf2f2' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#f1f5f9' : (remark.status === 'ForwardedToDestinationGn' || remark.status === 'Forwarded to GN' || remark.status === 'To Destination GN') ? '#faf5ff' : '#eff6ff'"
+                              [style.color]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#16a34a' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#de3535' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#0f172a' : (remark.status === 'ForwardedToDestinationGn' || remark.status === 'Forwarded to GN' || remark.status === 'To Destination GN') ? '#7e22ce' : '#1d4ed8'">
+                          {{ (remark.status === 'ForwardedToDestinationGn' || remark.status === 'Forwarded to GN') ? 'To Destination GN' : remark.status }}
+                        </span>
                        <span class="date">{{ remark.date | date:'MMM d, h:mm a' }}</span>
                        <button *ngIf="isFirst && canEditRemarks()" 
                                (click)="startEditRemark(remark)" 
@@ -699,12 +736,25 @@
   <div class="custom-modal-backdrop" *ngIf="showReleaseConfirmModal">
     <div class="custom-modal-content">
       <div class="custom-modal-header">
-        <h3>Confirm Release</h3>
+        <h3 *ngIf="requestDetails.categoryId !== 42">Confirm Release</h3>
+        <h3 *ngIf="requestDetails.categoryId === 42">Confirm Family Division Transfer</h3>
       </div>
       <div class="custom-modal-body">
-        <p *ngIf="requestDetails.categoryId < 1 || requestDetails.categoryId > 6">Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
-        <p *ngIf="requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6">Are you sure you want to release the updated Family Card to the citizen? This will publish the final signed Family Card and mark the request as Accepted.</p>
-        <p class="modal-subtext">Do you want to continue?</p>
+        <p *ngIf="(requestDetails.categoryId < 1 || requestDetails.categoryId > 6) && requestDetails.categoryId !== 42">Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
+        <p *ngIf="requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6 && requestDetails.categoryId !== 42">Are you sure you want to release the updated Family Card to the citizen? This will publish the final signed Family Card and mark the request as Accepted.</p>
+        
+        <div *ngIf="requestDetails.categoryId === 42" style="text-align: left; margin-bottom: 16px;">
+          <p style="font-weight: 600; margin-bottom: 8px;">By accepting this request:</p>
+          <ul style="padding-left: 20px; margin: 0 0 16px 0; list-style-type: disc; line-height: 1.5; color: #475569;">
+            <li>All selected family members will be moved to your GN Division.</li>
+            <li>Their GN Division records will be updated.</li>
+            <li>Their family card and related records may be updated.</li>
+            <li>The request cannot be handled again by the previous GN Officer after completion.</li>
+          </ul>
+          <p style="font-weight: 500; margin-top: 12px;">Are you sure you want to approve this family transfer?</p>
+        </div>
+        
+        <p class="modal-subtext" *ngIf="requestDetails.categoryId !== 42">Do you want to continue?</p>
       </div>
       <div class="custom-modal-footer">
         <button class="btn btn-secondary" (click)="showReleaseConfirmModal = false">Cancel</button>

@@ -271,25 +271,25 @@ export class ServiceFormPageComponent implements OnInit {
              }
 
               const displayField = f.parsedValidationRules.displayField || 'fullName';
-              const valueField = 'nic'; // Force NIC as value
               const isMembersToMove = f.fieldName === 'familyMembersToMove' || f.parsedValidationRules?.dataSource === 'CurrentFamilyCardMembers';
 
-              f.parsedOptions = members.map(m => {
-                  let label = m[displayField] || m[displayField.charAt(0).toUpperCase() + displayField.slice(1)];
-                  if (displayField === 'fullName-nic') {
-                      label = (m.fullName || m.FullName) + ' - ' + (m.nic || m.Nic);
-                  }
-                  if (isMembersToMove) {
-                      const name = m.fullName || m.FullName;
-                      const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
-                      const rel = m.relationshipToHead || m.RelationshipToHead || 'Member';
-                      label = `${name} - ${nic} (${rel})`;
-                  }
-                  return {
-                      label: label,
-                      value: m[valueField] || m[valueField.charAt(0).toUpperCase() + valueField.slice(1)]
-                  };
-              });
+               f.parsedOptions = members.map(m => {
+                   let label = m[displayField] || m[displayField.charAt(0).toUpperCase() + displayField.slice(1)];
+                   if (displayField === 'fullName-nic') {
+                       label = (m.fullName || m.FullName) + ' - ' + (m.nic || m.Nic);
+                   }
+                   if (isMembersToMove) {
+                       const name = m.fullName || m.FullName;
+                       const nic = m.nic || m.Nic || m.nicNumber || m.NicNumber;
+                       const rel = m.relationshipToHead || m.RelationshipToHead || 'Member';
+                       label = `${name} - ${nic} (${rel})`;
+                   }
+                   const rawNic = m.nic || m.Nic || m.nicNumber || m.NicNumber || '';
+                   return {
+                       label: label,
+                       value: rawNic
+                   };
+               });
            } else if (f.parsedValidationRules?.dataSource && f.parsedValidationRules.dataSource !== 'FamilyMembers' && f.parsedValidationRules.dataSource !== 'CurrentFamilyCardMembers') {
               // It's an external API dropdown. If it has no dependsOn, load it immediately.
               if (!f.parsedValidationRules.dependsOn) {
@@ -1199,6 +1199,74 @@ export class ServiceFormPageComponent implements OnInit {
       }
     }
     control?.patchValue(currentValue);
+  }
+
+  openDropdowns: { [fieldName: string]: boolean } = {};
+
+  toggleDropdownOpen(fieldName: string) {
+    this.openDropdowns[fieldName] = !this.openDropdowns[fieldName];
+  }
+
+  isDropdownOpen(fieldName: string): boolean {
+    return !!this.openDropdowns[fieldName];
+  }
+
+  getSelectedNicsArray(fieldName: string): string[] {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    const val = dynamicGroup.get(fieldName)?.value;
+    if (Array.isArray(val)) {
+      return val;
+    }
+    if (typeof val === 'string' && val) {
+      return [val];
+    }
+    return [];
+  }
+
+  getOptionLabel(field: any, value: string): string {
+    const option = field.parsedOptions?.find((o: any) => o.value === value);
+    if (option) {
+      if (option.label.includes(' - ')) {
+        return option.label.split(' - ')[0];
+      }
+      return option.label;
+    }
+    return value;
+  }
+
+  isMultiSelectOptionChecked(fieldName: string, value: string): boolean {
+    const selected = this.getSelectedNicsArray(fieldName);
+    return selected.includes(value);
+  }
+
+  toggleMultiSelectOption(fieldName: string, value: string) {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    const control = dynamicGroup.get(fieldName);
+    const selected = this.getSelectedNicsArray(fieldName);
+    const index = selected.indexOf(value);
+    
+    if (index >= 0) {
+      selected.splice(index, 1);
+    } else {
+      selected.push(value);
+    }
+    
+    control?.setValue([...selected]);
+    control?.markAsTouched();
+    control?.updateValueAndValidity();
+  }
+
+  removeSelectedTag(fieldName: string, val: string) {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    const control = dynamicGroup.get(fieldName);
+    const selected = this.getSelectedNicsArray(fieldName);
+    const index = selected.indexOf(val);
+    if (index >= 0) {
+      selected.splice(index, 1);
+      control?.setValue([...selected]);
+      control?.markAsTouched();
+      control?.updateValueAndValidity();
+    }
   }
 
   removeFile(index: number) {

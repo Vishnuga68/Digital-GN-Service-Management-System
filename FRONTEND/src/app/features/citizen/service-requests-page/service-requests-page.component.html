@@ -141,8 +141,9 @@
                 'status-in-progress': req.status === 'In Progress' || req.status === 'Under Review' || req.status === 'Changes Requested',
                 'status-verified': req.status === 'Verified',
                 'status-approved': req.status === 'Approved' || req.status === 'Accepted',
-                'status-rejected': req.status === 'Rejected' || req.status === 'Revoked'
-              }">{{ req.status }}</span>
+                'status-rejected': req.status === 'Rejected' || req.status === 'Revoked',
+                'status-forwarded': req.status === 'ForwardedToDestinationGn'
+              }">{{ req.status === 'ForwardedToDestinationGn' ? 'To Destination GN' : req.status }}</span>
             </td>
             <td class="date-col">{{ req.submittedDate | date:'MMM d, y, h:mm a' }}</td>
             <td class="date-col">{{ req.lastUpdated | date:'MMM d, y, h:mm a' }}</td>

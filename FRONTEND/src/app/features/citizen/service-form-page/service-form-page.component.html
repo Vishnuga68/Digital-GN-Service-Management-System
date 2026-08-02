@@ -136,11 +136,39 @@
                           <!-- Date Input -->
                           <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                           
-                          <!-- Dropdown -->
-                          <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" [multiple]="field.parsedValidationRules?.multiple">
-                            <option value="" selected *ngIf="!field.parsedValidationRules?.multiple">Select {{ field.fieldLabel }}</option>
-                            <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
-                          </select>
+                           <ng-container *ngSwitchCase="'dropdown'">
+                             <ng-container *ngIf="!field.parsedValidationRules?.multiple; else multiSelectTemplate">
+                               <select [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                                 <option value="" selected>Select {{ field.fieldLabel }}</option>
+                                 <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
+                               </select>
+                             </ng-container>
+                             <ng-template #multiSelectTemplate>
+                               <div class="custom-multiselect-container" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                                 <div class="selected-tags-display" (click)="toggleDropdownOpen(field.fieldName)">
+                                   <div class="multiselect-tags-list">
+                                     <span *ngFor="let selectedVal of getSelectedNicsArray(field.fieldName)" class="multiselect-tag">
+                                       {{ getOptionLabel(field, selectedVal) }}
+                                       <button type="button" class="btn-remove-tag" (click)="removeSelectedTag(field.fieldName, selectedVal); $event.stopPropagation();">&times;</button>
+                                     </span>
+                                     <span class="multiselect-placeholder" *ngIf="getSelectedNicsArray(field.fieldName).length === 0">
+                                       Select {{ field.fieldLabel }}
+                                     </span>
+                                   </div>
+                                   <span class="dropdown-chevron">▼</span>
+                                 </div>
+                                 <div class="multiselect-dropdown-menu" *ngIf="isDropdownOpen(field.fieldName)">
+                                   <div class="multiselect-option-item" *ngFor="let opt of field.parsedOptions" (click)="toggleMultiSelectOption(field.fieldName, opt.value); $event.stopPropagation();">
+                                     <input type="checkbox" [checked]="isMultiSelectOptionChecked(field.fieldName, opt.value)" (click)="$event.stopPropagation();" (change)="toggleMultiSelectOption(field.fieldName, opt.value);">
+                                     <span class="option-text">{{ opt.label }}</span>
+                                   </div>
+                                   <div class="no-options-text" *ngIf="!field.parsedOptions || field.parsedOptions.length === 0">
+                                     No members available
+                                   </div>
+                                 </div>
+                               </div>
+                             </ng-template>
+                           </ng-container>
                           
                           <!-- Radio Buttons -->
                           <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
@@ -238,10 +266,39 @@
                       <input *ngSwitchCase="'date'" type="date" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                       
                       <!-- Dropdown -->
-                      <select *ngSwitchCase="'dropdown'" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid" [multiple]="field.parsedValidationRules?.multiple">
-                        <option value="" selected *ngIf="!field.parsedValidationRules?.multiple">Select {{ field.fieldLabel }}</option>
-                        <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
-                      </select>
+                      <ng-container *ngSwitchCase="'dropdown'">
+                        <ng-container *ngIf="!field.parsedValidationRules?.multiple; else multiSelectTemplate2">
+                          <select [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                            <option value="" selected>Select {{ field.fieldLabel }}</option>
+                            <option *ngFor="let opt of field.parsedOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </ng-container>
+                        <ng-template #multiSelectTemplate2>
+                          <div class="custom-multiselect-container" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
+                            <div class="selected-tags-display" (click)="toggleDropdownOpen(field.fieldName)">
+                              <div class="multiselect-tags-list">
+                                <span *ngFor="let selectedVal of getSelectedNicsArray(field.fieldName)" class="multiselect-tag">
+                                  {{ getOptionLabel(field, selectedVal) }}
+                                  <button type="button" class="btn-remove-tag" (click)="removeSelectedTag(field.fieldName, selectedVal); $event.stopPropagation();">&times;</button>
+                                </span>
+                                <span class="multiselect-placeholder" *ngIf="getSelectedNicsArray(field.fieldName).length === 0">
+                                  Select {{ field.fieldLabel }}
+                                </span>
+                              </div>
+                              <span class="dropdown-chevron">▼</span>
+                            </div>
+                            <div class="multiselect-dropdown-menu" *ngIf="isDropdownOpen(field.fieldName)">
+                              <div class="multiselect-option-item" *ngFor="let opt of field.parsedOptions" (click)="toggleMultiSelectOption(field.fieldName, opt.value); $event.stopPropagation();">
+                                <input type="checkbox" [checked]="isMultiSelectOptionChecked(field.fieldName, opt.value)" (click)="$event.stopPropagation();" (change)="toggleMultiSelectOption(field.fieldName, opt.value);">
+                                <span class="option-text">{{ opt.label }}</span>
+                              </div>
+                              <div class="no-options-text" *ngIf="!field.parsedOptions || field.parsedOptions.length === 0">
+                                No members available
+                              </div>
+                            </div>
+                          </div>
+                        </ng-template>
+                      </ng-container>
                       
                       <!-- Radio Buttons -->
                       <div *ngSwitchCase="'radio'" class="radio-group-modern" style="grid-column: 1 / -1;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">

@@ -56,5 +56,6 @@ export const routes: Routes = [
       { path: 'transfers', loadComponent: () => import('./features/ds-officer/gn-transfers-page/gn-transfers-page.component').then(m => m.GnTransfersPageComponent) }
     ]
   },
-  { path: 'verify-document/:token', loadComponent: () => import('./features/public/verify-document-page/verify-document-page.component').then(m => m.VerifyDocumentPageComponent) }
+  { path: 'verify-document/:token', loadComponent: () => import('./features/public/verify-document-page/verify-document-page.component').then(m => m.VerifyDocumentPageComponent) },
+  { path: 'document-verification/:token', loadComponent: () => import('./features/public/verify-document-page/verify-document-page.component').then(m => m.VerifyDocumentPageComponent) }
 ];

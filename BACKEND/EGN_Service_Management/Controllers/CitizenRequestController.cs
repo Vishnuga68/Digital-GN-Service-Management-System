@@ -365,11 +365,11 @@ namespace EGN_Service_Management.Controllers
                 // Determine current step index (1 to 4)
                 int currentStep = 1;
                 var currentStatusUpper = request.CurrentStatus.ToUpper();
-                if (currentStatusUpper == "UNDER_REVIEW" || currentStatusUpper == "IN PROGRESS" || currentStatusUpper == "IN_PROGRESS" || currentStatusUpper == "CHANGES_REQUESTED" || currentStatusUpper == "RESUBMITTED")
+                if (currentStatusUpper == "UNDER_REVIEW" || currentStatusUpper == "IN PROGRESS" || currentStatusUpper == "IN_PROGRESS" || currentStatusUpper == "CHANGES_REQUESTED" || currentStatusUpper == "RESUBMITTED" || currentStatusUpper == "RETURNED")
                 {
                     currentStep = 2;
                 }
-                else if (currentStatusUpper == "VERIFIED")
+                else if (currentStatusUpper == "VERIFIED" || currentStatusUpper == "FORWARDEDTODESTINATIONGN")
                 {
                     currentStep = 3;
                 }
@@ -516,13 +516,15 @@ namespace EGN_Service_Management.Controllers
                     RejectedDate = request.RejectedDate?.ToString("yyyy-MM-ddTHH:mm:ss"),
                     AssignedOfficerNic = request.AssignedGnOfficerNic ?? "",
                     GnDivision = request.GnDivision ?? "Unknown",
+                    DestinationGnDivision = request.DynamicData != null ? SafeGetJsonProperty(request.DynamicData.JsonData, "newGnDivision") : null,
                     AssignedOfficerName = request.AssignedOfficer?.FullName ?? "Unassigned",
                     Applicant = request.Citizen != null ? new EGN_Service_Management.DTO.RequestDTO.ApplicantDTO
                     {
                         FullName = request.Citizen.FullName ?? "Unknown",
                         Nic = request.CitizenNic ?? "Unknown",
-                        Address = request.Citizen.FamilyCard?.Address ?? "Unknown Address"
-                    } : new EGN_Service_Management.DTO.RequestDTO.ApplicantDTO { FullName = "", Nic = "", Address = "" },
+                        Address = request.Citizen.FamilyCard?.Address ?? "Unknown Address",
+                        GnDivisionId = request.Citizen.GnDivisionId
+                    } : new EGN_Service_Management.DTO.RequestDTO.ApplicantDTO { FullName = "", Nic = "", Address = "", GnDivisionId = null },
                     Attachments = sourceAttachments?.Select(a => new EGN_Service_Management.DTO.RequestDTO.AttachmentDTO
                     {
                         AttachmentId = a.AttachmentId,
@@ -876,6 +878,64 @@ namespace EGN_Service_Management.Controllers
             return Ok(new { success = true, message = "Changes requested successfully" });
         }
 
+        [HttpPost("verification/{requestNumber}/forward")]
+        [Authorize(Roles = "GNOfficer")]
+        public async Task<IActionResult> ForwardRequest(string requestNumber, [FromBody] UpdateStatusRequestDto? dto)
+        {
+            var gnNic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(gnNic)) return Unauthorized();
+
+            var request = await _context.UnifiedRequests
+                .FirstOrDefaultAsync(r => r.RequestNumber == requestNumber);
+            if (request == null) return NotFound("Request not found.");
+            if (request.AssignedGnOfficerNic != gnNic) return Forbid();
+
+            // Find destination GN Division from JSON data
+            var reqData = await _context.RequestDataEntries
+                .FirstOrDefaultAsync(rd => rd.RequestId == request.RequestId);
+            if (reqData == null || string.IsNullOrEmpty(reqData.JsonData))
+            {
+                return BadRequest(new { message = "Request data is missing." });
+            }
+
+            string destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+            if (string.IsNullOrEmpty(destGnDivisionId))
+            {
+                return BadRequest(new { message = "Destination GN division is not set in the form data." });
+            }
+
+            var destGnOfficer = await _context.GnOfficers
+                .FirstOrDefaultAsync(o => o.GnDivisionId == destGnDivisionId);
+            if (destGnOfficer == null)
+            {
+                return BadRequest(new { message = "No GN Officer is assigned to the selected destination GN Division." });
+            }
+
+            // Update AssignedGnOfficerNic and GnDivision
+            request.GnDivision = destGnDivisionId;
+            request.AssignedGnOfficerNic = destGnOfficer.Nic;
+            request.CurrentStatus = "ForwardedToDestinationGn";
+            request.LastUpdated = GetSriLankanTime();
+            _context.UnifiedRequests.Update(request);
+
+            // Update DocumentVerification status if exists
+            var verification = await _context.DocumentVerifications
+                .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
+            if (verification != null)
+            {
+                verification.AssignedGNOfficerNIC = destGnOfficer.Nic;
+                verification.VerificationStatus = "FORWARDED";
+                verification.VerificationRemarks = dto?.Remarks ?? "Request forwarded to destination GN Officer.";
+                verification.UpdatedDate = GetSriLankanTime();
+                _context.DocumentVerifications.Update(verification);
+            }
+
+            AddStatusHistory(request.RequestId, "ForwardedToDestinationGn", dto?.Remarks ?? "Request forwarded to destination GN Officer.", gnNic);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { success = true, message = "Request successfully forwarded to destination GN Officer." });
+        }
+
         [HttpPost("verification/{requestNumber}/reject")]
         [Authorize(Roles = "GNOfficer")]
         public async Task<IActionResult> RejectRequest(string requestNumber, [FromBody] VerificationRemarkRequest remarkReq)
@@ -889,6 +949,7 @@ namespace EGN_Service_Management.Controllers
             }
 
             var request = await _context.UnifiedRequests
+                .Include(r => r.Citizen)
                 .FirstOrDefaultAsync(r => r.RequestNumber == requestNumber);
 
             if (request == null) return NotFound();
@@ -896,6 +957,41 @@ namespace EGN_Service_Management.Controllers
 
             var verification = await _context.DocumentVerifications
                 .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
+
+            bool isCrossGn = (request.CategoryId == 5 || request.CategoryId == 42) &&
+                             request.Citizen != null &&
+                             !string.IsNullOrEmpty(request.Citizen.GnDivisionId) &&
+                             !string.IsNullOrEmpty(request.GnDivision) &&
+                             request.Citizen.GnDivisionId != request.GnDivision;
+
+            if (isCrossGn && request.CurrentStatus == "ForwardedToDestinationGn")
+            {
+                var prevGnOfficer = await _context.GnOfficers
+                    .FirstOrDefaultAsync(o => o.GnDivisionId == request.Citizen.GnDivisionId);
+                if (prevGnOfficer == null)
+                {
+                    return BadRequest(new { message = "Applicant's previous GN Officer not found." });
+                }
+
+                request.AssignedGnOfficerNic = prevGnOfficer.Nic;
+                request.CurrentStatus = "Returned";
+                request.LastUpdated = GetSriLankanTime();
+                _context.UnifiedRequests.Update(request);
+
+                if (verification != null)
+                {
+                    verification.AssignedGNOfficerNIC = prevGnOfficer.Nic;
+                    verification.VerificationStatus = "RETURNED";
+                    verification.VerificationRemarks = remarkReq.Remarks;
+                    verification.UpdatedDate = GetSriLankanTime();
+                    _context.DocumentVerifications.Update(verification);
+                }
+
+                AddStatusHistory(request.RequestId, "Returned", remarkReq.Remarks, gnNic);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Request rejected and returned to the previous GN Officer." });
+            }
 
             request.CurrentStatus = "Rejected";
             request.RejectedDate = GetSriLankanTime();
@@ -1500,6 +1596,23 @@ namespace EGN_Service_Management.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> PublicVerifyDocument(string token)
         {
+            if (token == "mock-revoked-token")
+            {
+                return Ok(new
+                {
+                    status = "revoked",
+                    requestNumber = "REQ-MOCK-REVOKED",
+                    documentType = "Residence Certificate",
+                    citizenName = "Jane Doe",
+                    maskedNic = "951****67V",
+                    verifiedDate = DateTime.UtcNow.AddDays(-10),
+                    gnOfficerName = "Grama Niladhari Kamal",
+                    gnDivision = "Colombo West",
+                    revocationReason = "Citizen reported certificate lost, new copy issued.",
+                    revokedDate = DateTime.UtcNow
+                });
+            }
+
             // Apply lightweight rate limiting by IP
             var clientIp = Request.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
             var now = DateTime.UtcNow;
@@ -1524,6 +1637,8 @@ namespace EGN_Service_Management.Controllers
                 .Include(v => v.Request)
                     .ThenInclude(r => r.Citizen)
                         .ThenInclude(c => c.GnDivision)
+                .Include(v => v.Request)
+                    .ThenInclude(r => r.Category)
                 .Include(v => v.MainAttachment)
                 .Include(v => v.FinalVerifiedAttachment)
                 .Include(v => v.AssignedOfficer)
@@ -1531,13 +1646,13 @@ namespace EGN_Service_Management.Controllers
 
             if (verification == null)
             {
-                return Ok(new { isValid = false, message = "Document verification record not found." });
+                return Ok(new { status = "invalid" });
             }
 
             var request = verification.Request;
             if (request == null)
             {
-                return Ok(new { isValid = false, message = "Request associated with verification not found." });
+                return Ok(new { status = "invalid" });
             }
 
             // Get GN division name
@@ -1545,33 +1660,60 @@ namespace EGN_Service_Management.Controllers
                                ?? verification.Request?.GnDivision 
                                ?? "Unknown";
 
-            var attachment = verification.FinalVerifiedAttachment;
-            var attachmentExists = attachment != null;
-            var attachmentActive = attachment != null && attachment.IsActive;
-            var attachmentNotSuperseded = attachment != null && attachment.DocumentRole != "SUPERSEDED_CERTIFICATE";
-            var isRevoked = verification.VerificationStatus == "REVOKED";
+            // Status checks:
+            // Published/final status: document is valid.
+            // Revoked status: document is revoked and show RevocationReason and RevokedDate.
+            // Any unfinished status: document is not publicly available.
+            string status;
+            if (verification.VerificationStatus == "PUBLISHED")
+            {
+                status = "valid";
+            }
+            else if (verification.VerificationStatus == "REVOKED")
+            {
+                status = "revoked";
+            }
+            else
+            {
+                status = "unavailable";
+            }
 
-            bool isValid = !isRevoked &&
-                           verification.VerificationStatus == "PUBLISHED" &&
-                           (request.CurrentStatus == "Accepted" || request.CurrentStatus == "Approved") &&
-                           attachmentExists &&
-                           attachmentActive &&
-                           attachmentNotSuperseded;
+            // Mask citizen NIC: keep first 3 and last 3, replace middle with asterisks
+            string citizenNic = request.CitizenNic ?? string.Empty;
+            string maskedNic = string.Empty;
+            if (!string.IsNullOrEmpty(citizenNic))
+            {
+                if (citizenNic.Length <= 6)
+                {
+                    maskedNic = new string('*', citizenNic.Length);
+                }
+                else
+                {
+                    maskedNic = $"{citizenNic.Substring(0, 3)}{new string('*', citizenNic.Length - 6)}{citizenNic.Substring(citizenNic.Length - 3)}";
+                }
+            }
+
+            // GN officer name
+            string officerName = verification.AssignedOfficer?.FullName 
+                                 ?? request.AssignedOfficer?.FullName 
+                                 ?? "Unknown Grama Niladhari";
+
+            // Document category
+            string documentType = request.Category?.CategoryName ?? "Official Certificate";
 
             return Ok(new
             {
-                isValid = isValid,
-                isRevoked = isRevoked,
-                revocationReason = verification.RevocationReason,
-                revokedDate = verification.RevokedDate,
+                status = status,
                 requestNumber = request.RequestNumber,
-                documentName = verification.MainAttachment?.FileName ?? "Document",
+                documentType = documentType,
+                citizenName = request.Citizen?.FullName ?? "Unknown Citizen",
+                maskedNic = maskedNic,
                 verifiedDate = verification.VerifiedDate,
+                gnOfficerName = officerName,
                 gnDivision = divisionName,
-                issuingAuthority = "Grama Niladhari Office",
-                officerName = verification.AssignedOfficer != null ? $"Grama Niladhari {verification.AssignedOfficer.FullName}" : "Grama Niladhari Officer",
-                fileHash = verification.FinalFileHash,
-                downloadUrl = isValid ? verification.FinalVerifiedAttachment?.FileUrl : null
+                revocationReason = status == "revoked" ? verification.RevocationReason : null,
+                revokedDate = status == "revoked" ? verification.RevokedDate : null,
+                downloadUrl = status == "valid" ? verification.FinalVerifiedAttachment?.FileUrl : null
             });
         }
 
@@ -1665,8 +1807,19 @@ namespace EGN_Service_Management.Controllers
                 var docVerification = await _context.DocumentVerifications
                     .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
 
-                var verificationToken = docVerification?.VerificationTokenHash ?? Guid.NewGuid().ToString("N");
-                var verificationUrl = docVerification?.VerificationUrl ?? $"http://localhost:4200/verify-document/{verificationToken}";
+                string verificationUrl = docVerification?.VerificationUrl ?? string.Empty;
+                if (string.IsNullOrEmpty(verificationUrl))
+                {
+                    var verificationToken = Guid.NewGuid().ToString("N");
+                    verificationUrl = $"http://localhost:4200/verify-document/{verificationToken}";
+                    if (docVerification != null)
+                    {
+                        docVerification.VerificationTokenHash = HashToken(verificationToken);
+                        docVerification.VerificationUrl = verificationUrl;
+                        _context.DocumentVerifications.Update(docVerification);
+                        await _context.SaveChangesAsync();
+                    }
+                }
 
                 var officerNic = docVerification?.AssignedGNOfficerNIC ?? request.AssignedGnOfficerNic;
                 if (string.IsNullOrEmpty(officerNic)) return;
@@ -1899,6 +2052,20 @@ namespace EGN_Service_Management.Controllers
                 request.RejectedDate = GetSriLankanTime();
             }
 
+            if (string.Equals(dto.Status, "Verified", StringComparison.OrdinalIgnoreCase))
+            {
+                var verification = await _context.DocumentVerifications
+                    .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
+                if (verification != null)
+                {
+                    verification.VerificationStatus = "VERIFIED";
+                    verification.VerificationRemarks = dto.Remarks ?? "Request verified.";
+                    verification.VerifiedDate = GetSriLankanTime();
+                    verification.UpdatedDate = GetSriLankanTime();
+                    _context.DocumentVerifications.Update(verification);
+                }
+            }
+
             var latestHistory = await _context.RequestStatusHistories
                 .Where(h => h.RequestId == request.RequestId)
                 .OrderByDescending(h => h.ChangedDate)
@@ -2089,247 +2256,599 @@ namespace EGN_Service_Management.Controllers
 
             if (request.ServiceId == 1)
             {
-                var familyCardNumber = request.Citizen?.FamilyCardNumber;
-                var familyCard = await _context.FamilyCards
-                    .Include(fc => fc.HeadOfHousehold)
-                    .FirstOrDefaultAsync(fc => fc.FamilyCardNumber == familyCardNumber);
-
-                if (familyCard != null)
+                if (request.CategoryId == 5 && 
+                    request.CurrentStatus != "Accepted" && 
+                    request.CurrentStatus != "ACCEPTED")
                 {
-                    response.FamilyCardNumber = familyCard.FamilyCardNumber;
-                    response.HeadOfHouseholdName = familyCard.HeadOfHousehold?.FullName ?? "Unknown";
-                    response.HeadOfHouseholdNic = familyCard.HeadOfHouseholdNic;
-                    response.HouseNumber = familyCard.HouseNumber;
-                    response.Address = familyCard.Address;
-                    response.RegisteredDate = familyCard.RegisteredDate.ToString("yyyy-MM-dd");
-                    response.FamilyCardStatus = familyCard.Status;
-
-                    // Category 4: Change Family Head
-                    if (request.CategoryId == 4 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                    string requestType = SafeGetJsonProperty(json, "requestType");
+                    if (string.IsNullOrEmpty(requestType))
                     {
-                        string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
-                        if (string.IsNullOrEmpty(newHeadNic))
-                        {
-                            newHeadNic = SafeGetJsonProperty(reqData.JsonData, "nic");
-                        }
-                        if (!string.IsNullOrEmpty(newHeadNic))
-                        {
-                            var newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == newHeadNic);
-                            if (newHeadCit == null)
-                            {
-                                newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.FamilyCardNumber == familyCardNumber && c.FullName == newHeadNic);
-                            }
-                            if (newHeadCit != null)
-                            {
-                                response.HeadOfHouseholdName = newHeadCit.FullName;
-                                response.HeadOfHouseholdNic = newHeadCit.Nic;
-                            }
-                        }
+                        requestType = "Marriage";
                     }
 
-                    // Category 3: Removal of Deceased Family Member (if head is deceased)
-                    if (request.CategoryId == 3 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                    if (string.Equals(requestType, "Marriage", StringComparison.OrdinalIgnoreCase))
                     {
-                        string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
-                        if (!string.IsNullOrEmpty(newHeadNic))
+                        var applicant = request.Citizen;
+                        string spouseNic = SafeGetJsonProperty(json, "spouseNic");
+                        var spouse = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == spouseNic);
+
+                        if (applicant != null && spouse != null)
                         {
-                            var newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == newHeadNic);
-                            if (newHeadCit == null)
+                            string sameGnDivisionVal = SafeGetJsonProperty(json, "sameGnDivision");
+                            bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                            string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                            string destGnDivisionId;
+                            if (isSameGn)
                             {
-                                newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.FamilyCardNumber == familyCardNumber && c.FullName == newHeadNic);
+                                destGnDivisionId = applicant.GnDivisionId;
                             }
-                            if (newHeadCit != null)
+                            else
                             {
-                                response.HeadOfHouseholdName = newHeadCit.FullName;
-                                response.HeadOfHouseholdNic = newHeadCit.Nic;
-                            }
-                        }
-                    }
-
-                    var membersList = new List<FamilyMemberRowDto>();
-
-                    var head = await _context.CitizenMasters
-                        .FirstOrDefaultAsync(c => c.Nic == response.HeadOfHouseholdNic);
-                    if (head != null && head.LifeStatus == "Alive")
-                    {
-                        membersList.Add(new FamilyMemberRowDto
-                        {
-                            Nic = head.Nic,
-                            FullName = head.FullName,
-                            Relationship = "Head",
-                            Gender = head.Gender,
-                            Dob = head.Dob.ToString("yyyy-MM-dd"),
-                            Occupation = head.Occupation ?? "Not Applicable",
-                            MonthlyIncome = head.MonthlyIncome ?? 0
-                        });
-                    }
-
-                    var otherMembers = await _context.CitizenMasters
-                        .Where(c => c.FamilyCardNumber == familyCard.FamilyCardNumber && c.Nic != response.HeadOfHouseholdNic && c.LifeStatus == "Alive")
-                        .ToListAsync();
-
-                    foreach (var m in otherMembers)
-                    {
-                        membersList.Add(new FamilyMemberRowDto
-                        {
-                            Nic = m.Nic,
-                            FullName = m.FullName,
-                            Relationship = m.RelationshipToHead ?? "Member",
-                            Gender = m.Gender,
-                            Dob = m.Dob.ToString("yyyy-MM-dd"),
-                            Occupation = m.Occupation ?? "Not Applicable",
-                            MonthlyIncome = m.MonthlyIncome ?? 0
-                        });
-                    }
-
-                    if (request.CategoryId == 1)
-                    {
-                        string? childFullName = null;
-                        string? childGender = null;
-                        string? childDob = null;
-                        string? childRelationship = null;
-                        if (reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
-                        {
-                            try
-                            {
-                                using var doc = System.Text.Json.JsonDocument.Parse(reqData.JsonData);
-                                if (doc.RootElement.TryGetProperty("childFullName", out var p1)) childFullName = p1.GetString();
-                                if (doc.RootElement.TryGetProperty("gender", out var p2)) childGender = p2.GetString();
-                                if (doc.RootElement.TryGetProperty("dateOfBirth", out var p3)) childDob = p3.GetString();
-                                if (doc.RootElement.TryGetProperty("relationshipOfChild", out var p4)) childRelationship = p4.GetString();
-                            }
-                            catch {}
-                        }
-
-                        if (!string.IsNullOrEmpty(childFullName) && !string.IsNullOrEmpty(childDob))
-                        {
-                            DateOnly childDobDate = DateOnly.Parse(childDob);
-                            bool newbornAlreadyInDb = membersList.Any(m => m.FullName == childFullName && m.Dob == childDob);
-                            if (!newbornAlreadyInDb && request.CurrentStatus != "Accepted")
-                            {
-                                var prefix = $"T{childDobDate:yyyyMMdd}";
-                                var existingNics = await _context.CitizenMasters.Where(c => c.Nic.StartsWith(prefix)).Select(c => c.Nic).ToListAsync();
-                                string tempNic = "";
-                                for (int i = 901; i <= 999; i++)
+                                destGnDivisionId = SafeGetJsonProperty(json, "gnDivisionId");
+                                if (string.IsNullOrEmpty(destGnDivisionId))
                                 {
-                                    var testNic = $"{prefix}{i:D3}";
-                                    if (!existingNics.Contains(testNic)) { tempNic = testNic; break; }
+                                    destGnDivisionId = SafeGetJsonProperty(json, "newGnDivision");
                                 }
-                                if (string.IsNullOrEmpty(tempNic))
+                                if (string.IsNullOrEmpty(destGnDivisionId))
                                 {
-                                    for (int i = 1; i <= 900; i++)
+                                    destGnDivisionId = SafeGetJsonProperty(json, "gnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = request.GnDivision ?? string.Empty;
+                                }
+                            }
+
+                            // Generate unique family card number for preview
+                            var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                            if (string.IsNullOrEmpty(digits))
+                            {
+                                digits = "10";
+                            }
+                            
+                            string newFamilyCardNumber = string.Empty;
+                            int seq = 1;
+                            while (true)
+                            {
+                                string testCardNumber = $"FC-{digits}{seq:D2}";
+                                bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                              || string.Equals(testCardNumber, applicant.FamilyCardNumber, StringComparison.OrdinalIgnoreCase)
+                                              || string.Equals(testCardNumber, spouse.FamilyCardNumber, StringComparison.OrdinalIgnoreCase);
+                                
+                                if (!exists)
+                                {
+                                    newFamilyCardNumber = testCardNumber;
+                                    break;
+                                }
+                                seq++;
+                            }
+
+                            // Decide Head based on gender
+                            string newHeadOfHouseholdNic = SafeGetJsonProperty(json, "newHeadOfHousehold");
+                            CitizenMaster headCitizen;
+                            CitizenMaster nonHeadCitizen;
+                            string nonHeadRelationship = "Spouse";
+
+                            bool applicantIsMale = string.Equals(applicant.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                            bool spouseIsMale = string.Equals(spouse.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                            bool applicantIsFemale = string.Equals(applicant.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+                            bool spouseIsFemale = string.Equals(spouse.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+
+                            if (applicantIsFemale && spouseIsMale && string.Equals(newHeadOfHouseholdNic, applicant.Nic))
+                            {
+                                headCitizen = applicant;
+                                nonHeadCitizen = spouse;
+                                nonHeadRelationship = "Husband";
+                            }
+                            else if (spouseIsFemale && applicantIsMale && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                            {
+                                headCitizen = spouse;
+                                nonHeadCitizen = applicant;
+                                nonHeadRelationship = "Husband";
+                            }
+                            else if (applicantIsMale)
+                            {
+                                headCitizen = applicant;
+                                nonHeadCitizen = spouse;
+                                nonHeadRelationship = spouseIsFemale ? "Wife" : "Spouse";
+                            }
+                            else if (spouseIsMale)
+                            {
+                                headCitizen = spouse;
+                                nonHeadCitizen = applicant;
+                                nonHeadRelationship = applicantIsFemale ? "Wife" : "Spouse";
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(newHeadOfHouseholdNic) && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                                {
+                                    headCitizen = spouse;
+                                    nonHeadCitizen = applicant;
+                                }
+                                else
+                                {
+                                    headCitizen = applicant;
+                                    nonHeadCitizen = spouse;
+                                }
+                                nonHeadRelationship = "Spouse";
+                            }
+
+                            response.FamilyCardNumber = newFamilyCardNumber;
+                            response.HeadOfHouseholdName = headCitizen.FullName;
+                            response.HeadOfHouseholdNic = headCitizen.Nic;
+
+                            var newAddress = SafeGetJsonProperty(json, "newAddress");
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = SafeGetJsonProperty(json, "address");
+                            }
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = "No Address Provided";
+                            }
+
+                            var newHouseNumber = SafeGetJsonProperty(json, "houseNumber");
+                            if (string.IsNullOrEmpty(newHouseNumber))
+                            {
+                                newHouseNumber = SafeGetJsonProperty(json, "newHouseNumber");
+                            }
+
+                            response.HouseNumber = newHouseNumber;
+                            response.Address = newAddress;
+                            response.RegisteredDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                            response.FamilyCardStatus = "Active";
+
+                            var membersList = new List<FamilyMemberRowDto>
+                            {
+                                new FamilyMemberRowDto
+                                {
+                                    Nic = headCitizen.Nic,
+                                    FullName = headCitizen.FullName,
+                                    Relationship = "Head",
+                                    Gender = headCitizen.Gender,
+                                    Dob = headCitizen.Dob.ToString("yyyy-MM-dd"),
+                                    Occupation = headCitizen.Occupation ?? "Not Applicable",
+                                    MonthlyIncome = headCitizen.MonthlyIncome ?? 0
+                                },
+                                new FamilyMemberRowDto
+                                {
+                                    Nic = nonHeadCitizen.Nic,
+                                    FullName = nonHeadCitizen.FullName,
+                                    Relationship = nonHeadRelationship,
+                                    Gender = nonHeadCitizen.Gender,
+                                    Dob = nonHeadCitizen.Dob.ToString("yyyy-MM-dd"),
+                                    Occupation = nonHeadCitizen.Occupation ?? "Not Applicable",
+                                    MonthlyIncome = nonHeadCitizen.MonthlyIncome ?? 0
+                                }
+                            };
+
+                            var htmlRows = new System.Text.StringBuilder();
+                            int index = 1;
+                            foreach (var m in membersList)
+                            {
+                                htmlRows.Append("<tr>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{index++}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; font-family:monospace;\">{m.Nic}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.FullName}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Relationship}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Gender}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Dob}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.Occupation}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:right;\">Rs. {m.MonthlyIncome:N2}</td>");
+                                htmlRows.Append("</tr>");
+                            }
+
+                            response.FamilyMembersRows = htmlRows.ToString();
+                            response.ActiveLivingMemberCount = membersList.Count.ToString();
+                            response.TotalMonthlyIncome = membersList.Sum(m => m.MonthlyIncome).ToString("N2");
+                        }
+                    }
+                    else if (string.Equals(requestType, "DivorceOrSeparation", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(requestType, "Other", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var memberNicsToMove = SafeGetJsonArray(json, "familyMembersToMove");
+                        var movingCitizens = await _context.CitizenMasters
+                            .Where(c => memberNicsToMove.Contains(c.Nic))
+                            .ToListAsync();
+
+                        if (movingCitizens.Any())
+                        {
+                            var applicant = request.Citizen;
+                            string destGnDivisionId = string.Empty;
+                            string sameGnDivisionVal = SafeGetJsonProperty(json, "sameGnDivision");
+                            bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                            string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                            if (isSameGn && applicant != null)
+                            {
+                                destGnDivisionId = applicant.GnDivisionId;
+                            }
+                            else
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(json, "gnDivisionId");
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "newGnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "gnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = request.GnDivision ?? string.Empty;
+                                }
+                            }
+
+                            // Generate unique family card number for preview
+                            var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                            if (string.IsNullOrEmpty(digits))
+                            {
+                                digits = "10";
+                            }
+                            
+                            string newFamilyCardNumber = string.Empty;
+                            int seq = 1;
+                            while (true)
+                            {
+                                string testCardNumber = $"FC-{digits}{seq:D2}";
+                                bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                              || movingCitizens.Any(c => string.Equals(testCardNumber, c.FamilyCardNumber, StringComparison.OrdinalIgnoreCase));
+                                
+                                if (!exists)
+                                {
+                                    newFamilyCardNumber = testCardNumber;
+                                    break;
+                                }
+                                seq++;
+                            }
+
+                            string newHeadOfHouseholdNic = SafeGetJsonProperty(json, "newHeadOfHousehold");
+                            var headCitizen = movingCitizens.FirstOrDefault(c => c.Nic == newHeadOfHouseholdNic) ?? movingCitizens[0];
+
+                            response.FamilyCardNumber = newFamilyCardNumber;
+                            response.HeadOfHouseholdName = headCitizen.FullName;
+                            response.HeadOfHouseholdNic = headCitizen.Nic;
+
+                            var newAddress = SafeGetJsonProperty(json, "newAddress");
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = SafeGetJsonProperty(json, "address");
+                            }
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = "No Address Provided";
+                            }
+
+                            var newHouseNumber = SafeGetJsonProperty(json, "houseNumber");
+                            if (string.IsNullOrEmpty(newHouseNumber))
+                            {
+                                newHouseNumber = SafeGetJsonProperty(json, "newHouseNumber");
+                            }
+
+                            response.HouseNumber = newHouseNumber;
+                            response.Address = newAddress;
+                            response.RegisteredDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                            response.FamilyCardStatus = "Active";
+
+                            var membersList = new List<FamilyMemberRowDto>();
+                            foreach (var movingCit in movingCitizens)
+                            {
+                                string rel = "Member";
+                                if (movingCit.Nic == headCitizen.Nic)
+                                {
+                                    rel = "Head";
+                                }
+                                else
+                                {
+                                    if (movingCit.RelationshipToHead != "Head" && !string.IsNullOrEmpty(movingCit.RelationshipToHead))
                                     {
-                                        var testNic = $"{prefix}{i:D3}";
-                                        if (!existingNics.Contains(testNic)) { tempNic = testNic; break; }
+                                        rel = movingCit.RelationshipToHead;
                                     }
                                 }
 
                                 membersList.Add(new FamilyMemberRowDto
                                 {
-                                    Nic = tempNic,
-                                    FullName = childFullName,
-                                    Relationship = childRelationship ?? "Son/Daughter",
-                                    Gender = childGender ?? "Unknown",
-                                    Dob = childDob,
-                                    Occupation = "Not Applicable",
-                                    MonthlyIncome = 0
+                                    Nic = movingCit.Nic,
+                                    FullName = movingCit.FullName,
+                                    Relationship = rel,
+                                    Gender = movingCit.Gender,
+                                    Dob = movingCit.Dob.ToString("yyyy-MM-dd"),
+                                    Occupation = movingCit.Occupation ?? "Not Applicable",
+                                    MonthlyIncome = movingCit.MonthlyIncome ?? 0
                                 });
                             }
-                        }
-                    }
-                    else if (request.CategoryId == 2 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
-                    {
-                        string transferredNic = SafeGetJsonProperty(reqData.JsonData, "nic");
-                        string relationshipToHeadVal = SafeGetJsonProperty(reqData.JsonData, "relationshipToFamilyHead");
-                        if (string.IsNullOrEmpty(relationshipToHeadVal))
-                        {
-                            relationshipToHeadVal = "Member";
-                        }
 
-                        if (!string.IsNullOrEmpty(transferredNic) && !membersList.Any(m => m.Nic == transferredNic) && request.CurrentStatus != "Accepted")
-                        {
-                            var transCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == transferredNic);
-                            if (transCit != null && transCit.LifeStatus == "Alive")
-                            {
-                                membersList.Add(new FamilyMemberRowDto
-                                {
-                                    Nic = transCit.Nic,
-                                    FullName = transCit.FullName,
-                                    Relationship = relationshipToHeadVal ?? "Member",
-                                    Gender = transCit.Gender,
-                                    Dob = transCit.Dob.ToString("yyyy-MM-dd"),
-                                    Occupation = transCit.Occupation ?? "Not Applicable",
-                                    MonthlyIncome = transCit.MonthlyIncome ?? 0
-                                });
-                            }
-                        }
-                    }
-                    else if (request.CategoryId == 3 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
-                    {
-                        string deceasedNic = SafeGetJsonProperty(reqData.JsonData, "nic") != "" ? SafeGetJsonProperty(reqData.JsonData, "nic") : SafeGetJsonProperty(reqData.JsonData, "deceasedNic");
-                        if (string.IsNullOrEmpty(deceasedNic))
-                        {
-                            deceasedNic = SafeGetJsonProperty(reqData.JsonData, "affectedPerson");
-                        }
-                        if (!string.IsNullOrEmpty(deceasedNic))
-                        {
-                            membersList.RemoveAll(m => m.Nic == deceasedNic);
-                        }
+                            // Sort members so Head is first
+                            membersList = membersList.OrderBy(m => m.Relationship == "Head" ? 0 : 1).ToList();
 
-                        // Check if new head is assigned
-                        string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
-                        if (!string.IsNullOrEmpty(newHeadNic))
-                        {
-                            var newHeadRow = membersList.FirstOrDefault(m => m.Nic == newHeadNic);
-                            if (newHeadRow != null)
+                            var htmlRows = new System.Text.StringBuilder();
+                            int index = 1;
+                            foreach (var m in membersList)
                             {
-                                membersList.Remove(newHeadRow);
-                                newHeadRow.Relationship = "Head";
-                                membersList.Insert(0, newHeadRow);
+                                htmlRows.Append("<tr>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{index++}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; font-family:monospace;\">{m.Nic}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.FullName}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Relationship}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Gender}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Dob}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.Occupation}</td>");
+                                htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:right;\">Rs. {m.MonthlyIncome:N2}</td>");
+                                htmlRows.Append("</tr>");
                             }
+
+                            response.FamilyMembersRows = htmlRows.ToString();
+                            response.ActiveLivingMemberCount = membersList.Count.ToString();
+                            response.TotalMonthlyIncome = membersList.Sum(m => m.MonthlyIncome).ToString("N2");
                         }
                     }
-                    else if (request.CategoryId == 4 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                }
+                else
+                {
+                    var familyCardNumber = request.Citizen?.FamilyCardNumber;
+                    var familyCard = await _context.FamilyCards
+                        .Include(fc => fc.HeadOfHousehold)
+                        .FirstOrDefaultAsync(fc => fc.FamilyCardNumber == familyCardNumber);
+
+                    if (familyCard != null)
                     {
-                        foreach (var m in membersList)
+                        response.FamilyCardNumber = familyCard.FamilyCardNumber;
+                        response.HeadOfHouseholdName = familyCard.HeadOfHousehold?.FullName ?? "Unknown";
+                        response.HeadOfHouseholdNic = familyCard.HeadOfHouseholdNic;
+                        response.HouseNumber = familyCard.HouseNumber;
+                        response.Address = familyCard.Address;
+                        response.RegisteredDate = familyCard.RegisteredDate.ToString("yyyy-MM-dd");
+                        response.FamilyCardStatus = familyCard.Status;
+
+                        // Category 4: Change Family Head
+                        if (request.CategoryId == 4 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
                         {
-                            if (m.Nic != response.HeadOfHouseholdNic)
+                            string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
+                            if (string.IsNullOrEmpty(newHeadNic))
                             {
-                                if (m.Relationship == "Head" || m.Relationship == "Self")
+                                newHeadNic = SafeGetJsonProperty(reqData.JsonData, "nic");
+                            }
+                            if (!string.IsNullOrEmpty(newHeadNic))
+                            {
+                                var newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == newHeadNic);
+                                if (newHeadCit == null)
                                 {
-                                    m.Relationship = "Member";
+                                    newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.FamilyCardNumber == familyCardNumber && c.FullName == newHeadNic);
+                                }
+                                if (newHeadCit != null)
+                                {
+                                    response.HeadOfHouseholdName = newHeadCit.FullName;
+                                    response.HeadOfHouseholdNic = newHeadCit.Nic;
                                 }
                             }
                         }
-                    }
-                    else if (request.CategoryId == 6 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
-                    {
-                        string migratedNic = SafeGetJsonProperty(reqData.JsonData, "nic");
-                        if (!string.IsNullOrEmpty(migratedNic))
+
+                        // Category 3: Removal of Deceased Family Member (if head is deceased)
+                        if (request.CategoryId == 3 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
                         {
-                            membersList.RemoveAll(m => m.Nic == migratedNic);
+                            string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
+                            if (!string.IsNullOrEmpty(newHeadNic))
+                            {
+                                var newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == newHeadNic);
+                                if (newHeadCit == null)
+                                {
+                                    newHeadCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.FamilyCardNumber == familyCardNumber && c.FullName == newHeadNic);
+                                }
+                                if (newHeadCit != null)
+                                {
+                                    response.HeadOfHouseholdName = newHeadCit.FullName;
+                                    response.HeadOfHouseholdNic = newHeadCit.Nic;
+                                }
+                            }
                         }
-                    }
 
-                    var htmlRows = new System.Text.StringBuilder();
-                    int index = 1;
-                    foreach (var m in membersList)
-                    {
-                        htmlRows.Append("<tr>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{index++}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; font-family:monospace;\">{m.Nic}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.FullName}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Relationship}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Gender}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Dob}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.Occupation}</td>");
-                        htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:right;\">Rs. {m.MonthlyIncome:N2}</td>");
-                        htmlRows.Append("</tr>");
-                    }
+                        // Category 42: Register to New GN Division (simulating new address details for preview)
+                        if (request.CategoryId == 42 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                        {
+                            var newAddress = SafeGetJsonProperty(reqData.JsonData, "newResidentialAddress");
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = SafeGetJsonProperty(reqData.JsonData, "newAddress");
+                            }
+                            if (!string.IsNullOrEmpty(newAddress))
+                            {
+                                response.Address = newAddress;
+                            }
 
-                    response.FamilyMembersRows = htmlRows.ToString();
-                    response.ActiveLivingMemberCount = membersList.Count.ToString();
-                    response.TotalMonthlyIncome = membersList.Sum(m => m.MonthlyIncome).ToString("N2");
+                            var newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "newHouseNumber");
+                            if (!string.IsNullOrEmpty(newHouseNumber))
+                            {
+                                response.HouseNumber = newHouseNumber;
+                            }
+                        }
+
+                        var membersList = new List<FamilyMemberRowDto>();
+
+                        var head = await _context.CitizenMasters
+                            .FirstOrDefaultAsync(c => c.Nic == response.HeadOfHouseholdNic);
+                        if (head != null && head.LifeStatus == "Alive")
+                        {
+                            membersList.Add(new FamilyMemberRowDto
+                            {
+                                Nic = head.Nic,
+                                FullName = head.FullName,
+                                Relationship = "Head",
+                                Gender = head.Gender,
+                                Dob = head.Dob.ToString("yyyy-MM-dd"),
+                                Occupation = head.Occupation ?? "Not Applicable",
+                                MonthlyIncome = head.MonthlyIncome ?? 0
+                            });
+                        }
+
+                        var otherMembers = await _context.CitizenMasters
+                            .Where(c => c.FamilyCardNumber == familyCard.FamilyCardNumber && c.Nic != response.HeadOfHouseholdNic && c.LifeStatus == "Alive")
+                            .ToListAsync();
+
+                        foreach (var m in otherMembers)
+                        {
+                            membersList.Add(new FamilyMemberRowDto
+                            {
+                                Nic = m.Nic,
+                                FullName = m.FullName,
+                                Relationship = m.RelationshipToHead ?? "Member",
+                                Gender = m.Gender,
+                                Dob = m.Dob.ToString("yyyy-MM-dd"),
+                                Occupation = m.Occupation ?? "Not Applicable",
+                                MonthlyIncome = m.MonthlyIncome ?? 0
+                            });
+                        }
+
+                        if (request.CategoryId == 1)
+                        {
+                            string? childFullName = null;
+                            string? childGender = null;
+                            string? childDob = null;
+                            string? childRelationship = null;
+                            if (reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                            {
+                                try
+                                {
+                                    using var doc = System.Text.Json.JsonDocument.Parse(reqData.JsonData);
+                                    if (doc.RootElement.TryGetProperty("childFullName", out var p1)) childFullName = p1.GetString();
+                                    if (doc.RootElement.TryGetProperty("gender", out var p2)) childGender = p2.GetString();
+                                    if (doc.RootElement.TryGetProperty("dateOfBirth", out var p3)) childDob = p3.GetString();
+                                    if (doc.RootElement.TryGetProperty("relationshipOfChild", out var p4)) childRelationship = p4.GetString();
+                                }
+                                catch {}
+                            }
+
+                            if (!string.IsNullOrEmpty(childFullName) && !string.IsNullOrEmpty(childDob))
+                            {
+                                DateOnly childDobDate = DateOnly.Parse(childDob);
+                                bool newbornAlreadyInDb = membersList.Any(m => m.FullName == childFullName && m.Dob == childDob);
+                                if (!newbornAlreadyInDb && request.CurrentStatus != "Accepted")
+                                {
+                                    var prefix = $"T{childDobDate:yyyyMMdd}";
+                                    var existingNics = await _context.CitizenMasters.Where(c => c.Nic.StartsWith(prefix)).Select(c => c.Nic).ToListAsync();
+                                    string tempNic = "";
+                                    for (int i = 901; i <= 999; i++)
+                                    {
+                                        var testNic = $"{prefix}{i:D3}";
+                                        if (!existingNics.Contains(testNic)) { tempNic = testNic; break; }
+                                    }
+                                    if (string.IsNullOrEmpty(tempNic))
+                                    {
+                                        for (int i = 1; i <= 900; i++)
+                                        {
+                                            var testNic = $"{prefix}{i:D3}";
+                                            if (!existingNics.Contains(testNic)) { tempNic = testNic; break; }
+                                        }
+                                    }
+
+                                    membersList.Add(new FamilyMemberRowDto
+                                    {
+                                        Nic = tempNic,
+                                        FullName = childFullName,
+                                        Relationship = childRelationship ?? "Son/Daughter",
+                                        Gender = childGender ?? "Unknown",
+                                        Dob = childDob,
+                                        Occupation = "Not Applicable",
+                                        MonthlyIncome = 0
+                                    });
+                                }
+                            }
+                        }
+                        else if (request.CategoryId == 2 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                        {
+                            string transferredNic = SafeGetJsonProperty(reqData.JsonData, "nic");
+                            string relationshipToHeadVal = SafeGetJsonProperty(reqData.JsonData, "relationshipToFamilyHead");
+                            if (string.IsNullOrEmpty(relationshipToHeadVal))
+                            {
+                                relationshipToHeadVal = "Member";
+                            }
+
+                            if (!string.IsNullOrEmpty(transferredNic) && !membersList.Any(m => m.Nic == transferredNic) && request.CurrentStatus != "Accepted")
+                            {
+                                var transCit = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == transferredNic);
+                                if (transCit != null && transCit.LifeStatus == "Alive")
+                                {
+                                    membersList.Add(new FamilyMemberRowDto
+                                    {
+                                        Nic = transCit.Nic,
+                                        FullName = transCit.FullName,
+                                        Relationship = relationshipToHeadVal ?? "Member",
+                                        Gender = transCit.Gender,
+                                        Dob = transCit.Dob.ToString("yyyy-MM-dd"),
+                                        Occupation = transCit.Occupation ?? "Not Applicable",
+                                        MonthlyIncome = transCit.MonthlyIncome ?? 0
+                                    });
+                                }
+                            }
+                        }
+                        else if (request.CategoryId == 3 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                        {
+                            string deceasedNic = SafeGetJsonProperty(reqData.JsonData, "nic") != "" ? SafeGetJsonProperty(reqData.JsonData, "nic") : SafeGetJsonProperty(reqData.JsonData, "deceasedNic");
+                            if (string.IsNullOrEmpty(deceasedNic))
+                            {
+                                deceasedNic = SafeGetJsonProperty(reqData.JsonData, "affectedPerson");
+                            }
+                            if (!string.IsNullOrEmpty(deceasedNic))
+                            {
+                                membersList.RemoveAll(m => m.Nic == deceasedNic);
+                            }
+
+                            // Check if new head is assigned
+                            string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "newFamilyHead");
+                            if (!string.IsNullOrEmpty(newHeadNic))
+                            {
+                                var newHeadRow = membersList.FirstOrDefault(m => m.Nic == newHeadNic);
+                                if (newHeadRow != null)
+                                {
+                                    membersList.Remove(newHeadRow);
+                                    newHeadRow.Relationship = "Head";
+                                    membersList.Insert(0, newHeadRow);
+                                }
+                            }
+                        }
+                        else if (request.CategoryId == 4 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                        {
+                            foreach (var m in membersList)
+                            {
+                                if (m.Nic != response.HeadOfHouseholdNic)
+                                {
+                                    if (m.Relationship == "Head" || m.Relationship == "Self")
+                                    {
+                                        m.Relationship = "Member";
+                                    }
+                                }
+                            }
+                        }
+                        else if (request.CategoryId == 6 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                        {
+                            string migratedNic = SafeGetJsonProperty(reqData.JsonData, "nic");
+                            if (!string.IsNullOrEmpty(migratedNic))
+                            {
+                                membersList.RemoveAll(m => m.Nic == migratedNic);
+                            }
+                        }
+
+                        var htmlRows = new System.Text.StringBuilder();
+                        int index = 1;
+                        foreach (var m in membersList)
+                        {
+                            htmlRows.Append("<tr>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{index++}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; font-family:monospace;\">{m.Nic}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.FullName}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Relationship}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Gender}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:center;\">{m.Dob}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px;\">{m.Occupation}</td>");
+                            htmlRows.Append($"<td style=\"border:1px solid #000; padding:6px 3px; text-align:right;\">Rs. {m.MonthlyIncome:N2}</td>");
+                            htmlRows.Append("</tr>");
+                        }
+
+                        response.FamilyMembersRows = htmlRows.ToString();
+                        response.ActiveLivingMemberCount = membersList.Count.ToString();
+                        response.TotalMonthlyIncome = membersList.Sum(m => m.MonthlyIncome).ToString("N2");
+                    }
                 }
             }
 
@@ -2477,7 +2996,8 @@ namespace EGN_Service_Management.Controllers
                 .FirstOrDefaultAsync(r => r.RequestNumber == requestNumber);
             if (request == null) return NotFound("Request not found.");
             if (request.AssignedGnOfficerNic != gnNic) return Forbid();
-            if (request.CurrentStatus?.ToUpper().Replace(" ", "_") != "UNDER_REVIEW") return BadRequest("Request must be in UNDER_REVIEW status to generate certificate.");
+            var statusUpper = request.CurrentStatus?.ToUpper().Replace(" ", "_");
+            if (statusUpper != "UNDER_REVIEW" && statusUpper != "VERIFIED") return BadRequest("Request must be in UNDER_REVIEW or VERIFIED status to generate certificate.");
 
             // Load template
             var template = await _context.CertificateTemplates
@@ -2545,7 +3065,137 @@ namespace EGN_Service_Management.Controllers
 
                 // Save file to disk using attachment system
                 string finalFileName;
-                if (request.CategoryId >= 1 && request.CategoryId <= 6)
+                if (request.CategoryId == 5)
+                {
+                    string familyCardNumber = "unknown";
+                    var reqData = await _context.RequestDataEntries.FirstOrDefaultAsync(rd => rd.RequestId == request.RequestId);
+                    if (reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                    {
+                        string requestType = SafeGetJsonProperty(reqData.JsonData, "requestType");
+                        if (string.IsNullOrEmpty(requestType))
+                        {
+                            requestType = "Marriage";
+                        }
+
+                        if (string.Equals(requestType, "Marriage", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var applicant = request.Citizen;
+                            string spouseNic = SafeGetJsonProperty(reqData.JsonData, "spouseNic");
+                            var spouse = await _context.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == spouseNic);
+                            if (applicant != null && spouse != null)
+                            {
+                                string sameGnDivisionVal = SafeGetJsonProperty(reqData.JsonData, "sameGnDivision");
+                                bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                                string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                                string destGnDivisionId;
+                                if (isSameGn)
+                                {
+                                    destGnDivisionId = applicant.GnDivisionId;
+                                }
+                                else
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivisionId");
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+                                    }
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivision");
+                                    }
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = request.GnDivision ?? string.Empty;
+                                    }
+                                }
+
+                                 var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                                 if (string.IsNullOrEmpty(digits))
+                                 {
+                                     digits = "10";
+                                 }
+                                 
+                                 int seq = 1;
+                                 while (true)
+                                 {
+                                     string testCardNumber = $"FC-{digits}{seq:D2}";
+                                     bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                                   || string.Equals(testCardNumber, applicant.FamilyCardNumber, StringComparison.OrdinalIgnoreCase)
+                                                   || string.Equals(testCardNumber, spouse.FamilyCardNumber, StringComparison.OrdinalIgnoreCase);
+                                     
+                                     if (!exists)
+                                     {
+                                         familyCardNumber = testCardNumber;
+                                         break;
+                                     }
+                                     seq++;
+                                 }
+                            }
+                        }
+                        else if (string.Equals(requestType, "DivorceOrSeparation", StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(requestType, "Other", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var memberNicsToMove = SafeGetJsonArray(reqData.JsonData, "familyMembersToMove");
+                            var movingCitizens = await _context.CitizenMasters
+                                .Where(c => memberNicsToMove.Contains(c.Nic))
+                                .ToListAsync();
+
+                            if (movingCitizens.Any())
+                            {
+                                var applicant = request.Citizen;
+                                string destGnDivisionId = string.Empty;
+                                string sameGnDivisionVal = SafeGetJsonProperty(reqData.JsonData, "sameGnDivision");
+                                bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                                string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                                if (isSameGn && applicant != null)
+                                {
+                                    destGnDivisionId = applicant.GnDivisionId;
+                                }
+                                else
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivisionId");
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+                                    }
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivision");
+                                    }
+                                    if (string.IsNullOrEmpty(destGnDivisionId))
+                                    {
+                                        destGnDivisionId = request.GnDivision ?? string.Empty;
+                                    }
+                                }
+
+                                var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                                if (string.IsNullOrEmpty(digits))
+                                {
+                                    digits = "10";
+                                }
+                                
+                                int seq = 1;
+                                while (true)
+                                {
+                                    string testCardNumber = $"FC-{digits}{seq:D2}";
+                                    bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                                  || movingCitizens.Any(c => string.Equals(testCardNumber, c.FamilyCardNumber, StringComparison.OrdinalIgnoreCase));
+                                    
+                                    if (!exists)
+                                    {
+                                        familyCardNumber = testCardNumber;
+                                        break;
+                                    }
+                                    seq++;
+                                }
+                            }
+                        }
+                    }
+                    finalFileName = $"family_card_{familyCardNumber}.pdf";
+                }
+                else if (request.CategoryId >= 1 && request.CategoryId <= 6)
                 {
                     string familyCardNumber = request.Citizen?.FamilyCardNumber ?? "unknown";
                     finalFileName = $"family_card_{familyCardNumber}.pdf";
@@ -3138,7 +3788,7 @@ namespace EGN_Service_Management.Controllers
 
                     var activeRequests = await _context.UnifiedRequests
                         .Include(r => r.DynamicData)
-                        .Where(r => r.CategoryId == 2 && r.RequestId != request.RequestId && (r.CurrentStatus == "Accepted" || r.CurrentStatus == "Approved"))
+                        .Where(r => r.CategoryId == 2 && r.RequestId != request.RequestId && (r.CurrentStatus == "Pending" || r.CurrentStatus == "Submitted" || r.CurrentStatus == "Under Review" || r.CurrentStatus == "Verified" || r.CurrentStatus == "In Progress" || r.CurrentStatus == "Changes Requested" || r.CurrentStatus == "Resubmitted"))
                         .ToListAsync();
                     
                     bool hasDuplicate = activeRequests.Any(r => 
@@ -4094,6 +4744,1200 @@ namespace EGN_Service_Management.Controllers
                     return StatusCode(500, new { success = false, message = "Failed to process Family Head change.", error = detailedError });
                 }
             }
+            else if (request.CategoryId == 42)
+            {
+                using var tx = await _context.Database.BeginTransactionAsync();
+                string? savedFilePath = null;
+                try
+                {
+                    var dbRequest = await _context.UnifiedRequests.FirstOrDefaultAsync(r => r.RequestId == request.RequestId);
+                    if (dbRequest == null)
+                    {
+                        return BadRequest(new { success = false, message = "Request not found." });
+                    }
+                    if (dbRequest.CurrentStatus == "Accepted" || dbRequest.CurrentStatus == "ACCEPTED")
+                    {
+                        return BadRequest(new { success = false, message = "The request has already been accepted." });
+                    }
+
+                    officer = await _context.GnOfficers.FirstOrDefaultAsync(o => o.Nic == gnNic);
+                    if (officer == null)
+                    {
+                        return BadRequest(new { success = false, message = "Authenticated GN Officer record not found." });
+                    }
+
+                    var reqData = await _context.RequestDataEntries
+                        .FirstOrDefaultAsync(rd => rd.RequestId == request.RequestId);
+
+                    if (reqData == null || string.IsNullOrEmpty(reqData.JsonData))
+                    {
+                        return BadRequest(new { success = false, message = "Request data is missing." });
+                    }
+
+                    string destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+                    if (string.IsNullOrEmpty(destGnDivisionId))
+                    {
+                        destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivisionId");
+                    }
+                    if (string.IsNullOrEmpty(destGnDivisionId))
+                    {
+                        destGnDivisionId = request.GnDivision ?? string.Empty;
+                    }
+
+                    var destinationDivision = await _context.GnDivisions
+                        .FirstOrDefaultAsync(d => d.Id == destGnDivisionId);
+                    if (destinationDivision == null)
+                    {
+                        return BadRequest(new { success = false, message = "Destination GN Division not found." });
+                    }
+
+                    var destGnOfficer = await _context.GnOfficers
+                        .FirstOrDefaultAsync(o => o.GnDivisionId == destGnDivisionId);
+                    if (destGnOfficer == null)
+                    {
+                        return BadRequest(new { success = false, message = "No GN Officer assigned to the destination GN Division." });
+                    }
+
+                    var applicant = await _context.CitizenMasters
+                        .Include(c => c.FamilyCard)
+                        .FirstOrDefaultAsync(c => c.Nic == request.CitizenNic);
+
+                    if (applicant == null)
+                    {
+                        return BadRequest(new { success = false, message = $"Applicant citizen with NIC {request.CitizenNic} not found." });
+                    }
+
+                    if (string.IsNullOrEmpty(applicant.FamilyCardNumber) || applicant.FamilyCard?.Status != "Active")
+                    {
+                        return BadRequest(new { success = false, message = "Applicant does not belong to an active family card." });
+                    }
+
+                    string familyCardNumber = applicant.FamilyCardNumber;
+                    var familyCard = await _context.FamilyCards
+                        .FirstOrDefaultAsync(fc => fc.FamilyCardNumber == familyCardNumber);
+
+                    if (familyCard == null)
+                    {
+                        return BadRequest(new { success = false, message = $"Family card {familyCardNumber} not found." });
+                    }
+
+                    var familyMembers = await _context.CitizenMasters
+                        .Where(c => c.FamilyCardNumber == familyCardNumber && c.LifeStatus == "Alive")
+                        .ToListAsync();
+
+                    string prevGnDivisionId = familyCard.GnDivisionId;
+                    
+                    var newAddress = SafeGetJsonProperty(reqData.JsonData, "newResidentialAddress");
+                    if (string.IsNullOrEmpty(newAddress))
+                    {
+                        newAddress = SafeGetJsonProperty(reqData.JsonData, "newAddress");
+                    }
+                    if (string.IsNullOrEmpty(newAddress))
+                    {
+                        newAddress = familyCard.Address;
+                    }
+
+                    var newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "newHouseNumber");
+                    if (string.IsNullOrEmpty(newHouseNumber))
+                    {
+                        newHouseNumber = familyCard.HouseNumber;
+                    }
+
+                    // Update Family Card details
+                    familyCard.GnDivisionId = destGnDivisionId;
+                    familyCard.Address = newAddress;
+                    familyCard.HouseNumber = !string.IsNullOrEmpty(newHouseNumber) ? newHouseNumber : null;
+                    _context.FamilyCards.Update(familyCard);
+
+                    // Update GnDivisionId for all members and save their details for history logging
+                    var prevDetails = new Dictionary<string, (string Division, string Relationship)>();
+
+                    foreach (var member in familyMembers)
+                    {
+                        prevDetails[member.Nic] = (
+                            member.GnDivisionId ?? string.Empty,
+                            member.RelationshipToHead ?? string.Empty
+                        );
+
+                        if (member.GnDivisionId != destGnDivisionId)
+                        {
+                            member.GnDivisionId = destGnDivisionId;
+                            _context.CitizenMasters.Update(member);
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+
+                    // Record movement histories in Family_Member_History
+                    foreach (var member in familyMembers)
+                    {
+                        var details = prevDetails[member.Nic];
+                        var history = new FamilyMemberHistory
+                        {
+                            CitizenNic = member.Nic,
+                            FamilyCardNumber = familyCardNumber,
+                            JoinedDate = GetSriLankanTime(),
+                            LeftDate = null,
+                            Reason = "GN Division Transfer",
+                            PreviousFamilyCard = familyCardNumber,
+                            PreviousGnDivision = details.Division,
+                            DestinationGnDivision = destGnDivisionId,
+                            PreviousRelationship = details.Relationship,
+                            NewRelationship = details.Relationship,
+                            RequestId = request.RequestId,
+                            ActionType = "GnTransfer",
+                            ChangedBy = gnNic,
+                            ChangedDate = GetSriLankanTime(),
+                            Remarks = $"family relocated to new GN division {destGnDivisionId} under category 42 approval"
+                        };
+                        _context.FamilyMemberHistories.Add(history);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    // Reassign division/officer and handle open requests/documents separately for each family member
+                    foreach (var member in familyMembers)
+                    {
+                        var details = prevDetails[member.Nic];
+                        if (details.Division != destGnDivisionId)
+                        {
+                            await _citizenRequestService.HandleCitizenGnDivisionChangeAsync(
+                                member.Nic,
+                                details.Division,
+                                destGnDivisionId,
+                                string.Empty, // Pass empty string so family card is not deactivated
+                                destGnOfficer.Nic,
+                                gnNic,
+                                request.RequestId
+                            );
+                        }
+                    }
+
+                    bool isCrossGn = prevGnDivisionId != destGnDivisionId;
+                    if (isCrossGn)
+                    {
+                        request.CurrentStatus = "Accepted";
+                        request.ApprovedDate = GetSriLankanTime();
+                        request.LastUpdated = GetSriLankanTime();
+                        _context.UnifiedRequests.Update(request);
+
+                        var latestCrossGnHistory = await _context.RequestStatusHistories
+                            .Where(h => h.RequestId == request.RequestId)
+                            .OrderByDescending(h => h.ChangedDate)
+                            .FirstOrDefaultAsync();
+
+                        if (latestCrossGnHistory == null || latestCrossGnHistory.Status.ToUpper() != "ACCEPTED")
+                        {
+                            AddStatusHistory(request.RequestId, "Accepted", dto.Remarks, gnNic);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        await tx.CommitAsync();
+
+                        return Ok(new { success = true, message = "GN Division Transfer approved and Family Card updated successfully." });
+                    }
+
+                    // Generate Certificate and Verification PDF
+                    var template = await _context.CertificateTemplates
+                        .FirstOrDefaultAsync(t => t.CategoryId == request.CategoryId && t.IsActive);
+                    if (template == null)
+                    {
+                        template = await _context.CertificateTemplates.FirstOrDefaultAsync(t => t.IsActive);
+                    }
+                    if (template == null)
+                    {
+                        throw new Exception("Active template not found.");
+                    }
+
+                    var digital = await _context.GNOfficerDigitalDetails
+                        .FirstOrDefaultAsync(d => d.GNOfficerNIC == gnNic);
+                    var sigPath = GetPhysicalPath(digital?.SignaturePath, "gn-signatures");
+                    var stampPath = GetPhysicalPath(digital?.RubberStampPath, "gn-stamps");
+
+                    if (string.IsNullOrEmpty(sigPath) || !System.IO.File.Exists(sigPath))
+                    {
+                        throw new Exception("GN Officer signature file is missing.");
+                    }
+                    if (string.IsNullOrEmpty(stampPath) || !System.IO.File.Exists(stampPath))
+                    {
+                        throw new Exception("GN Officer rubber stamp file is missing.");
+                    }
+
+                    var division = await _context.GnDivisions.FirstOrDefaultAsync(d => d.Id == request.GnDivision);
+                    var divisionName = division != null ? division.Name : (request.GnDivision ?? "Unknown");
+                    var officerName = officer?.FullName ?? "GN Officer";
+
+                    var verificationToken = Guid.NewGuid().ToString("N");
+                    var tokenHash = HashToken(verificationToken);
+                    var verificationUrl = $"http://localhost:4200/verify-document/{verificationToken}";
+
+                    var editableValues = new CertificateEditableValuesDto
+                    {
+                        IssuedDate = DateTime.UtcNow.ToString("MMMM dd, yyyy")
+                    };
+
+                    var pdfBytes = RenderCertificateToPdf(
+                        template.TemplateContent,
+                        divisionName,
+                        officerName,
+                        editableValues,
+                        request.RequestNumber,
+                        sigPath,
+                        stampPath,
+                        verificationUrl
+                    );
+
+                    string fileHash;
+                    using (var sha256 = System.Security.Cryptography.SHA256.Create())
+                    {
+                        var hashBytes = sha256.ComputeHash(pdfBytes);
+                        fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+                    }
+
+                    var finalFileName = $"family_card_{familyCardNumber}.pdf";
+                    var uploadFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "requests");
+                    if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+                    savedFilePath = Path.Combine(uploadFolder, finalFileName);
+
+                    await System.IO.File.WriteAllBytesAsync(savedFilePath, pdfBytes);
+
+                    var certificateAttachment = await _context.UnifiedRequestAttachments
+                        .FirstOrDefaultAsync(a => a.RequestId == request.RequestId && a.DocumentRole == "GENERATED_CERTIFICATE");
+
+                    if (certificateAttachment != null)
+                    {
+                        var oldPhysicalPath = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), certificateAttachment.FileUrl.TrimStart('/'));
+                        if (oldPhysicalPath != savedFilePath && System.IO.File.Exists(oldPhysicalPath))
+                        {
+                            try { System.IO.File.Delete(oldPhysicalPath); } catch {}
+                        }
+
+                        certificateAttachment.FileName = finalFileName;
+                        certificateAttachment.FileUrl = $"/uploads/requests/{finalFileName}";
+                        certificateAttachment.UploadedAt = DateTime.UtcNow;
+                        certificateAttachment.FileSize = pdfBytes.Length;
+                        certificateAttachment.UploadedBy = gnNic;
+                        _context.UnifiedRequestAttachments.Update(certificateAttachment);
+                    }
+                    else
+                    {
+                        certificateAttachment = new UnifiedRequestAttachment
+                        {
+                            RequestId = request.RequestId,
+                            FileName = finalFileName,
+                            FileUrl = $"/uploads/requests/{finalFileName}",
+                            FileType = "PDF",
+                            UploadedAt = DateTime.UtcNow,
+                            DocumentRole = "GENERATED_CERTIFICATE",
+                            DisplayName = "Generated Certificate",
+                            IsPrimary = true,
+                            UploadedBy = gnNic,
+                            FileSize = pdfBytes.Length,
+                            MimeType = "application/pdf",
+                            IsActive = true
+                        };
+                        _context.UnifiedRequestAttachments.Add(certificateAttachment);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    // Save verification entry
+                    var docVerification = await _context.DocumentVerifications
+                        .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
+
+                    int mainAttachmentId = 0;
+                    var mainAtt = await _context.UnifiedRequestAttachments.FirstOrDefaultAsync(a => a.RequestId == request.RequestId && a.DocumentRole != "GENERATED_CERTIFICATE");
+                    if (mainAtt == null)
+                    {
+                        mainAtt = new UnifiedRequestAttachment
+                        {
+                            RequestId = request.RequestId,
+                            FileName = "application_form.pdf",
+                            FileUrl = "/uploads/requests/dummy.pdf",
+                            FileType = "PDF",
+                            UploadedAt = DateTime.UtcNow,
+                            DocumentRole = "SUPPORTING_DOCUMENT",
+                            DisplayName = "Application Form",
+                            IsActive = true
+                        };
+                        _context.UnifiedRequestAttachments.Add(mainAtt);
+                        await _context.SaveChangesAsync();
+                    }
+                    mainAttachmentId = mainAtt.AttachmentId;
+
+                    if (docVerification == null)
+                    {
+                        docVerification = new DocumentVerification
+                        {
+                            RequestId = request.RequestId,
+                            MainAttachmentId = mainAttachmentId,
+                            AssignedGNOfficerNIC = gnNic,
+                            VerificationStatus = "PUBLISHED",
+                            VerificationRemarks = dto.Remarks ?? "GN Division Transfer approved.",
+                            VerifiedDate = DateTime.UtcNow,
+                            FinalVerifiedAttachmentId = certificateAttachment.AttachmentId,
+                            VerificationTokenHash = tokenHash,
+                            VerificationUrl = verificationUrl,
+                            OriginalFileHash = template.TemplateId.ToString(),
+                            FinalFileHash = fileHash,
+                            CreatedDate = DateTime.UtcNow,
+                            UpdatedDate = DateTime.UtcNow
+                        };
+                        _context.DocumentVerifications.Add(docVerification);
+                    }
+                    else
+                    {
+                        docVerification.MainAttachmentId = mainAttachmentId;
+                        docVerification.AssignedGNOfficerNIC = gnNic;
+                        docVerification.VerificationStatus = "PUBLISHED";
+                        docVerification.VerificationRemarks = dto.Remarks ?? "GN Division Transfer approved.";
+                        docVerification.VerifiedDate = GetSriLankanTime();
+                        docVerification.FinalVerifiedAttachmentId = certificateAttachment.AttachmentId;
+                        docVerification.VerificationTokenHash = tokenHash;
+                        docVerification.VerificationUrl = verificationUrl;
+                        docVerification.OriginalFileHash = template.TemplateId.ToString();
+                        docVerification.FinalFileHash = fileHash;
+                        docVerification.UpdatedDate = GetSriLankanTime();
+                        _context.DocumentVerifications.Update(docVerification);
+                    }
+
+                    request.CurrentStatus = "Accepted";
+                    request.ApprovedDate = GetSriLankanTime();
+                    request.LastUpdated = GetSriLankanTime();
+                    _context.UnifiedRequests.Update(request);
+
+                    var latestHistory = await _context.RequestStatusHistories
+                        .Where(h => h.RequestId == request.RequestId)
+                        .OrderByDescending(h => h.ChangedDate)
+                        .FirstOrDefaultAsync();
+
+                    if (latestHistory == null || latestHistory.Status.ToUpper() != "ACCEPTED")
+                    {
+                        AddStatusHistory(request.RequestId, "Accepted", dto.Remarks, gnNic);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+
+                    return Ok(new { success = true, message = "GN Division Transfer approved and Family Card updated successfully." });
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync();
+                    if (!string.IsNullOrEmpty(savedFilePath) && System.IO.File.Exists(savedFilePath))
+                    {
+                        try { System.IO.File.Delete(savedFilePath); } catch {}
+                    }
+                    var detailedError = ex.InnerException != null ? $"{ex.Message} (Inner: {ex.InnerException.Message})" : ex.Message;
+                    return StatusCode(500, new { success = false, message = "Failed to process GN Division Transfer request.", error = detailedError });
+                }
+            }
+            else if (request.CategoryId == 5)
+            {
+                using var tx = await _context.Database.BeginTransactionAsync();
+                string? savedFilePath = null;
+                try
+                {
+                    var dbRequest = await _context.UnifiedRequests.FirstOrDefaultAsync(r => r.RequestId == request.RequestId);
+                    if (dbRequest == null)
+                    {
+                        return BadRequest(new { success = false, message = "Request not found." });
+                    }
+                    if (dbRequest.CurrentStatus == "Accepted" || dbRequest.CurrentStatus == "ACCEPTED")
+                    {
+                        return BadRequest(new { success = false, message = "The request has already been accepted." });
+                    }
+
+                    officer = await _context.GnOfficers.FirstOrDefaultAsync(o => o.Nic == gnNic);
+                    if (officer == null)
+                    {
+                        return BadRequest(new { success = false, message = "Authenticated GN Officer record not found." });
+                    }
+
+                    var reqData = await _context.RequestDataEntries
+                        .FirstOrDefaultAsync(rd => rd.RequestId == request.RequestId);
+
+                    if (reqData == null || string.IsNullOrEmpty(reqData.JsonData))
+                    {
+                        return BadRequest(new { success = false, message = "Request data is missing." });
+                    }
+
+                    string requestType = SafeGetJsonProperty(reqData.JsonData, "requestType");
+                    if (string.IsNullOrEmpty(requestType))
+                    {
+                        requestType = "Marriage";
+                    }
+
+                    string newFamilyCardNumber = string.Empty;
+                    string destGnDivisionId = string.Empty;
+                    GnOfficer destGnOfficer;
+
+                    if (string.Equals(requestType, "Marriage", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string spouseNic = SafeGetJsonProperty(reqData.JsonData, "spouseNic");
+                        if (string.IsNullOrEmpty(spouseNic))
+                        {
+                            return BadRequest(new { success = false, message = "Spouse NIC is missing in the request." });
+                        }
+
+                        if (string.Equals(request.CitizenNic, spouseNic))
+                        {
+                            return BadRequest(new { success = false, message = "Applicant and Spouse cannot be the same citizen." });
+                        }
+
+                        var applicant = await _context.CitizenMasters
+                            .Include(c => c.FamilyCard)
+                            .FirstOrDefaultAsync(c => c.Nic == request.CitizenNic);
+                        var spouse = await _context.CitizenMasters
+                            .Include(c => c.FamilyCard)
+                            .FirstOrDefaultAsync(c => c.Nic == spouseNic);
+
+                        if (applicant == null)
+                        {
+                            return BadRequest(new { success = false, message = $"Applicant citizen with NIC {request.CitizenNic} not found." });
+                        }
+                        if (spouse == null)
+                        {
+                            return BadRequest(new { success = false, message = $"Spouse citizen with NIC {spouseNic} not found." });
+                        }
+
+                        if (applicant.LifeStatus != "Alive")
+                        {
+                            return BadRequest(new { success = false, message = "Applicant is not active/alive." });
+                        }
+                        if (spouse.LifeStatus != "Alive")
+                        {
+                            return BadRequest(new { success = false, message = "Spouse is not active/alive." });
+                        }
+
+                        if (string.IsNullOrEmpty(applicant.FamilyCardNumber) || applicant.FamilyCard?.Status != "Active")
+                        {
+                            return BadRequest(new { success = false, message = "Applicant does not belong to an active family card." });
+                        }
+                        if (string.IsNullOrEmpty(spouse.FamilyCardNumber) || spouse.FamilyCard?.Status != "Active")
+                        {
+                            return BadRequest(new { success = false, message = "Spouse does not belong to an active family card." });
+                        }
+
+                        string sameGnDivisionVal = SafeGetJsonProperty(reqData.JsonData, "sameGnDivision");
+                        bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                        string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                        if (isSameGn)
+                        {
+                            destGnDivisionId = applicant.GnDivisionId;
+                        }
+                        else
+                        {
+                            destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivisionId");
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+                            }
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivision");
+                            }
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = request.GnDivision ?? string.Empty;
+                            }
+                        }
+
+                        var destinationDivision = await _context.GnDivisions
+                            .FirstOrDefaultAsync(d => d.Id == destGnDivisionId);
+                        if (destinationDivision == null)
+                        {
+                            return BadRequest(new { success = false, message = "Destination GN Division not found." });
+                        }
+
+                        var resolvedOfficer = await _context.GnOfficers
+                            .FirstOrDefaultAsync(o => o.GnDivisionId == destGnDivisionId);
+                        if (resolvedOfficer == null)
+                        {
+                            return BadRequest(new { success = false, message = "No GN Officer assigned to the destination GN Division." });
+                        }
+                        destGnOfficer = resolvedOfficer;
+
+                        // Head of Household determination
+                        string newHeadOfHouseholdNic = SafeGetJsonProperty(reqData.JsonData, "newHeadOfHousehold");
+
+                        CitizenMaster headCitizen;
+                        CitizenMaster nonHeadCitizen;
+
+                        bool applicantIsMale = string.Equals(applicant.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                        bool spouseIsMale = string.Equals(spouse.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                        bool applicantIsFemale = string.Equals(applicant.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+                        bool spouseIsFemale = string.Equals(spouse.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+
+                        if (applicantIsFemale && spouseIsMale && string.Equals(newHeadOfHouseholdNic, applicant.Nic))
+                        {
+                            headCitizen = applicant;
+                            nonHeadCitizen = spouse;
+                            headCitizen.RelationshipToHead = "Head";
+                            nonHeadCitizen.RelationshipToHead = "Husband";
+                        }
+                        else if (spouseIsFemale && applicantIsMale && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                        {
+                            headCitizen = spouse;
+                            nonHeadCitizen = applicant;
+                            headCitizen.RelationshipToHead = "Head";
+                            nonHeadCitizen.RelationshipToHead = "Husband";
+                        }
+                        else if (applicantIsMale)
+                        {
+                            headCitizen = applicant;
+                            nonHeadCitizen = spouse;
+                            headCitizen.RelationshipToHead = "Head";
+                            nonHeadCitizen.RelationshipToHead = spouseIsFemale ? "Wife" : "Spouse";
+                        }
+                        else if (spouseIsMale)
+                        {
+                            headCitizen = spouse;
+                            nonHeadCitizen = applicant;
+                            headCitizen.RelationshipToHead = "Head";
+                            nonHeadCitizen.RelationshipToHead = applicantIsFemale ? "Wife" : "Spouse";
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(newHeadOfHouseholdNic) && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                            {
+                                headCitizen = spouse;
+                                nonHeadCitizen = applicant;
+                            }
+                            else
+                            {
+                                headCitizen = applicant;
+                                nonHeadCitizen = spouse;
+                            }
+                            headCitizen.RelationshipToHead = "Head";
+                            nonHeadCitizen.RelationshipToHead = "Spouse";
+                        }
+
+                        string newHeadOfHouseholdNicFinal = headCitizen.Nic;
+
+                        // Generate Unique FamilyCardNumber based on division numeric part (e.g. 60) and 2-digit sequence (e.g. 01, 02)
+                        var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                        if (string.IsNullOrEmpty(digits))
+                        {
+                            digits = "10";
+                        }
+                        
+                        int seq = 1;
+                        while (true)
+                        {
+                            string testCardNumber = $"FC-{digits}{seq:D2}";
+                            bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                          || string.Equals(testCardNumber, applicant.FamilyCardNumber, StringComparison.OrdinalIgnoreCase)
+                                          || string.Equals(testCardNumber, spouse.FamilyCardNumber, StringComparison.OrdinalIgnoreCase);
+                            
+                            if (!exists)
+                            {
+                                newFamilyCardNumber = testCardNumber;
+                                break;
+                            }
+                            seq++;
+                        }
+
+                        var newAddress = SafeGetJsonProperty(reqData.JsonData, "newAddress");
+                        if (string.IsNullOrEmpty(newAddress))
+                        {
+                            newAddress = SafeGetJsonProperty(reqData.JsonData, "address");
+                        }
+                        if (string.IsNullOrEmpty(newAddress))
+                        {
+                            newAddress = "No Address Provided";
+                        }
+
+                        var newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "houseNumber");
+                        if (string.IsNullOrEmpty(newHouseNumber))
+                        {
+                            newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "newHouseNumber");
+                        }
+
+                        // Create Family Card
+                        var newFamilyCard = new FamilyCard
+                        {
+                            FamilyCardNumber = newFamilyCardNumber,
+                            HeadOfHouseholdNic = newHeadOfHouseholdNicFinal,
+                            GnDivisionId = destGnDivisionId,
+                            Address = newAddress,
+                            RegisteredDate = DateOnly.FromDateTime(GetSriLankanTime()),
+                            Status = "Active",
+                            HouseNumber = !string.IsNullOrEmpty(newHouseNumber) ? newHouseNumber : null
+                        };
+                        _context.FamilyCards.Add(newFamilyCard);
+                        await _context.SaveChangesAsync();
+
+                        // Field Preservation
+                        string prevApplicantCard = applicant.FamilyCardNumber ?? string.Empty;
+                        string prevSpouseCard = spouse.FamilyCardNumber ?? string.Empty;
+                        string prevApplicantGn = applicant.GnDivisionId ?? string.Empty;
+                        string prevSpouseGn = spouse.GnDivisionId ?? string.Empty;
+                        string prevApplicantRelation = applicant.RelationshipToHead ?? string.Empty;
+                        string prevSpouseRelation = spouse.RelationshipToHead ?? string.Empty;
+
+                        // Update applicant and spouse in Citizen_Master
+                        headCitizen.PastFamilyCardNumber = (headCitizen.Nic == applicant.Nic) ? prevApplicantCard : prevSpouseCard;
+                        headCitizen.FamilyCardNumber = newFamilyCardNumber;
+                        headCitizen.MaritalStatus = "Married";
+                        headCitizen.RelationshipToHead = "Head";
+                        if (headCitizen.GnDivisionId != destGnDivisionId)
+                        {
+                            headCitizen.GnDivisionId = destGnDivisionId;
+                        }
+
+                        nonHeadCitizen.PastFamilyCardNumber = (nonHeadCitizen.Nic == applicant.Nic) ? prevApplicantCard : prevSpouseCard;
+                        nonHeadCitizen.FamilyCardNumber = newFamilyCardNumber;
+                        nonHeadCitizen.MaritalStatus = "Married";
+                        if (nonHeadCitizen.GnDivisionId != destGnDivisionId)
+                        {
+                            nonHeadCitizen.GnDivisionId = destGnDivisionId;
+                        }
+
+                        _context.CitizenMasters.Update(headCitizen);
+                        _context.CitizenMasters.Update(nonHeadCitizen);
+                        await _context.SaveChangesAsync();
+
+                        // Add movement records to Family_Member_History
+                        var headHistory = new FamilyMemberHistory
+                        {
+                            CitizenNic = headCitizen.Nic,
+                            FamilyCardNumber = newFamilyCardNumber,
+                            JoinedDate = GetSriLankanTime(),
+                            LeftDate = null,
+                            Reason = "Marriage",
+                            PreviousFamilyCard = (headCitizen.Nic == applicant.Nic) ? prevApplicantCard : prevSpouseCard,
+                            PreviousGnDivision = (headCitizen.Nic == applicant.Nic) ? prevApplicantGn : prevSpouseGn,
+                            DestinationGnDivision = destGnDivisionId,
+                            PreviousRelationship = (headCitizen.Nic == applicant.Nic) ? prevApplicantRelation : prevSpouseRelation,
+                            NewRelationship = "Head",
+                            RequestId = request.RequestId,
+                            ActionType = "MarriageTransfer",
+                            ChangedBy = gnNic,
+                            ChangedDate = GetSriLankanTime(),
+                            Remarks = "moved to a newly created family card after marriage approval"
+                        };
+
+                        var nonHeadHistory = new FamilyMemberHistory
+                        {
+                            CitizenNic = nonHeadCitizen.Nic,
+                            FamilyCardNumber = newFamilyCardNumber,
+                            JoinedDate = GetSriLankanTime(),
+                            LeftDate = null,
+                            Reason = "Marriage",
+                            PreviousFamilyCard = (nonHeadCitizen.Nic == applicant.Nic) ? prevApplicantCard : prevSpouseCard,
+                            PreviousGnDivision = (nonHeadCitizen.Nic == applicant.Nic) ? prevApplicantGn : prevSpouseGn,
+                            DestinationGnDivision = destGnDivisionId,
+                            PreviousRelationship = (nonHeadCitizen.Nic == applicant.Nic) ? prevApplicantRelation : prevSpouseRelation,
+                            NewRelationship = nonHeadCitizen.RelationshipToHead,
+                            RequestId = request.RequestId,
+                            ActionType = "MarriageTransfer",
+                            ChangedBy = gnNic,
+                            ChangedDate = GetSriLankanTime(),
+                            Remarks = "moved to a newly created family card after marriage approval"
+                        };
+
+                        _context.FamilyMemberHistories.Add(headHistory);
+                        _context.FamilyMemberHistories.Add(nonHeadHistory);
+                        await _context.SaveChangesAsync();
+
+                        // Check both previous family cards after moving the citizens
+                        if (!string.IsNullOrEmpty(prevApplicantCard))
+                        {
+                            var remainingAlive = await _context.CitizenMasters
+                                .CountAsync(c => c.FamilyCardNumber == prevApplicantCard && c.LifeStatus == "Alive" && c.Nic != applicant.Nic && c.Nic != spouse.Nic);
+
+                            if (remainingAlive == 0)
+                            {
+                                var oldCard = await _context.FamilyCards.FirstOrDefaultAsync(fc => fc.FamilyCardNumber == prevApplicantCard);
+                                if (oldCard != null)
+                                {
+                                    oldCard.Status = "Inactive";
+                                    _context.FamilyCards.Update(oldCard);
+                                }
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(prevSpouseCard) && prevSpouseCard != prevApplicantCard)
+                        {
+                            var remainingAlive = await _context.CitizenMasters
+                                .CountAsync(c => c.FamilyCardNumber == prevSpouseCard && c.LifeStatus == "Alive" && c.Nic != applicant.Nic && c.Nic != spouse.Nic);
+
+                            if (remainingAlive == 0)
+                            {
+                                var oldCard = await _context.FamilyCards.FirstOrDefaultAsync(fc => fc.FamilyCardNumber == prevSpouseCard);
+                                if (oldCard != null)
+                                {
+                                    oldCard.Status = "Inactive";
+                                    _context.FamilyCards.Update(oldCard);
+                                }
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+
+                        // Reassign division/officer and handle open requests/documents for applicant if division is different
+                        if (prevApplicantGn != destGnDivisionId)
+                        {
+                            await _citizenRequestService.HandleCitizenGnDivisionChangeAsync(
+                                applicant.Nic,
+                                prevApplicantGn ?? string.Empty,
+                                destGnDivisionId,
+                                prevApplicantCard ?? string.Empty,
+                                destGnOfficer.Nic,
+                                gnNic,
+                                request.RequestId
+                            );
+                        }
+
+                        // Reassign division/officer and handle open requests/documents for spouse if division is different
+                        if (prevSpouseGn != destGnDivisionId)
+                        {
+                            await _citizenRequestService.HandleCitizenGnDivisionChangeAsync(
+                                spouse.Nic,
+                                prevSpouseGn ?? string.Empty,
+                                destGnDivisionId,
+                                prevSpouseCard ?? string.Empty,
+                                destGnOfficer.Nic,
+                                gnNic,
+                                request.RequestId
+                            );
+                        }
+                    }
+                    else if (string.Equals(requestType, "DivorceOrSeparation", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(requestType, "Other", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var memberNicsToMove = SafeGetJsonArray(reqData.JsonData, "familyMembersToMove");
+                        if (memberNicsToMove == null || memberNicsToMove.Count == 0)
+                        {
+                            return BadRequest(new { success = false, message = "No family members selected to move." });
+                        }
+
+                        var movingCitizens = await _context.CitizenMasters
+                            .Include(c => c.FamilyCard)
+                            .Where(c => memberNicsToMove.Contains(c.Nic))
+                            .ToListAsync();
+
+                        var applicant = await _context.CitizenMasters
+                            .Include(c => c.FamilyCard)
+                            .FirstOrDefaultAsync(c => c.Nic == request.CitizenNic);
+
+                        if (applicant == null)
+                        {
+                            return BadRequest(new { success = false, message = $"Applicant citizen with NIC {request.CitizenNic} not found." });
+                        }
+
+                        foreach (var nic in memberNicsToMove)
+                        {
+                            var citizen = movingCitizens.FirstOrDefault(c => c.Nic == nic);
+                            if (citizen == null)
+                            {
+                                return BadRequest(new { success = false, message = $"Selected family member with NIC {nic} not found." });
+                            }
+                            if (citizen.LifeStatus != "Alive")
+                            {
+                                return BadRequest(new { success = false, message = $"Selected family member with NIC {nic} is not alive." });
+                            }
+                            if (string.IsNullOrEmpty(citizen.FamilyCardNumber) || citizen.FamilyCard?.Status != "Active")
+                            {
+                                return BadRequest(new { success = false, message = $"Selected family member with NIC {nic} does not belong to an active family card." });
+                            }
+                        }
+
+                        string sameGnDivisionVal = SafeGetJsonProperty(reqData.JsonData, "sameGnDivision");
+                        bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                        string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                        if (isSameGn)
+                        {
+                            destGnDivisionId = applicant.GnDivisionId;
+                        }
+                        else
+                        {
+                            destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivisionId");
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "newGnDivision");
+                            }
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(reqData.JsonData, "gnDivision");
+                            }
+                            if (string.IsNullOrEmpty(destGnDivisionId))
+                            {
+                                destGnDivisionId = request.GnDivision ?? string.Empty;
+                            }
+                        }
+
+                        var destinationDivision = await _context.GnDivisions
+                            .FirstOrDefaultAsync(d => d.Id == destGnDivisionId);
+                        if (destinationDivision == null)
+                        {
+                            return BadRequest(new { success = false, message = "Destination GN Division not found." });
+                        }
+
+                        var resolvedOfficer = await _context.GnOfficers
+                            .FirstOrDefaultAsync(o => o.GnDivisionId == destGnDivisionId);
+                        if (resolvedOfficer == null)
+                        {
+                            return BadRequest(new { success = false, message = "No GN Officer assigned to the destination GN Division." });
+                        }
+                        destGnOfficer = resolvedOfficer;
+
+                        string newHeadOfHouseholdNic = SafeGetJsonProperty(reqData.JsonData, "newHeadOfHousehold");
+                        var headCitizen = movingCitizens.FirstOrDefault(c => c.Nic == newHeadOfHouseholdNic) ?? movingCitizens[0];
+
+                        // Generate Unique FamilyCardNumber based on division numeric part (e.g. 60) and 2-digit sequence (e.g. 01, 02)
+                        var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                        if (string.IsNullOrEmpty(digits))
+                        {
+                            digits = "10";
+                        }
+                        
+                        int seq = 1;
+                        while (true)
+                        {
+                            string testCardNumber = $"FC-{digits}{seq:D2}";
+                            bool exists = await _context.FamilyCards.AnyAsync(fc => fc.FamilyCardNumber == testCardNumber)
+                                          || movingCitizens.Any(c => string.Equals(testCardNumber, c.FamilyCardNumber, StringComparison.OrdinalIgnoreCase));
+                            
+                            if (!exists)
+                            {
+                                newFamilyCardNumber = testCardNumber;
+                                break;
+                            }
+                            seq++;
+                        }
+
+                        var newAddress = SafeGetJsonProperty(reqData.JsonData, "newAddress");
+                        if (string.IsNullOrEmpty(newAddress))
+                        {
+                            newAddress = SafeGetJsonProperty(reqData.JsonData, "address");
+                        }
+                        if (string.IsNullOrEmpty(newAddress))
+                        {
+                            newAddress = "No Address Provided";
+                        }
+
+                        var newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "houseNumber");
+                        if (string.IsNullOrEmpty(newHouseNumber))
+                        {
+                            newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "newHouseNumber");
+                        }
+
+                        // Create Family Card
+                        var newFamilyCard = new FamilyCard
+                        {
+                            FamilyCardNumber = newFamilyCardNumber,
+                            HeadOfHouseholdNic = headCitizen.Nic,
+                            GnDivisionId = destGnDivisionId,
+                            Address = newAddress,
+                            RegisteredDate = DateOnly.FromDateTime(GetSriLankanTime()),
+                            Status = "Active",
+                            HouseNumber = !string.IsNullOrEmpty(newHouseNumber) ? newHouseNumber : null
+                        };
+                        _context.FamilyCards.Add(newFamilyCard);
+                        await _context.SaveChangesAsync();
+
+                        // Keep track of moving citizens' previous values
+                        var prevDetails = new Dictionary<string, (string Card, string Division, string Relationship)>();
+
+                        foreach (var citizen in movingCitizens)
+                        {
+                            prevDetails[citizen.Nic] = (
+                                citizen.FamilyCardNumber ?? string.Empty, 
+                                citizen.GnDivisionId ?? string.Empty, 
+                                citizen.RelationshipToHead ?? string.Empty
+                            );
+
+                            citizen.PastFamilyCardNumber = citizen.FamilyCardNumber;
+                            citizen.FamilyCardNumber = newFamilyCardNumber;
+
+                            if (citizen.Nic == headCitizen.Nic)
+                            {
+                                citizen.RelationshipToHead = "Head";
+                            }
+                            else
+                            {
+                                if (citizen.RelationshipToHead == "Head" || string.IsNullOrEmpty(citizen.RelationshipToHead))
+                                {
+                                    citizen.RelationshipToHead = "Member";
+                                }
+                            }
+
+                            if (citizen.GnDivisionId != destGnDivisionId)
+                            {
+                                citizen.GnDivisionId = destGnDivisionId;
+                            }
+
+                            _context.CitizenMasters.Update(citizen);
+                        }
+                        await _context.SaveChangesAsync();
+
+                        // Record movement histories in Family_Member_History
+                        foreach (var citizen in movingCitizens)
+                        {
+                            var details = prevDetails[citizen.Nic];
+                            var history = new FamilyMemberHistory
+                            {
+                                CitizenNic = citizen.Nic,
+                                FamilyCardNumber = newFamilyCardNumber,
+                                JoinedDate = GetSriLankanTime(),
+                                LeftDate = null,
+                                Reason = requestType,
+                                PreviousFamilyCard = details.Card,
+                                PreviousGnDivision = details.Division,
+                                DestinationGnDivision = destGnDivisionId,
+                                PreviousRelationship = details.Relationship,
+                                NewRelationship = citizen.RelationshipToHead,
+                                RequestId = request.RequestId,
+                                ActionType = "FamilyTransfer",
+                                ChangedBy = gnNic,
+                                ChangedDate = GetSriLankanTime(),
+                                Remarks = $"moved to a newly created family card due to {requestType} approval"
+                            };
+                            _context.FamilyMemberHistories.Add(history);
+                        }
+                        await _context.SaveChangesAsync();
+
+                        // Deactivate old cards that are left empty (0 remaining alive members)
+                        var leftCardNumbers = prevDetails.Values
+                            .Select(v => v.Card)
+                            .Where(c => !string.IsNullOrEmpty(c))
+                            .Distinct()
+                            .ToList();
+
+                        foreach (var oldCardNo in leftCardNumbers)
+                        {
+                            var remainingAlive = await _context.CitizenMasters
+                                .CountAsync(c => c.FamilyCardNumber == oldCardNo && c.LifeStatus == "Alive" && !memberNicsToMove.Contains(c.Nic));
+
+                            if (remainingAlive == 0)
+                            {
+                                var oldCard = await _context.FamilyCards.FirstOrDefaultAsync(fc => fc.FamilyCardNumber == oldCardNo);
+                                if (oldCard != null)
+                                {
+                                    oldCard.Status = "Inactive";
+                                    _context.FamilyCards.Update(oldCard);
+                                }
+                            }
+                        }
+                        await _context.SaveChangesAsync();
+
+                        // Reassign division/officer and handle open requests/documents separately for each citizen if division is different
+                        foreach (var citizen in movingCitizens)
+                        {
+                            var details = prevDetails[citizen.Nic];
+                            if (details.Division != destGnDivisionId)
+                            {
+                                await _citizenRequestService.HandleCitizenGnDivisionChangeAsync(
+                                    citizen.Nic,
+                                    details.Division,
+                                    destGnDivisionId,
+                                    details.Card,
+                                    destGnOfficer.Nic,
+                                    gnNic,
+                                    request.RequestId
+                                );
+                            }
+                        }
+                    }
+
+                    // Generate Certificate and Verification PDF
+                    var template = await _context.CertificateTemplates
+                        .FirstOrDefaultAsync(t => t.CategoryId == request.CategoryId && t.IsActive);
+                    if (template == null && request.ServiceId == 1)
+                    {
+                        template = await _context.CertificateTemplates
+                            .FirstOrDefaultAsync(t => t.CategoryId == 1 && t.IsActive);
+                    }
+                    if (template == null)
+                    {
+                        template = await _context.CertificateTemplates.FirstOrDefaultAsync(t => t.IsActive);
+                    }
+                    if (template == null)
+                    {
+                        throw new Exception("Active template not found.");
+                    }
+
+                    var digital = await _context.GNOfficerDigitalDetails
+                        .FirstOrDefaultAsync(d => d.GNOfficerNIC == gnNic);
+                    var sigPath = GetPhysicalPath(digital?.SignaturePath, "gn-signatures");
+                    var stampPath = GetPhysicalPath(digital?.RubberStampPath, "gn-stamps");
+
+                    if (string.IsNullOrEmpty(sigPath) || !System.IO.File.Exists(sigPath))
+                    {
+                        throw new Exception("GN Officer signature file is missing.");
+                    }
+                    if (string.IsNullOrEmpty(stampPath) || !System.IO.File.Exists(stampPath))
+                    {
+                        throw new Exception("GN Officer rubber stamp file is missing.");
+                    }
+
+                    var division = await _context.GnDivisions.FirstOrDefaultAsync(d => d.Id == request.GnDivision);
+                    var divisionName = division != null ? division.Name : (request.GnDivision ?? "Unknown");
+                    var officerName = officer?.FullName ?? "GN Officer";
+
+                    var verificationToken = Guid.NewGuid().ToString("N");
+                    var tokenHash = HashToken(verificationToken);
+                    var verificationUrl = $"http://localhost:4200/verify-document/{verificationToken}";
+
+                    var editableValues = new CertificateEditableValuesDto
+                    {
+                        IssuedDate = DateTime.UtcNow.ToString("MMMM dd, yyyy")
+                    };
+
+                    var pdfBytes = RenderCertificateToPdf(
+                        template.TemplateContent,
+                        divisionName,
+                        officerName,
+                        editableValues,
+                        request.RequestNumber,
+                        sigPath,
+                        stampPath,
+                        verificationUrl
+                    );
+
+                    string fileHash;
+                    using (var sha256 = System.Security.Cryptography.SHA256.Create())
+                    {
+                        var hashBytes = sha256.ComputeHash(pdfBytes);
+                        fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+                    }
+
+                    var finalFileName = $"family_card_{newFamilyCardNumber}.pdf";
+                    var uploadFolder = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "requests");
+                    if (!Directory.Exists(uploadFolder)) Directory.CreateDirectory(uploadFolder);
+                    savedFilePath = Path.Combine(uploadFolder, finalFileName);
+
+                    await System.IO.File.WriteAllBytesAsync(savedFilePath, pdfBytes);
+
+                    var certificateAttachment = await _context.UnifiedRequestAttachments
+                        .FirstOrDefaultAsync(a => a.RequestId == request.RequestId && a.DocumentRole == "GENERATED_CERTIFICATE");
+
+                    if (certificateAttachment != null)
+                    {
+                        var oldPhysicalPath = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), certificateAttachment.FileUrl.TrimStart('/'));
+                        if (oldPhysicalPath != savedFilePath && System.IO.File.Exists(oldPhysicalPath))
+                        {
+                            try { System.IO.File.Delete(oldPhysicalPath); } catch {}
+                        }
+
+                        certificateAttachment.FileName = finalFileName;
+                        certificateAttachment.FileUrl = $"/uploads/requests/{finalFileName}";
+                        certificateAttachment.UploadedAt = DateTime.UtcNow;
+                        certificateAttachment.FileSize = pdfBytes.Length;
+                        certificateAttachment.UploadedBy = gnNic;
+                        _context.UnifiedRequestAttachments.Update(certificateAttachment);
+                    }
+                    else
+                    {
+                        certificateAttachment = new UnifiedRequestAttachment
+                        {
+                            RequestId = request.RequestId,
+                            FileName = finalFileName,
+                            FileUrl = $"/uploads/requests/{finalFileName}",
+                            FileType = "PDF",
+                            UploadedAt = DateTime.UtcNow,
+                            DocumentRole = "GENERATED_CERTIFICATE",
+                            DisplayName = "Generated Certificate",
+                            IsPrimary = true,
+                            UploadedBy = gnNic,
+                            FileSize = pdfBytes.Length,
+                            MimeType = "application/pdf",
+                            IsActive = true
+                        };
+                        _context.UnifiedRequestAttachments.Add(certificateAttachment);
+                    }
+                    await _context.SaveChangesAsync();
+
+                    var docVerification = await _context.DocumentVerifications
+                        .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
+
+                    int mainAttachmentId = 0;
+                    var mainAtt = await _context.UnifiedRequestAttachments.FirstOrDefaultAsync(a => a.RequestId == request.RequestId && a.DocumentRole != "GENERATED_CERTIFICATE");
+                    if (mainAtt == null)
+                    {
+                        mainAtt = new UnifiedRequestAttachment
+                        {
+                            RequestId = request.RequestId,
+                            FileName = "application_form.pdf",
+                            FileUrl = "/uploads/requests/dummy.pdf",
+                            FileType = "PDF",
+                            UploadedAt = DateTime.UtcNow,
+                            DocumentRole = "SUPPORTING_DOCUMENT",
+                            DisplayName = "Application Form",
+                            IsActive = true
+                        };
+                        _context.UnifiedRequestAttachments.Add(mainAtt);
+                        await _context.SaveChangesAsync();
+                    }
+                    mainAttachmentId = mainAtt.AttachmentId;
+
+                    if (docVerification == null)
+                    {
+                        docVerification = new DocumentVerification
+                        {
+                            RequestId = request.RequestId,
+                            MainAttachmentId = mainAttachmentId,
+                            AssignedGNOfficerNIC = gnNic,
+                            VerificationStatus = "PUBLISHED",
+                            VerificationRemarks = dto.Remarks ?? "Family Card released.",
+                            VerifiedDate = DateTime.UtcNow,
+                            FinalVerifiedAttachmentId = certificateAttachment.AttachmentId,
+                            VerificationTokenHash = tokenHash,
+                            VerificationUrl = verificationUrl,
+                            OriginalFileHash = template.TemplateId.ToString(),
+                            FinalFileHash = fileHash,
+                            CreatedDate = DateTime.UtcNow,
+                            UpdatedDate = DateTime.UtcNow
+                        };
+                        _context.DocumentVerifications.Add(docVerification);
+                    }
+                    else
+                    {
+                        docVerification.MainAttachmentId = mainAttachmentId;
+                        docVerification.AssignedGNOfficerNIC = gnNic;
+                        docVerification.VerificationStatus = "PUBLISHED";
+                        docVerification.VerificationRemarks = dto.Remarks ?? "Family Card released.";
+                        docVerification.VerifiedDate = GetSriLankanTime();
+                        docVerification.FinalVerifiedAttachmentId = certificateAttachment.AttachmentId;
+                        docVerification.VerificationTokenHash = tokenHash;
+                        docVerification.VerificationUrl = verificationUrl;
+                        docVerification.OriginalFileHash = template.TemplateId.ToString();
+                        docVerification.FinalFileHash = fileHash;
+                        docVerification.UpdatedDate = GetSriLankanTime();
+                        _context.DocumentVerifications.Update(docVerification);
+                    }
+
+                    request.CurrentStatus = "Accepted";
+                    request.ApprovedDate = GetSriLankanTime();
+                    request.LastUpdated = GetSriLankanTime();
+                    _context.UnifiedRequests.Update(request);
+
+                    var latestHistory = await _context.RequestStatusHistories
+                        .Where(h => h.RequestId == request.RequestId)
+                        .OrderByDescending(h => h.ChangedDate)
+                        .FirstOrDefaultAsync();
+
+                    if (latestHistory == null || latestHistory.Status.ToUpper() != "ACCEPTED")
+                    {
+                        AddStatusHistory(request.RequestId, "Accepted", dto.Remarks ?? "Family Card requested and processed successfully.", gnNic);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await tx.CommitAsync();
+
+                    return Ok(new { success = true, message = "Family Card created and marriage processed successfully." });
+                }
+                catch (Exception ex)
+                {
+                    await tx.RollbackAsync();
+                    if (!string.IsNullOrEmpty(savedFilePath) && System.IO.File.Exists(savedFilePath))
+                    {
+                        try { System.IO.File.Delete(savedFilePath); } catch {}
+                    }
+                    var detailedError = ex.InnerException != null ? $"{ex.Message} (Inner: {ex.InnerException.Message})" : ex.Message;
+                    return StatusCode(500, new { success = false, message = "Failed to process marriage family card request.", error = detailedError });
+                }
+            }
             var verification = await _context.DocumentVerifications
                 .FirstOrDefaultAsync(v => v.RequestId == request.RequestId);
             if (verification == null || verification.FinalVerifiedAttachmentId == null)
@@ -4264,6 +6108,250 @@ namespace EGN_Service_Management.Controllers
                 string familyCardStatus = familyCard?.Status ?? "Active";
 
                 var reqData = _context.RequestDataEntries.FirstOrDefault(rd => rd.RequestId == (req != null ? req.RequestId : 0));
+                string json = reqData?.JsonData ?? string.Empty;
+
+                string requestType = SafeGetJsonProperty(json, "requestType");
+                if (string.IsNullOrEmpty(requestType))
+                {
+                    requestType = "Marriage";
+                }
+
+                bool isCategory5NotAccepted = categoryId == 5 && 
+                                              req != null && 
+                                              req.CurrentStatus != "Accepted" && 
+                                              req.CurrentStatus != "ACCEPTED";
+
+                CitizenMaster? cat5HeadCitizen = null;
+                CitizenMaster? cat5NonHeadCitizen = null;
+                string cat5NonHeadRelationship = "Spouse";
+                List<CitizenMaster> cat5MovingCitizens = new List<CitizenMaster>();
+
+                if (isCategory5NotAccepted && req != null)
+                {
+                    if (string.Equals(requestType, "Marriage", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var applicant = req.Citizen;
+                        string spouseNic = SafeGetJsonProperty(json, "spouseNic");
+                        var spouse = _context.CitizenMasters.FirstOrDefault(c => c.Nic == spouseNic);
+
+                        if (applicant != null && spouse != null)
+                        {
+                            string sameGnDivisionVal = SafeGetJsonProperty(json, "sameGnDivision");
+                            bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                            string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                            string destGnDivisionId;
+                            if (isSameGn)
+                            {
+                                destGnDivisionId = applicant.GnDivisionId;
+                            }
+                            else
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(json, "gnDivisionId");
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "newGnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "gnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = req.GnDivision ?? string.Empty;
+                                }
+                            }
+
+                            // Generate unique family card number
+                            var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                            if (string.IsNullOrEmpty(digits))
+                            {
+                                digits = "10";
+                            }
+                            
+                            string newFamilyCardNumber = string.Empty;
+                            int seq = 1;
+                            while (true)
+                            {
+                                string testCardNumber = $"FC-{digits}{seq:D2}";
+                                bool exists = _context.FamilyCards.Any(fc => fc.FamilyCardNumber == testCardNumber)
+                                              || string.Equals(testCardNumber, applicant.FamilyCardNumber, StringComparison.OrdinalIgnoreCase)
+                                              || string.Equals(testCardNumber, spouse.FamilyCardNumber, StringComparison.OrdinalIgnoreCase);
+                                
+                                if (!exists)
+                                {
+                                    newFamilyCardNumber = testCardNumber;
+                                    break;
+                                }
+                                seq++;
+                            }
+
+                            familyCardNumber = newFamilyCardNumber;
+
+                            // Decide Head based on gender
+                            string newHeadOfHouseholdNic = SafeGetJsonProperty(json, "newHeadOfHousehold");
+                            bool applicantIsMale = string.Equals(applicant.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                            bool spouseIsMale = string.Equals(spouse.Gender, "Male", StringComparison.OrdinalIgnoreCase);
+                            bool applicantIsFemale = string.Equals(applicant.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+                            bool spouseIsFemale = string.Equals(spouse.Gender, "Female", StringComparison.OrdinalIgnoreCase);
+
+                            if (applicantIsFemale && spouseIsMale && string.Equals(newHeadOfHouseholdNic, applicant.Nic))
+                            {
+                                cat5HeadCitizen = applicant;
+                                cat5NonHeadCitizen = spouse;
+                                cat5NonHeadRelationship = "Husband";
+                            }
+                            else if (spouseIsFemale && applicantIsMale && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                            {
+                                cat5HeadCitizen = spouse;
+                                cat5NonHeadCitizen = applicant;
+                                cat5NonHeadRelationship = "Husband";
+                            }
+                            else if (applicantIsMale)
+                            {
+                                cat5HeadCitizen = applicant;
+                                cat5NonHeadCitizen = spouse;
+                                cat5NonHeadRelationship = spouseIsFemale ? "Wife" : "Spouse";
+                            }
+                            else if (spouseIsMale)
+                            {
+                                cat5HeadCitizen = spouse;
+                                cat5NonHeadCitizen = applicant;
+                                cat5NonHeadRelationship = applicantIsFemale ? "Wife" : "Spouse";
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(newHeadOfHouseholdNic) && string.Equals(newHeadOfHouseholdNic, spouse.Nic))
+                                {
+                                    cat5HeadCitizen = spouse;
+                                    cat5NonHeadCitizen = applicant;
+                                }
+                                else
+                                {
+                                    cat5HeadCitizen = applicant;
+                                    cat5NonHeadCitizen = spouse;
+                                }
+                                cat5NonHeadRelationship = "Spouse";
+                            }
+
+                            headOfHouseholdNic = cat5HeadCitizen.Nic;
+                            headOfHouseholdName = cat5HeadCitizen.FullName;
+
+                            var newAddress = SafeGetJsonProperty(json, "newAddress");
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = SafeGetJsonProperty(json, "address");
+                            }
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = "No Address Provided";
+                            }
+
+                            var newHouseNumber = SafeGetJsonProperty(json, "houseNumber");
+                            if (string.IsNullOrEmpty(newHouseNumber))
+                            {
+                                newHouseNumber = SafeGetJsonProperty(json, "newHouseNumber");
+                            }
+
+                            houseNumber = newHouseNumber ?? string.Empty;
+                            address = newAddress;
+                            registeredDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                            familyCardStatus = "Active";
+                        }
+                    }
+                    else if (string.Equals(requestType, "DivorceOrSeparation", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(requestType, "Other", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var memberNicsToMove = SafeGetJsonArray(json, "familyMembersToMove");
+                        var movingCitizens = _context.CitizenMasters
+                            .Where(c => memberNicsToMove.Contains(c.Nic))
+                            .ToList();
+
+                        if (movingCitizens.Any())
+                        {
+                            var applicant = req.Citizen;
+                            string destGnDivisionId = string.Empty;
+                            string sameGnDivisionVal = SafeGetJsonProperty(json, "sameGnDivision");
+                            bool isSameGn = string.Equals(sameGnDivisionVal, "Yes", StringComparison.OrdinalIgnoreCase) || 
+                                            string.Equals(sameGnDivisionVal, "Y", StringComparison.OrdinalIgnoreCase);
+
+                            if (isSameGn && applicant != null)
+                            {
+                                destGnDivisionId = applicant.GnDivisionId;
+                            }
+                            else
+                            {
+                                destGnDivisionId = SafeGetJsonProperty(json, "gnDivisionId");
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "newGnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = SafeGetJsonProperty(json, "gnDivision");
+                                }
+                                if (string.IsNullOrEmpty(destGnDivisionId))
+                                {
+                                    destGnDivisionId = req.GnDivision ?? string.Empty;
+                                }
+                            }
+
+                            // Generate unique family card number
+                            var digits = new string((destGnDivisionId ?? string.Empty).Where(char.IsDigit).ToArray());
+                            if (string.IsNullOrEmpty(digits))
+                            {
+                                digits = "10";
+                            }
+                            
+                            string newFamilyCardNumber = string.Empty;
+                            int seq = 1;
+                            while (true)
+                            {
+                                string testCardNumber = $"FC-{digits}{seq:D2}";
+                                bool exists = _context.FamilyCards.Any(fc => fc.FamilyCardNumber == testCardNumber)
+                                              || movingCitizens.Any(c => string.Equals(testCardNumber, c.FamilyCardNumber, StringComparison.OrdinalIgnoreCase));
+                                
+                                if (!exists)
+                                {
+                                    newFamilyCardNumber = testCardNumber;
+                                    break;
+                                }
+                                seq++;
+                            }
+
+                            familyCardNumber = newFamilyCardNumber;
+
+                            string newHeadOfHouseholdNic = SafeGetJsonProperty(json, "newHeadOfHousehold");
+                            cat5HeadCitizen = movingCitizens.FirstOrDefault(c => c.Nic == newHeadOfHouseholdNic) ?? movingCitizens[0];
+
+                            headOfHouseholdNic = cat5HeadCitizen.Nic;
+                            headOfHouseholdName = cat5HeadCitizen.FullName;
+                            cat5MovingCitizens = movingCitizens;
+
+                            var newAddress = SafeGetJsonProperty(json, "newAddress");
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = SafeGetJsonProperty(json, "address");
+                            }
+                            if (string.IsNullOrEmpty(newAddress))
+                            {
+                                newAddress = "No Address Provided";
+                            }
+
+                            var newHouseNumber = SafeGetJsonProperty(json, "houseNumber");
+                            if (string.IsNullOrEmpty(newHouseNumber))
+                            {
+                                newHouseNumber = SafeGetJsonProperty(json, "newHouseNumber");
+                            }
+
+                            houseNumber = newHouseNumber ?? string.Empty;
+                            address = newAddress;
+                            registeredDate = DateTime.UtcNow.ToString("yyyy-MM-dd");
+                            familyCardStatus = "Active";
+                        }
+                    }
+                }
+
                 if (categoryId == 4 && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
                 {
                     string newHeadNic = SafeGetJsonProperty(reqData.JsonData, "nic");
@@ -4295,6 +6383,31 @@ namespace EGN_Service_Management.Controllers
                     }
                 }
 
+                // Category 42: Register to New GN Division (simulating new address details for preview)
+                bool isCategory42NotAccepted = categoryId == 42 &&
+                                               req != null &&
+                                               req.CurrentStatus != "Accepted" &&
+                                               req.CurrentStatus != "ACCEPTED";
+
+                if (isCategory42NotAccepted && reqData != null && !string.IsNullOrEmpty(reqData.JsonData))
+                {
+                    var newAddress = SafeGetJsonProperty(reqData.JsonData, "newResidentialAddress");
+                    if (string.IsNullOrEmpty(newAddress))
+                    {
+                        newAddress = SafeGetJsonProperty(reqData.JsonData, "newAddress");
+                    }
+                    if (!string.IsNullOrEmpty(newAddress))
+                    {
+                        address = newAddress;
+                    }
+
+                    var newHouseNumber = SafeGetJsonProperty(reqData.JsonData, "newHouseNumber");
+                    if (!string.IsNullOrEmpty(newHouseNumber))
+                    {
+                        houseNumber = newHouseNumber;
+                    }
+                }
+
                 var membersList = new List<FamilyMemberRowDto>();
 
                 var head = _context.CitizenMasters
@@ -4313,22 +6426,70 @@ namespace EGN_Service_Management.Controllers
                     });
                 }
 
-                var otherMembers = _context.CitizenMasters
-                    .Where(c => c.FamilyCardNumber == familyCardNumber && c.Nic != headOfHouseholdNic && c.LifeStatus == "Alive")
-                    .ToList();
-
-                foreach (var m in otherMembers)
+                if (isCategory5NotAccepted)
                 {
-                    membersList.Add(new FamilyMemberRowDto
+                    if (string.Equals(requestType, "Marriage", StringComparison.OrdinalIgnoreCase))
                     {
-                        Nic = m.Nic,
-                        FullName = m.FullName,
-                        Relationship = m.RelationshipToHead ?? "Member",
-                        Gender = m.Gender,
-                        Dob = m.Dob.ToString("yyyy-MM-dd"),
-                        Occupation = m.Occupation ?? "Not Applicable",
-                        MonthlyIncome = m.MonthlyIncome ?? 0
-                    });
+                        if (cat5NonHeadCitizen != null)
+                        {
+                            membersList.Add(new FamilyMemberRowDto
+                            {
+                                Nic = cat5NonHeadCitizen.Nic,
+                                FullName = cat5NonHeadCitizen.FullName,
+                                Relationship = cat5NonHeadRelationship,
+                                Gender = cat5NonHeadCitizen.Gender,
+                                Dob = cat5NonHeadCitizen.Dob.ToString("yyyy-MM-dd"),
+                                Occupation = cat5NonHeadCitizen.Occupation ?? "Not Applicable",
+                                MonthlyIncome = cat5NonHeadCitizen.MonthlyIncome ?? 0
+                            });
+                        }
+                    }
+                    else if (string.Equals(requestType, "DivorceOrSeparation", StringComparison.OrdinalIgnoreCase) ||
+                             string.Equals(requestType, "Other", StringComparison.OrdinalIgnoreCase))
+                    {
+                        foreach (var m in cat5MovingCitizens)
+                        {
+                            if (m.Nic != headOfHouseholdNic)
+                            {
+                                string rel = "Member";
+                                if (m.RelationshipToHead != "Head" && !string.IsNullOrEmpty(m.RelationshipToHead))
+                                {
+                                    rel = m.RelationshipToHead;
+                                }
+
+                                membersList.Add(new FamilyMemberRowDto
+                                {
+                                    Nic = m.Nic,
+                                    FullName = m.FullName,
+                                    Relationship = rel,
+                                    Gender = m.Gender,
+                                    Dob = m.Dob.ToString("yyyy-MM-dd"),
+                                    Occupation = m.Occupation ?? "Not Applicable",
+                                    MonthlyIncome = m.MonthlyIncome ?? 0
+                                });
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var otherMembers = _context.CitizenMasters
+                        .Where(c => c.FamilyCardNumber == familyCardNumber && c.Nic != headOfHouseholdNic && c.LifeStatus == "Alive")
+                        .ToList();
+
+                    foreach (var m in otherMembers)
+                    {
+                        membersList.Add(new FamilyMemberRowDto
+                        {
+                            Nic = m.Nic,
+                            FullName = m.FullName,
+                            Relationship = m.RelationshipToHead ?? "Member",
+                            Gender = m.Gender,
+                            Dob = m.Dob.ToString("yyyy-MM-dd"),
+                            Occupation = m.Occupation ?? "Not Applicable",
+                            MonthlyIncome = m.MonthlyIncome ?? 0
+                        });
+                    }
                 }
 
                 string? childFullName = null;
@@ -4567,7 +6728,7 @@ namespace EGN_Service_Management.Controllers
             interpolated = interpolated.Replace("{{RubberStamp}}", stampTag, StringComparison.OrdinalIgnoreCase);
 
             string qrTag = !string.IsNullOrEmpty(qrBase64)
-                ? $"<img src=\"{qrBase64}\" style=\"width:100px;height:100px;display:block;margin:0 auto;\" />"
+                ? $"<img src=\"{qrBase64}\" style=\"max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;\" />"
                 : string.Empty;
             interpolated = interpolated.Replace("{{QrCode}}", qrTag, StringComparison.OrdinalIgnoreCase);
 
@@ -4715,7 +6876,7 @@ namespace EGN_Service_Management.Controllers
                 var qrCodeData = qrGenerator.CreateQrCode(qrUrl, QRCoder.QRCodeGenerator.ECCLevel.Q);
                 using var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
                 byte[] qrBytes = qrCode.GetGraphic(20);
-                qrBase64Tag = $"<img src=\"data:image/png;base64,{Convert.ToBase64String(qrBytes)}\" style=\"width:105px;height:105px;display:block;\" />";
+                qrBase64Tag = $"<img src=\"data:image/png;base64,{Convert.ToBase64String(qrBytes)}\" style=\"max-width:100%;max-height:100%;object-fit:contain;display:block;margin:0 auto;\" />";
             }
             catch { qrBase64Tag = ""; }
 
@@ -4859,6 +7020,40 @@ namespace EGN_Service_Management.Controllers
                 "RESUBMITTED" => "Resubmitted",
                 _ => status
             };
+        }
+
+        private static List<string> SafeGetJsonArray(string? json, string propertyName)
+        {
+            var list = new List<string>();
+            if (string.IsNullOrEmpty(json)) return list;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty(propertyName, out var prop))
+                {
+                    if (prop.ValueKind == System.Text.Json.JsonValueKind.Array)
+                    {
+                        foreach (var item in prop.EnumerateArray())
+                        {
+                            var val = item.GetString();
+                            if (!string.IsNullOrEmpty(val))
+                            {
+                                list.Add(val);
+                            }
+                        }
+                    }
+                    else if (prop.ValueKind == System.Text.Json.JsonValueKind.String)
+                    {
+                        var val = prop.GetString();
+                        if (!string.IsNullOrEmpty(val))
+                        {
+                            list.AddRange(val.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
+                        }
+                    }
+                }
+            }
+            catch {}
+            return list;
         }
 
         private static string SafeGetJsonProperty(string? json, string propertyName)

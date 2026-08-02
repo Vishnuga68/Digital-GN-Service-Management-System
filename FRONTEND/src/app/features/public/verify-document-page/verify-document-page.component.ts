@@ -39,9 +39,7 @@ export class VerifyDocumentPageComponent implements OnInit {
       error: (err) => {
         console.error('Verification error', err);
         this.verificationResult = {
-          isValid: false,
-          isRevoked: false,
-          message: 'An error occurred during verification. Please check the network.'
+          status: 'invalid'
         };
         this.isLoading = false;
       }

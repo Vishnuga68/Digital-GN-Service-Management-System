@@ -27,19 +27,28 @@
         <h1>Request Details</h1>
       </div>
       <div class="header-right">
-        <span class="status-badge" [ngClass]="{
+         <span class="status-badge" [ngClass]="{
           'status-pending': requestDetails.status === 'Pending' || requestDetails.status === 'Submitted',
-          'status-in-progress': requestDetails.status === 'In Progress' || requestDetails.status === 'Under Review' || requestDetails.status === 'Changes Requested' || requestDetails.status === 'Resubmitted',
+          'status-in-progress': requestDetails.status === 'In Progress' || requestDetails.status === 'Under Review' || requestDetails.status === 'Changes Requested' || requestDetails.status === 'Resubmitted' || requestDetails.status === 'Returned',
           'status-verified': requestDetails.status === 'Verified',
           'status-approved': requestDetails.status === 'Approved' || requestDetails.status === 'Accepted',
-          'status-rejected': requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked'
-        }">{{ requestDetails.status }}</span>
+          'status-rejected': requestDetails.status === 'Rejected' || requestDetails.status === 'Revoked',
+          'status-forwarded': requestDetails.status === 'ForwardedToDestinationGn'
+        }">{{ requestDetails.status === 'ForwardedToDestinationGn' ? 'To Destination GN' : requestDetails.status }}</span>
       </div>
     </header>
 
     <div class="grid-layout">
       <!-- Main Content Column -->
       <div class="main-column">
+        <!-- Forwarded info banner -->
+        <div *ngIf="requestDetails.status === 'ForwardedToDestinationGn'" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #1e40af; font-weight: 600; font-size: 0.95rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Forwarded for Final Approval
+          </div>
+          <p style="margin: 0; color: #1e3a8a; font-size: 0.9rem; line-height: 1.5;">Your request has been verified by the current GN Officer and forwarded to the destination GN Officer for final approval.</p>
+        </div>
         
         <!-- Progress Timeline Section (NOW IN MAIN COLUMN) -->
         <div class="section-container">
@@ -109,7 +118,7 @@
               </div>
               <div class="info-group">
                 <label>Current Status</label>
-                <p>{{ requestDetails.status }}</p>
+                <p>{{ requestDetails.status === 'ForwardedToDestinationGn' ? 'To Destination GN' : requestDetails.status }}</p>
               </div>
               <div class="info-group">
                 <label>Submitted Date</label>
@@ -443,11 +452,16 @@
                         </div>
                      </div>
                      <div style="display: flex; align-items: center; gap: 8px;">
-                       <span *ngIf="remark.status" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;"
-                             [style.background]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#f0fdf4' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#fdf2f2' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#f1f5f9' : '#eff6ff'"
-                             [style.color]="(remark.status === 'Accepted' || remark.status === 'Approved' || remark.status === 'APPROVED' || remark.status === 'ACCEPTED') ? '#16a34a' : (remark.status === 'Rejected' || remark.status === 'REJECTED') ? '#de3535' : (remark.status === 'Verified' || remark.status === 'VERIFIED') ? '#0f172a' : '#1d4ed8'">
-                         {{ remark.status }}
-                       </span>
+                        <span class="status-badge" [ngClass]="{
+                          'status-pending': remark.status === 'Pending' || remark.status === 'Submitted',
+                          'status-in-progress': remark.status === 'In Progress' || remark.status === 'Under Review' || remark.status === 'Changes Requested',
+                          'status-verified': remark.status === 'Verified',
+                          'status-approved': remark.status === 'Approved' || remark.status === 'Accepted',
+                          'status-rejected': remark.status === 'Rejected' || remark.status === 'Revoked',
+                          'status-forwarded': remark.status === 'ForwardedToDestinationGn' || remark.status === 'Forwarded to GN' || remark.status === 'To Destination GN'
+                        }" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase;">
+                          {{ (remark.status === 'ForwardedToDestinationGn' || remark.status === 'Forwarded to GN') ? 'To Destination GN' : remark.status }}
+                        </span>
                        <span class="date">{{ remark.date | date:'MMM d, h:mm a' }}</span>
                      </div>
                   </div>

@@ -2,7 +2,9 @@
   <div class="glass-container">
     <!-- Header -->
     <header class="gov-header">
-      <div class="crest-placeholder">🏛️</div>
+      <div class="crest-placeholder">
+        <img src="/assets/images/logo.png" alt="Logo" class="logo-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3616/3616215.png'">
+      </div>
       <h1>E-Grama Niladhari Verification System</h1>
       <p class="subtitle">Official Public Document Verification Service</p>
     </header>
@@ -19,7 +21,7 @@
     <div class="loaded-state" *ngIf="!isLoading">
       
       <!-- 1. VALID STATE -->
-      <div class="status-section valid-doc" *ngIf="verificationResult?.isValid">
+      <div class="status-section valid-doc" *ngIf="verificationResult?.status === 'valid'">
         <div class="status-badge-icon check-icon">✓</div>
         <h2>Verification Success</h2>
         <p class="status-message">This document is verified and officially authentic.</p>
@@ -30,12 +32,20 @@
             <span class="value status-text-valid">● Valid & Verified</span>
           </div>
           <div class="detail-row">
-            <span class="label">Request Reference:</span>
+            <span class="label">Document Number:</span>
             <span class="value monospace">{{ verificationResult.requestNumber }}</span>
           </div>
           <div class="detail-row">
-            <span class="label">Document Name:</span>
-            <span class="value">{{ verificationResult.documentName }}</span>
+            <span class="label">Document Type:</span>
+            <span class="value">{{ verificationResult.documentType }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Citizen Name:</span>
+            <span class="value">{{ verificationResult.citizenName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Citizen NIC:</span>
+            <span class="value monospace">{{ verificationResult.maskedNic }}</span>
           </div>
           <div class="detail-row">
             <span class="label">Verified On:</span>
@@ -46,16 +56,8 @@
             <span class="value">{{ verificationResult.gnDivision }} Division</span>
           </div>
           <div class="detail-row">
-            <span class="label">Issuing Authority:</span>
-            <span class="value">{{ verificationResult.issuingAuthority }}</span>
-          </div>
-          <div class="detail-row">
             <span class="label">Verifying Officer:</span>
-            <span class="value">{{ verificationResult.officerName }}</span>
-          </div>
-          <div class="detail-row fingerprint-row">
-            <span class="label">SHA-256 Fingerprint:</span>
-            <span class="value monospace fingerprint">{{ verificationResult.fileHash }}</span>
+            <span class="value">{{ verificationResult.gnOfficerName }}</span>
           </div>
         </div>
 
@@ -65,8 +67,8 @@
       </div>
 
       <!-- 2. REVOKED STATE -->
-      <div class="status-section revoked-doc" *ngIf="verificationResult?.isRevoked">
-        <div class="status-badge-icon warning-icon">!</div>
+      <div class="status-section revoked-doc" *ngIf="verificationResult?.status === 'revoked'">
+        <div class="status-badge-icon error-icon">!</div>
         <h2 class="revoked-header">Verification Revoked</h2>
         <p class="status-message text-danger">This document verification has been officially revoked and is no longer valid.</p>
 
@@ -87,44 +89,78 @@
             <span class="value status-text-invalid">● Revoked</span>
           </div>
           <div class="detail-row">
-            <span class="label">Request Reference:</span>
+            <span class="label">Document Number:</span>
             <span class="value monospace">{{ verificationResult.requestNumber }}</span>
           </div>
           <div class="detail-row">
-            <span class="label">Document Name:</span>
-            <span class="value">{{ verificationResult.documentName }}</span>
+            <span class="label">Document Type:</span>
+            <span class="value">{{ verificationResult.documentType }}</span>
           </div>
           <div class="detail-row">
-            <span class="label">Original Verification:</span>
-            <span class="value">{{ verificationResult.verifiedDate | date:'MMMM d, y' }}</span>
+            <span class="label">Citizen Name:</span>
+            <span class="value">{{ verificationResult.citizenName }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Citizen NIC:</span>
+            <span class="value monospace">{{ verificationResult.maskedNic }}</span>
           </div>
           <div class="detail-row">
             <span class="label">GN Division:</span>
             <span class="value">{{ verificationResult.gnDivision }} Division</span>
           </div>
           <div class="detail-row">
-            <span class="label">Issuing Authority:</span>
-            <span class="value">{{ verificationResult.issuingAuthority }}</span>
-          </div>
-          <div class="detail-row">
             <span class="label">Assigned Officer:</span>
-            <span class="value">{{ verificationResult.officerName }}</span>
+            <span class="value">{{ verificationResult.gnOfficerName }}</span>
           </div>
         </div>
       </div>
 
-      <!-- 3. NOT FOUND / INVALID STATE -->
-      <div class="status-section invalid-doc" *ngIf="!verificationResult?.isValid && !verificationResult?.isRevoked">
+      <!-- 3. UNAVAILABLE STATE -->
+      <div class="status-section unavailable-doc" *ngIf="verificationResult?.status === 'unavailable'">
+        <div class="status-badge-icon warning-icon">⏱</div>
+        <h2 class="unavailable-header">Document Unavailable</h2>
+        <p class="status-message text-warning">This document is not yet publicly available.</p>
+
+        <div class="unavailable-banner">
+          <p>The document verification process is currently incomplete, pending, or under review by the Grama Niladhari officer.</p>
+        </div>
+
+        <div class="details-table">
+          <div class="detail-row">
+            <span class="label">Document Status:</span>
+            <span class="value status-text-unavailable">● Processing / Unreleased</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Document Number:</span>
+            <span class="value monospace">{{ verificationResult.requestNumber }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Document Type:</span>
+            <span class="value">{{ verificationResult.documentType }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">GN Division:</span>
+            <span class="value">{{ verificationResult.gnDivision }} Division</span>
+          </div>
+          <div class="detail-row">
+            <span class="label">Assigned Officer:</span>
+            <span class="value">{{ verificationResult.gnOfficerName }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. INVALID STATE -->
+      <div class="status-section invalid-doc" *ngIf="verificationResult?.status === 'invalid'">
         <div class="status-badge-icon error-icon">×</div>
         <h2>Verification Failed</h2>
         <p class="status-message">The document token is invalid, not found, or has been tampered with.</p>
         
         <div class="error-details">
-          <p>This could be due to:</p>
+          <p>Possible causes:</p>
           <ul>
-            <li>An incorrect or modified URL/QR code token</li>
-            <li>A counterfeit or forged document</li>
-            <li>A record that has been deleted from the registry</li>
+            <li>Incorrect or modified QR code token</li>
+            <li>Counterfeit or forged document</li>
+            <li>Record does not exist in the official registry</li>
           </ul>
         </div>
       </div>
@@ -136,7 +172,7 @@
       <p>🛡️ Secure Cryptographic Verification System</p>
       <p class="disclaimer">
         This portal allows external entities to verify the status and fingerprint of official certificates.
-        Please cross-reference the SHA-256 fingerprint with your local copy to ensure compliance.
+        Please contact the respective Divisional Secretariat for any escalations.
       </p>
     </footer>
   </div>

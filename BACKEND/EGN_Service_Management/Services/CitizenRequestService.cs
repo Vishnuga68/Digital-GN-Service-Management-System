@@ -75,6 +75,16 @@ namespace EGN_Service_Management.Services
                      (category.Service != null && category.Service.ServiceName.Contains("Document Verification", StringComparison.OrdinalIgnoreCase)));
 
                 var gnDivisionId = requestDto.GnDivisionId;
+                if (requestDto.CategoryId == 5 || requestDto.CategoryId == 42)
+                {
+                    var submitterCitizen = await _dbContext.CitizenMasters
+                        .FirstOrDefaultAsync(c => c.Nic == (currentUserId ?? requestDto.CitizenNic));
+                    if (submitterCitizen != null && !string.IsNullOrEmpty(submitterCitizen.GnDivisionId))
+                    {
+                        gnDivisionId = submitterCitizen.GnDivisionId;
+                        requestDto.GnDivisionId = gnDivisionId;
+                    }
+                }
                 if (requestDto.CategoryId == 2)
                 {
                     var submitterCitizen = await _dbContext.CitizenMasters

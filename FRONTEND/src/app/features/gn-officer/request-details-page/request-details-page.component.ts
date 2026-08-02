@@ -43,12 +43,29 @@ export class RequestDetailsPageComponent implements OnInit {
   isDocumentRequest = false;
   isSimpleRequestFlow = false;
   showVerifyButton = false;
+  showForwardButton = false;
   isRemarkEditable = false;
   showSimpleStartReviewConfirm = false;
   showSimpleVerifyConfirm = false;
   showSimpleAcceptConfirm = false;
   showSimpleRejectConfirm = false;
   isRemarkReadOnlyVisible = false;
+
+  isCrossGn(): boolean {
+    if (!this.requestDetails) return false;
+    const categoryId = this.requestDetails.categoryId;
+    if (categoryId !== 5 && categoryId !== 42) return false;
+
+    const currentDiv = this.requestDetails.applicant?.gnDivisionId;
+    const destDiv = this.requestDetails.destinationGnDivision;
+
+    return !!currentDiv && !!destDiv && currentDiv !== destDiv;
+  }
+
+  isStage2(): boolean {
+    if (!this.requestDetails) return false;
+    return this.requestDetails.gnDivision === this.requestDetails.destinationGnDivision;
+  }
 
   constructor(private route: ActivatedRoute, private router: Router, private http: HttpClient) {
     const navigation = this.router.getCurrentNavigation();
@@ -589,7 +606,7 @@ export class RequestDetailsPageComponent implements OnInit {
 
   confirmRelease() {
     this.showReleaseConfirmModal = false;
-    if (this.requestDetails && (this.requestDetails.categoryId >= 1 && this.requestDetails.categoryId <= 6)) {
+    if (this.requestDetails && ((this.requestDetails.categoryId >= 1 && this.requestDetails.categoryId <= 6) || this.requestDetails.categoryId === 42)) {
       this.executeReleaseCertificate();
     } else {
       this.executeReleaseVerification();
@@ -695,6 +712,20 @@ export class RequestDetailsPageComponent implements OnInit {
   updateButtonVisibility() {
     if (!this.requestDetails) return;
     
+    if (this.isNotAssignedToMe()) {
+      this.showStartReviewButton = false;
+      this.showVerifyButton = false;
+      this.showRejectButton = false;
+      this.showForwardButton = false;
+      this.showGenerateCertificateButton = false;
+      this.showReleaseCertificateButton = false;
+      this.showAcceptButton = false;
+      this.showReleaseButton = false;
+      this.isRemarkEditable = false;
+      this.isRemarkReadOnlyVisible = true;
+      return;
+    }
+
     const vDetails = this.requestDetails.verificationDetails;
     const vStatus = vDetails?.verificationStatus?.toUpperCase();
     const hasFinalPdf = !!vDetails?.finalVerifiedAttachmentId || !!this.finalVerifiedDocument;
@@ -726,25 +757,59 @@ export class RequestDetailsPageComponent implements OnInit {
     }
     else {
       this.showVerifyButton = false;
-      this.isDocumentRequest = (this.requestDetails?.serviceType?.toLowerCase().includes('request') || (this.requestDetails?.categoryId >= 1 && this.requestDetails?.categoryId <= 6)) || false;
+      this.showForwardButton = false;
+      this.isDocumentRequest = (this.requestDetails?.serviceType?.toLowerCase().includes('request') || 
+                                (this.requestDetails?.categoryId >= 1 && this.requestDetails?.categoryId <= 6) ||
+                                this.requestDetails?.categoryId === 42) || false;
 
       if (this.isDocumentRequest) {
-        const hasCert = (vStatus === 'GENERATED' || vStatus === 'PUBLISHED') || !!this.generatedCertificate;
-        const isCompleted = ['Rejected', 'Accepted', 'Approved', 'REVOKED', 'Revoked'].includes(status) ||
-                             ['PUBLISHED', 'REJECTED', 'REVOKED'].includes(vStatus);
+        if (this.isCrossGn()) {
+          const isForwarded = status === 'ForwardedToDestinationGn';
+          const isCompleted = ['Rejected', 'Accepted', 'Approved', 'REVOKED', 'Revoked'].includes(status) || status === 'Returned';
+          const hasCert = (vStatus === 'GENERATED' || vStatus === 'PUBLISHED') || !!this.generatedCertificate;
 
-        this.showStartReviewButton = (!vStatus || vStatus === 'PENDING' || vStatus === 'RESUBMITTED') && !isCompleted;
-        this.showGenerateCertificateButton = ((vStatus === 'UNDER_REVIEW' || vStatus === 'VERIFIED') && !hasCert) && !isCompleted;
-        this.showReleaseCertificateButton = (vStatus === 'GENERATED' && hasCert) && !isCompleted;
-        this.showRejectButton = (vStatus === 'UNDER_REVIEW' && !hasCert) && !isCompleted;
-        this.showAcceptButton = false;
-        // No release button for document request flow
-        this.showReleaseButton = false;
+          if (!this.isStage2()) {
+            // Stage 1 (Current Officer)
+            this.showStartReviewButton = (status === 'Submitted' || status === 'Pending' || !vStatus || vStatus === 'PENDING') && !isCompleted;
+            this.showVerifyButton = false;
+            this.showRejectButton = (status === 'Under Review' || vStatus === 'UNDER_REVIEW') && !isCompleted;
+            this.showForwardButton = (status === 'Under Review' || vStatus === 'UNDER_REVIEW') && !isCompleted;
+            this.showGenerateCertificateButton = false;
+            this.showReleaseCertificateButton = false;
+            this.showAcceptButton = false;
+            this.showReleaseButton = false;
+          } else {
+            // Stage 2 (Destination Officer)
+            this.showStartReviewButton = false;
+            this.showVerifyButton = (status === 'ForwardedToDestinationGn' || vStatus === 'FORWARDED') && !isCompleted;
+            this.showRejectButton = (status === 'Verified' || vStatus === 'VERIFIED') && !isCompleted;
+            this.showForwardButton = false;
+            this.showGenerateCertificateButton = (this.requestDetails.categoryId !== 42 && (status === 'Verified' || vStatus === 'VERIFIED') && !hasCert) && !isCompleted;
+            this.showReleaseCertificateButton = (this.requestDetails.categoryId !== 42 && vStatus === 'GENERATED' && hasCert) && !isCompleted;
+            this.showAcceptButton = ((status === 'Verified' || vStatus === 'VERIFIED') && this.requestDetails.categoryId === 42) && !isCompleted;
+            this.showReleaseButton = false;
+          }
 
-        // Remarks editable unless request is rejected
-        const rejectStatuses = ['REJECTED', 'Rejected'];
-        this.isRemarkEditable = !rejectStatuses.includes(status);
-        this.isRemarkReadOnlyVisible = rejectStatuses.includes(status);
+          const rejectStatuses = ['REJECTED', 'Rejected', 'ForwardedToDestinationGn'];
+          this.isRemarkEditable = !rejectStatuses.includes(status) && !this.isNotAssignedToMe();
+          this.isRemarkReadOnlyVisible = rejectStatuses.includes(status) || this.isNotAssignedToMe();
+        } else {
+          const hasCert = (vStatus === 'GENERATED' || vStatus === 'PUBLISHED') || !!this.generatedCertificate;
+          const isCompleted = ['Rejected', 'Accepted', 'Approved', 'REVOKED', 'Revoked'].includes(status) || ['PUBLISHED', 'REJECTED', 'REVOKED'].includes(vStatus!);
+
+          this.showStartReviewButton = (!vStatus || vStatus === 'PENDING' || vStatus === 'RESUBMITTED') && !isCompleted;
+          this.showVerifyButton = (vStatus === 'UNDER_REVIEW') && !isCompleted;
+          this.showForwardButton = false;
+          this.showGenerateCertificateButton = (this.requestDetails.categoryId !== 42 && vStatus === 'VERIFIED' && !hasCert) && !isCompleted;
+          this.showReleaseCertificateButton = (this.requestDetails.categoryId !== 42 && vStatus === 'GENERATED' && hasCert) && !isCompleted;
+          this.showRejectButton = ((vStatus === 'UNDER_REVIEW' || vStatus === 'VERIFIED') && !hasCert) && !isCompleted;
+          this.showAcceptButton = (this.requestDetails.categoryId === 42 && vStatus === 'VERIFIED' && !hasCert) && !isCompleted;
+          this.showReleaseButton = false;
+
+          const rejectStatuses = ['REJECTED', 'Rejected'];
+          this.isRemarkEditable = !rejectStatuses.includes(status);
+          this.isRemarkReadOnlyVisible = rejectStatuses.includes(status);
+        }
       } else {
         this.showGenerateCertificateButton = false;
         this.showReleaseCertificateButton = false;
@@ -912,5 +977,60 @@ export class RequestDetailsPageComponent implements OnInit {
     const status = this.requestDetails.status;
     const disabledStatuses = ['Accepted', 'Rejected', 'Approved', 'ACCEPTED', 'REJECTED', 'APPROVED'];
     return !disabledStatuses.includes(status);
+  }
+
+  verifyRequest() {
+    this.isProcessing = true;
+    const token = sessionStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const body = {
+      Status: 'Verified',
+      Remarks: this.newRemark ? this.newRemark.trim() : 'Request verified'
+    };
+    this.http.post(`http://localhost:5058/api/CitizenRequest/${this.requestId}/status`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isProcessing = false;
+        this.newRemark = '';
+        this.fetchRequestDetails(this.requestId!);
+        this.notificationTitle = 'Request Verified';
+        this.notificationMessage = 'The request has been verified successfully.';
+        this.notificationType = 'success';
+        this.showNotificationModal = true;
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.notificationTitle = 'Verification Failed';
+        this.notificationMessage = err?.error?.message || 'Failed to verify request.';
+        this.notificationType = 'error';
+        this.showNotificationModal = true;
+      }
+    });
+  }
+
+  forwardRequest() {
+    this.isProcessing = true;
+    const token = sessionStorage.getItem('token');
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    const body = {
+      Remarks: this.newRemark ? this.newRemark.trim() : 'Forwarded to destination GN officer'
+    };
+    this.http.post(`http://localhost:5058/api/CitizenRequest/verification/${this.requestId}/forward`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isProcessing = false;
+        this.newRemark = '';
+        this.fetchRequestDetails(this.requestId!);
+        this.notificationTitle = 'Request Forwarded';
+        this.notificationMessage = 'The request has been forwarded to the destination GN Officer successfully.';
+        this.notificationType = 'success';
+        this.showNotificationModal = true;
+      },
+      error: (err) => {
+        this.isProcessing = false;
+        this.notificationTitle = 'Forwarding Failed';
+        this.notificationMessage = err?.error?.message || 'Failed to forward request.';
+        this.notificationType = 'error';
+        this.showNotificationModal = true;
+      }
+    });
   }
 }

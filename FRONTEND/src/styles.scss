@@ -52,6 +52,11 @@ html, body {
   color: #ef4444 !important; /* red */
 }
 
+.status-badge.status-forwarded {
+  background-color: #faf5ff !important; /* light purple */
+  color: #7e22ce !important; /* purple */
+}
+
 /* Custom Modal Overlay */
 .custom-modal-backdrop {
   position: fixed;
