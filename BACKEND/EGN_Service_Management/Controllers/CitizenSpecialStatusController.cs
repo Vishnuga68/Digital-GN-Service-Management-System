@@ -116,20 +116,36 @@ namespace EGN_Service_Management.Controllers
                 }
             }
 
+            var isRegisteredVoter = await _context.VoterRegistries.AnyAsync(vr => vr.CitizenNic == citizen.Nic);
+            if (isRegisteredVoter)
+            {
+                confirmedWelfare.Add(new
+                {
+                    programName = "Voter Registration",
+                    statusText = "Registered",
+                    lastVerifiedDate = today.ToString("yyyy-MM-dd"),
+                    verifiedBy = "GN Officer"
+                });
+            }
+
             // 2. Suggestions Mapping (only when citizen is Alive)
             if (citizen.LifeStatus.Equals("Alive", StringComparison.OrdinalIgnoreCase))
             {
                 // A. Voter Registration Suggestion
-                // Conditions: age >= 18, LifeStatus is Alive, and not registered in voter registration registry.
-                // Since there is no voter table, we treat isRegisteredVoter as false (always suggest if >= 18).
-                bool isRegisteredVoter = false; 
-                if (age >= 18 && !isRegisteredVoter)
+                // Conditions: age >= 18, LifeStatus is Alive, not already registered in voter registration registry, and no pending or active Category ID 7 request.
+                var hasVoterRequest = await _context.UnifiedRequests.AnyAsync(r =>
+                    r.CitizenNic == citizen.Nic &&
+                    r.CategoryId == 7 &&
+                    r.CurrentStatus != "Rejected");
+
+                int voterAge = today.Year - citizen.Dob.Year;
+                if (voterAge >= 18 && !isRegisteredVoter && !hasVoterRequest)
                 {
                     suggestions.Add(new
                     {
                         type = "Voter",
                         title = "Eligible for Voter Registration Review",
-                        reason = $"Voter Registration Review – Citizen is {age} years old and not registered."
+                        reason = $"Voter Registration Review – Citizen turns {voterAge} this year and is not registered."
                     });
                 }
 
@@ -146,8 +162,8 @@ namespace EGN_Service_Management.Controllers
                     });
                 }
 
-                // C. Low-Income Family Suggestion
-                // Conditions: is official head of household, total family monthly income < 30000.
+                // C. Low-Income Family Suggestion (Aswesuma)
+                // Conditions: is official head of household, total family monthly income < 30000, and does not have an active Aswesuma record.
                 if (!string.IsNullOrEmpty(citizen.FamilyCardNumber))
                 {
                     var familyCard = await _context.FamilyCards
@@ -163,16 +179,14 @@ namespace EGN_Service_Management.Controllers
 
                         decimal totalFamilyIncome = familyMembersIncome.Sum();
 
-                        if (totalFamilyIncome < 30000)
+                        bool hasActiveAswesuma = welfare != null && welfare.IsAswesuma;
+                        if (totalFamilyIncome < 30000 && !hasActiveAswesuma)
                         {
-                            bool alreadyReceivingWelfare = welfare != null && (welfare.IsAswesuma || welfare.IsPublicAssistanceEligible);
                             suggestions.Add(new
                             {
                                 type = "LowIncome",
                                 title = "Eligible for Low-Income Assistance Review",
-                                reason = alreadyReceivingWelfare 
-                                    ? "Low-Income Family Review (Household already receiving welfare support)"
-                                    : "Low-Income Family Review",
+                                reason = "Low-Income Family Review",
                                 details = $"Total recorded family monthly income: Rs. {totalFamilyIncome:N2}"
                             });
                         }

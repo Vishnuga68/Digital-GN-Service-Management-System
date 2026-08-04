@@ -606,7 +606,7 @@ export class RequestDetailsPageComponent implements OnInit {
 
   confirmRelease() {
     this.showReleaseConfirmModal = false;
-    if (this.requestDetails && ((this.requestDetails.categoryId >= 1 && this.requestDetails.categoryId <= 6) || this.requestDetails.categoryId === 42)) {
+    if (this.requestDetails && ((this.requestDetails.categoryId >= 1 && this.requestDetails.categoryId <= 6) || this.requestDetails.categoryId === 53 || this.requestDetails.categoryId === 42)) {
       this.executeReleaseCertificate();
     } else {
       this.executeReleaseVerification();
@@ -731,7 +731,7 @@ export class RequestDetailsPageComponent implements OnInit {
     const hasFinalPdf = !!vDetails?.finalVerifiedAttachmentId || !!this.finalVerifiedDocument;
     const status = this.requestDetails.status;
     
-    this.isSimpleRequestFlow = [44, 45, 46].includes(this.requestDetails.categoryId);
+    this.isSimpleRequestFlow = [7, 44, 45, 46, 52].includes(this.requestDetails.categoryId);
 
     if (this.isSimpleRequestFlow) {
       this.isDocumentRequest = false;
@@ -760,6 +760,7 @@ export class RequestDetailsPageComponent implements OnInit {
       this.showForwardButton = false;
       this.isDocumentRequest = (this.requestDetails?.serviceType?.toLowerCase().includes('request') || 
                                 (this.requestDetails?.categoryId >= 1 && this.requestDetails?.categoryId <= 6) ||
+                                this.requestDetails?.categoryId === 53 ||
                                 this.requestDetails?.categoryId === 42) || false;
 
       if (this.isDocumentRequest) {

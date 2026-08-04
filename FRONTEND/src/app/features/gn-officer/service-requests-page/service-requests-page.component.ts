@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { SearchService } from '../../../core/services/search.service';
 
 export interface ServiceRequest {
   id: string;
@@ -24,6 +25,8 @@ export interface ServiceRequest {
 export class ServiceRequestsPageComponent implements OnInit {
   constructor(private router: Router, private http: HttpClient) {}
   
+  private searchService = inject(SearchService);
+  searchQuery = '';
   isLoading = true;
   
   // Filters
@@ -40,12 +43,30 @@ export class ServiceRequestsPageComponent implements OnInit {
   allRequests: ServiceRequest[] = [];
   filteredRequests: ServiceRequest[] = [];
 
-  categories = ['All', 'Certificates', 'Permits', 'Complaints', 'Inquiries'];
+  categories: string[] = ['All'];
   
   ngOnInit(): void {
+    this.searchService.searchQuery$.subscribe(query => {
+      this.searchQuery = query;
+      this.applyFilters();
+    });
+
     const nic = sessionStorage.getItem('userNic');
     const token = sessionStorage.getItem('token');
     
+    // Fetch active services
+    this.http.get<any[]>('http://localhost:5058/api/Services/active')
+      .subscribe({
+        next: (services) => {
+          if (services) {
+            this.categories = ['All', ...services.map(s => s.serviceName)];
+          }
+        },
+        error: (err) => {
+          console.error('Failed to fetch active services', err);
+        }
+      });
+
     if (nic && token) {
       const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
       this.http.get<ServiceRequest[]>(`http://localhost:5058/api/CitizenRequest/gn/${nic}`, { headers })
@@ -95,15 +116,24 @@ export class ServiceRequestsPageComponent implements OnInit {
   // Filtered requests specifically for calculating counts (ignoring the selectedStatus filter)
   get filteredRequestsForCounts(): ServiceRequest[] {
     return this.allRequests.filter(req => {
-      const matchCategory = this.selectedCategory === 'All' || req.category === this.selectedCategory;
+      const matchCategory = this.selectedCategory === 'All' || req.serviceType === this.selectedCategory;
       
       let matchDate = true;
-      if (this.startDate && this.endDate) {
-        const start = new Date(this.startDate).getTime();
-        const end = new Date(this.endDate).getTime();
-        const endOfEndDay = end + 24 * 60 * 60 * 1000 - 1;
+      if (this.startDate) {
+        const start = new Date(this.startDate);
+        start.setHours(0, 0, 0, 0);
         const reqTime = new Date(req.submittedDate).getTime();
-        matchDate = reqTime >= start && reqTime <= endOfEndDay;
+        if (reqTime < start.getTime()) {
+          matchDate = false;
+        }
+      }
+      if (this.endDate) {
+        const end = new Date(this.endDate);
+        end.setHours(23, 59, 59, 999);
+        const reqTime = new Date(req.submittedDate).getTime();
+        if (reqTime > end.getTime()) {
+          matchDate = false;
+        }
       }
 
       return matchCategory && matchDate;
@@ -139,19 +169,37 @@ export class ServiceRequestsPageComponent implements OnInit {
                           req.status === this.selectedStatus ||
                           (this.selectedStatus === 'In Progress' && 
                            (req.status === 'Under Review' || req.status === 'Verified' || req.status === 'Changes Requested'));
-      const matchCategory = this.selectedCategory === 'All' || req.category === this.selectedCategory;
+      const matchCategory = this.selectedCategory === 'All' || req.serviceType === this.selectedCategory;
       
       let matchDate = true;
-      if (this.startDate && this.endDate) {
-        const start = new Date(this.startDate).getTime();
-        const end = new Date(this.endDate).getTime();
-        // Set end time to end of day
-        const endOfEndDay = end + 24 * 60 * 60 * 1000 - 1;
+      if (this.startDate) {
+        const start = new Date(this.startDate);
+        start.setHours(0, 0, 0, 0);
         const reqTime = new Date(req.submittedDate).getTime();
-        matchDate = reqTime >= start && reqTime <= endOfEndDay;
+        if (reqTime < start.getTime()) {
+          matchDate = false;
+        }
+      }
+      if (this.endDate) {
+        const end = new Date(this.endDate);
+        end.setHours(23, 59, 59, 999);
+        const reqTime = new Date(req.submittedDate).getTime();
+        if (reqTime > end.getTime()) {
+          matchDate = false;
+        }
       }
 
-      return matchStatus && matchCategory && matchDate;
+      let matchSearch = true;
+      if (this.searchQuery) {
+        const q = this.searchQuery.toLowerCase();
+        matchSearch = (req.id?.toString() || '').toLowerCase().includes(q) || 
+                      (req.citizenName || '').toLowerCase().includes(q) ||
+                      (req.serviceType || '').toLowerCase().includes(q) || 
+                      (req.category || '').toLowerCase().includes(q) || 
+                      (req.status || '').toLowerCase().includes(q);
+      }
+
+      return matchStatus && matchCategory && matchDate && matchSearch;
     });
     
     // Default sorting: newest first by submittedDate

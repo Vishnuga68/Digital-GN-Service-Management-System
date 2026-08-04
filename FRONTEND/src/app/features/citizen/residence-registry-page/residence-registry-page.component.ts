@@ -283,10 +283,14 @@ export class ResidenceRegistryPageComponent implements OnInit {
     setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
   }
 
-  isVoterEligible(dob: string, lifeStatus?: string): boolean {
+  isVoterEligible(dob: any, lifeStatus?: string): boolean {
     const isAlive = lifeStatus !== undefined ? (lifeStatus === 'Alive' || lifeStatus === 'Active') : (this.myData.specialStatus?.lifeStatus === 'Alive');
     if (!isAlive) return false;
-    return this.calculateAge(dob) >= 18;
+    if (!dob) return false;
+    const parsed = this.parseDate(dob);
+    const birthDate = parsed instanceof Date ? parsed : new Date(parsed as string);
+    if (isNaN(birthDate.getTime())) return false;
+    return (new Date().getFullYear() - birthDate.getFullYear()) >= 18;
   }
 
   isElderly(dob: string, lifeStatus?: string): boolean {
@@ -349,7 +353,7 @@ export class ResidenceRegistryPageComponent implements OnInit {
       {
         name: 'Voter Registration',
         icon: '/assets/icons/vote.png',
-        status: findSuggestion('Voter') ? 'Suggested' : (isVoter ? 'Eligible' : 'Not Eligible'),
+        status: findConfirmed('voter') ? 'Eligible' : (findSuggestion('Voter') ? 'Suggested' : 'Not Eligible'),
         cardClass: 'card-voter'
       }
     ];
@@ -365,6 +369,10 @@ export class ResidenceRegistryPageComponent implements OnInit {
 
   hasActiveWelfare(): boolean {
     return this.getWelfarePrograms().some(p => p.status === 'Eligible');
+  }
+
+  hasSuggestions(): boolean {
+    return this.getWelfarePrograms().some(p => p.status === 'Suggested');
   }
 
 

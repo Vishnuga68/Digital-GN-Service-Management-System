@@ -55,7 +55,7 @@ namespace EGN_Service_Management.Database
         public DbSet<EGN_Service_Management.Entity.NewChat.ChatConversation> ChatConversations { get; set; }
         public DbSet<EGN_Service_Management.Entity.NewChat.ChatMessage> NewChatMessages { get; set; }
         public DbSet<EGN_Service_Management.Entity.NewChat.ChatAttachment> NewChatAttachments { get; set; }
-        // public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         public DbSet<TransferRequest> TransferRequests { get; set; }
         public DbSet<GnDivisionAssignment> GnDivisionAssignments { get; set; }
         
@@ -64,6 +64,8 @@ namespace EGN_Service_Management.Database
         public DbSet<GnPollOption> GnPollOptions { get; set; }
         public DbSet<GnPollVote> GnPollVotes { get; set; }
         public DbSet<CertificateTemplate> CertificateTemplates { get; set; }
+        public DbSet<VoterRegistry> VoterRegistries { get; set; }
+        public DbSet<AccountPasswordResetOtp> AccountPasswordResetOtps { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -60,7 +60,7 @@ export class RequestDetailsPageComponent implements OnInit {
           });
         }
         
-        this.isSimpleRequestFlow = [44, 45, 46].includes(data.categoryId);
+        this.isSimpleRequestFlow = [7, 44, 45, 46, 52].includes(data.categoryId);
 
         // Map the backend status to display status and step number
         const status = this.requestDetails.currentStatus;

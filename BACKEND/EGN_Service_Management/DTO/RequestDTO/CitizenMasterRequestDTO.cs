@@ -39,5 +39,6 @@ EGN_Service_Management.DTO.RequestDTO
         [MaxLength(20)]
         public string LifeStatus { get; set; } = "Alive";
 
+        public decimal? MonthlyIncome { get; set; }
     }
 }

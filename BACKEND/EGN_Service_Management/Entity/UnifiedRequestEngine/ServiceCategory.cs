@@ -18,7 +18,7 @@ namespace EGN_Service_Management.Entity
         [MaxLength(255)]
         public string CategoryName { get; set; }
 
-        public string GuidelineText { get; set; }
+        public string? GuidelineText { get; set; }
 
         // Navigation properties
         [ForeignKey("ServiceId")]

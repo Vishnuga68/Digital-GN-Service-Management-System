@@ -18,9 +18,9 @@ namespace EGN_Service_Management.Entity
         public int? ParentHeadingId { get; set; }
 
         [MaxLength(255)]
-        public string Icon { get; set; }
+        public string? Icon { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [ForeignKey("ParentHeadingId")]
         public virtual ServiceParentHeading ParentHeading { get; set; }

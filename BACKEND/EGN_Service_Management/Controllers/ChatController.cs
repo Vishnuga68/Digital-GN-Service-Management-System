@@ -17,11 +17,15 @@ namespace EGN_Service_Management.Controllers
     {
         private readonly IChatService _chatService;
         private readonly INewChatAttachmentService _attachmentService;
+        private readonly EGN_Service_Management.Database.EgnDbContext _context;
+        private readonly INotificationService _notificationService;
 
-        public ChatController(IChatService chatService, INewChatAttachmentService attachmentService)
+        public ChatController(IChatService chatService, INewChatAttachmentService attachmentService, EGN_Service_Management.Database.EgnDbContext context, INotificationService notificationService)
         {
             _chatService = chatService;
             _attachmentService = attachmentService;
+            _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet("common")]
@@ -127,6 +131,34 @@ namespace EGN_Service_Management.Controllers
             try
             {
                 var message = await _chatService.SendMessageAsync(conversationId, callerNic, role, requestDto.MessageText ?? string.Empty);
+
+                var conversation = await _context.ChatConversations.FindAsync(conversationId);
+                if (conversation != null)
+                {
+                    string recipientNic = string.Equals(callerNic, conversation.CitizenNic, StringComparison.OrdinalIgnoreCase) 
+                        ? conversation.GnOfficerNic 
+                        : conversation.CitizenNic;
+                    string recipientRole = string.Equals(callerNic, conversation.CitizenNic, StringComparison.OrdinalIgnoreCase) 
+                        ? "GNOfficer" 
+                        : "Citizen";
+                    string senderName = string.Equals(callerNic, conversation.CitizenNic, StringComparison.OrdinalIgnoreCase) 
+                        ? "Citizen" 
+                        : "GN Officer";
+
+                    await _notificationService.SendNotificationAsync(
+                        recipientNic: recipientNic,
+                        recipientRole: recipientRole,
+                        type: "chat",
+                        title: $"New Message from {senderName}",
+                        message: requestDto.MessageText ?? "Sent an attachment.",
+                        relatedEntityType: "Chat",
+                        relatedEntityId: conversationId.ToString(),
+                        actionUrl: recipientRole == "Citizen" ? "/citizen/chat" : "/gn-officer/chat",
+                        priority: "Medium",
+                        createdBy: callerNic
+                    );
+                }
+
                 return Ok(ApiResponse<ChatMessageDTO>.SuccessResponse(message, "Message sent successfully."));
             }
             catch (UnauthorizedAccessException ex)

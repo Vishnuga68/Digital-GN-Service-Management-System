@@ -44,5 +44,7 @@ EGN_Service_Management.DTO.ResponseDTO
 
         [MaxLength(50)]
         public string? GnDivisionId { get; set; }
+
+        public decimal? MonthlyIncome { get; set; }
     }
 }

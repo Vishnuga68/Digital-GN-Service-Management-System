@@ -8,7 +8,7 @@
         <h2>Welcome, {{ officerName }} 👋</h2>
         <p>Your GN Dashboard for {{ divisionName }} is ready for today's activities.</p>
       </div>
-      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Officer Illustration" class="welcome-illustration">
+      <img [src]="userImageUrl ? userImageUrl : '/assets/images/default_profile.jpg'" alt="Officer Illustration" class="welcome-illustration">
     </div>
 
     <!-- GN Division Info Card -->

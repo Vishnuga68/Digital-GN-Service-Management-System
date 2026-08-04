@@ -16,9 +16,9 @@ namespace EGN_Service_Management.Entity
         public string ParentHeadingName { get; set; }
 
         [MaxLength(255)]
-        public string Icon { get; set; }
+        public string? Icon { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public virtual ICollection<UnifiedService> Services { get; set; }
     }

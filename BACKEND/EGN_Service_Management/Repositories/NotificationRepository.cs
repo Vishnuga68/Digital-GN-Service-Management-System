@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using EGN_Service_Management.Database;
 using EGN_Service_Management.Entity;
 using EGN_Service_Management.IRepositories;
@@ -18,7 +22,7 @@ namespace EGN_Service_Management.Repositories
 
         public async Task<IEnumerable<Notification>> GetAllAsync()
         {
-            return await _dbSet.AsNoTracking().ToListAsync();
+            return await _dbSet.Where(n => n.IsActive).AsNoTracking().ToListAsync();
         }
 
         public async Task<Notification?> GetByIdAsync(int id)
@@ -54,13 +58,60 @@ namespace EGN_Service_Management.Repositories
                 throw new KeyNotFoundException("Notification not found.");
             }
 
-            _dbSet.Remove(entity);
+            // Soft delete as requested by guidelines/instructions
+            entity.IsActive = false;
+            _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
 
         public async Task<bool> ExistsAsync(int id)
         {
-            return await _dbSet.FindAsync(id) != null;
+            return await _dbSet.AnyAsync(n => n.Id == id && n.IsActive);
+        }
+
+        public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(string userNic, string role)
+        {
+            return await _dbSet
+                .Where(n => n.RecipientNic == userNic && n.RecipientRole == role && n.IsActive)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetUnreadCountAsync(string userNic, string role)
+        {
+            return await _dbSet
+                .CountAsync(n => n.RecipientNic == userNic && n.RecipientRole == role && !n.IsRead && n.IsActive);
+        }
+
+        public async Task MarkAsReadAsync(int notificationId)
+        {
+            var entity = await _dbSet.FindAsync(notificationId);
+            if (entity != null && !entity.IsRead)
+            {
+                entity.IsRead = true;
+                entity.ReadDate = DateTime.UtcNow;
+                _context.Entry(entity).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task MarkAllAsReadAsync(string userNic, string role)
+        {
+            var unread = await _dbSet
+                .Where(n => n.RecipientNic == userNic && n.RecipientRole == role && !n.IsRead && n.IsActive)
+                .ToListAsync();
+
+            foreach (var n in unread)
+            {
+                n.IsRead = true;
+                n.ReadDate = DateTime.UtcNow;
+                _context.Entry(n).State = EntityState.Modified;
+            }
+
+            if (unread.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }

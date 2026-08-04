@@ -52,7 +52,7 @@ export class AuthService {
   
   constructor() { }
 
-  login(nic: string, password: string, selectedRole: string): Observable<{ success: boolean; role?: string; message?: string }> {
+  login(nic: string, password: string, selectedRole: string): Observable<{ success: boolean; role?: string; message?: string; isFirstLogin?: boolean }> {
     return this.http.post<any>(`${this.baseUrl}/login`, { nic, password, selectedRole }).pipe(
       map(res => {
         if (res.success && res.data) {
@@ -75,7 +75,9 @@ export class AuthService {
           this.profileSubject.next(null);
           this.statsSubject.next(null);
 
-          return { success: true, role: mappedRole };
+          const isFirstLogin = res.data.isFirstLogin || res.data.IsFirstLogin || false;
+
+          return { success: true, role: mappedRole, isFirstLogin };
         }
         return { success: false, message: res.message || 'Login failed.' };
       }),
@@ -95,31 +97,32 @@ export class AuthService {
   }
 
   sendOtp(nicOrEmail: string): Observable<{ success: boolean }> {
-    // Send standard mock forgot password payload (using default test email for simplicity)
+    sessionStorage.setItem('resetNicOrEmail', nicOrEmail);
     return this.http.post<any>(`${this.baseUrl}/forgot-password`, { 
       nic: nicOrEmail, 
       email: nicOrEmail.includes('@') ? nicOrEmail : 'citizen1@egn.gov.lk' 
     }).pipe(
-      map(res => ({ success: !!res.success })),
+      map(res => ({ success: true })),
       catchError(() => of({ success: true })) // Fallback to true so the user can advance to OTP screen
     );
   }
 
   resetPassword(otp: string, newPassword: string): Observable<{ success: boolean; message?: string }> {
-    const nic = sessionStorage.getItem('userNic') || 'citizen1';
+    const nicOrEmail = sessionStorage.getItem('resetNicOrEmail') || 'citizen1';
     return this.http.post<any>(`${this.baseUrl}/reset-password`, {
-      nic: nic,
+      nic: nicOrEmail,
       code: otp,
       newPassword: newPassword
     }).pipe(
       map(res => {
         if (res.success) {
+          sessionStorage.removeItem('resetNicOrEmail');
           return { success: true, message: 'Password reset successful!' };
         }
         return { success: false, message: res.message || 'Invalid OTP' };
       }),
       catchError(err => {
-        const errMsg = err.error?.message || 'Failed to reset password. For local testing, use code "123456".';
+        const errMsg = err.error?.message || 'Failed to reset password.';
         return of({ success: false, message: errMsg });
       })
     );

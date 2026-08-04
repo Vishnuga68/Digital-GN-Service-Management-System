@@ -97,7 +97,7 @@ builder.Services.AddScoped<IEgnServiceUserRepository, EgnServiceUserRepository>(
 builder.Services.AddScoped<IFamilyCardRepository, FamilyCardRepository>();
 builder.Services.AddScoped<IGnDivisionRepository, GnDivisionRepository>();
 builder.Services.AddScoped<IGnOfficerRepository, GnOfficerRepository>();
-// builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IPollOptionRepository, PollOptionRepository>();
 builder.Services.AddScoped<IPollVoteRepository, PollVoteRepository>();
 builder.Services.AddScoped<IRequestAttachmentRepository, RequestAttachmentRepository>();
@@ -130,7 +130,7 @@ builder.Services.AddScoped<IFamilyCardService, FamilyCardService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IGnDivisionService, GnDivisionService>();
 builder.Services.AddScoped<IGnOfficerService, GnOfficerService>();
-// builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IPollOptionService, PollOptionService>();
 builder.Services.AddScoped<IPollVoteService, PollVoteService>();
 builder.Services.AddScoped<IRequestAttachmentService, RequestAttachmentService>();
@@ -145,6 +145,8 @@ builder.Services.AddScoped<IGnAnnouncementRepository, GnAnnouncementRepository>(
 builder.Services.AddScoped<IGnAnnouncementService, GnAnnouncementService>();
 
 builder.Services.AddScoped<ICitizenRequestService, CitizenRequestService>();
+
+builder.Services.AddHostedService<GnAvailabilityGeneratorService>();
 
 builder.Services.AddCors(options =>
 {
@@ -294,6 +296,48 @@ using (var scope = app.Services.CreateScope())
             IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[citizen_special_statuses]') AND type in (N'U'))
             BEGIN
                 DROP TABLE [citizen_special_statuses];
+            END
+
+            -- Create Notifications table if not exists
+            IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Notifications]') AND type in (N'U'))
+            BEGIN
+                CREATE TABLE [Notifications] (
+                    [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                    [RecipientNic] NVARCHAR(50) NOT NULL,
+                    [RecipientRole] NVARCHAR(30) NOT NULL,
+                    [Type] NVARCHAR(30) NOT NULL,
+                    [Title] NVARCHAR(255) NOT NULL,
+                    [Message] NVARCHAR(MAX) NOT NULL,
+                    [RelatedEntityType] NVARCHAR(50) NULL,
+                    [RelatedEntityId] NVARCHAR(50) NULL,
+                    [ActionUrl] NVARCHAR(255) NULL,
+                    [Priority] NVARCHAR(20) NOT NULL DEFAULT 'Low',
+                    [IsRead] BIT NOT NULL DEFAULT 0,
+                    [ReadDate] DATETIME2 NULL,
+                    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                    [CreatedBy] NVARCHAR(50) NULL,
+                    [IsActive] BIT NOT NULL DEFAULT 1
+                );
+            END
+
+            -- Create Account_Password_Reset_OTP table if not exists
+            IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[Account_Password_Reset_OTP]') AND type in (N'U'))
+            BEGIN
+                CREATE TABLE [Account_Password_Reset_OTP] (
+                    [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    [AccountNic] NVARCHAR(20) NOT NULL,
+                    [OtpHash] NVARCHAR(255) NOT NULL,
+                    [ExpiresAt] DATETIME2 NOT NULL,
+                    [AttemptCount] INT NOT NULL DEFAULT 0,
+                    [MaxAttempts] INT NOT NULL DEFAULT 5,
+                    [IsVerified] BIT NOT NULL DEFAULT 0,
+                    [IsUsed] BIT NOT NULL DEFAULT 0,
+                    [CreatedAt] DATETIME2 NOT NULL DEFAULT GETUTCDATE(),
+                    [VerifiedAt] DATETIME2 NULL,
+                    [UsedAt] DATETIME2 NULL,
+                    [CreatedIp] NVARCHAR(50) NULL,
+                    CONSTRAINT [FK_Account_Password_Reset_OTP_accounts_AccountNic] FOREIGN KEY ([AccountNic]) REFERENCES [accounts] ([Nic]) ON DELETE CASCADE
+                );
             END
 
             -- Insert the newFamilyHead field for Category 3 if it does not exist

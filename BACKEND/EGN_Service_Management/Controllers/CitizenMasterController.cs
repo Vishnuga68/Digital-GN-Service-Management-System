@@ -118,9 +118,10 @@ namespace EGN_Service_Management.Controllers
                             (SELECT COUNT(*) FROM [EGN_Service_Users] esu WHERE esu.[Nic] = cm.[Nic]) AS HasEgnAccount,
                             a.[Email], a.[Phone]
                         FROM [Citizen_Master] cm
+                        INNER JOIN [Voter_Registry] vr ON cm.[Nic] = vr.[CitizenNic]
                         LEFT JOIN [family_cards] fc ON cm.[FamilyCardNumber] = fc.[FamilyCardNumber]
                         LEFT JOIN [accounts] a ON cm.[Nic] = a.[Nic]
-                        WHERE cm.[GnDivisionId] = @GnDivId OR fc.[GnDivisionId] = @GnDivId";
+                        WHERE LOWER(cm.[GnDivisionId]) = LOWER(@GnDivId)";
 
                     var param = command.CreateParameter();
                     param.ParameterName = "@GnDivId";
@@ -132,25 +133,25 @@ namespace EGN_Service_Management.Controllers
                         while (await reader.ReadAsync())
                         {
                             citizens.Add(new
-                            {
-                                nic = reader["Nic"].ToString(),
-                                fullName = reader["FullName"].ToString(),
-                                dob = reader["Dob"] != DBNull.Value ? reader["Dob"].ToString() : null,
-                                gender = reader["Gender"].ToString(),
-                                maritalStatus = reader["MaritalStatus"].ToString(),
-                                religion = reader["Religion"] != DBNull.Value ? reader["Religion"].ToString() : null,
-                                occupation = reader["Occupation"] != DBNull.Value ? reader["Occupation"].ToString() : null,
-                                relationshipToHead = reader["RelationshipToHead"] != DBNull.Value ? reader["RelationshipToHead"].ToString() : null,
-                                lifeStatus = reader["LifeStatus"].ToString(),
-                                gnDivisionId = reader["GnDivisionId"] != DBNull.Value ? reader["GnDivisionId"].ToString() : null,
-                                pastFamilyCardNumber = reader["PastFamilyCardNumber"] != DBNull.Value ? reader["PastFamilyCardNumber"].ToString() : null,
-                                familyCardNumber = reader["FamilyCardNumber"] != DBNull.Value ? reader["FamilyCardNumber"].ToString() : null,
-                                familyCardStatus = reader["FamilyCardStatus"] != DBNull.Value ? reader["FamilyCardStatus"].ToString() : null,
-                                address = reader["Address"] != DBNull.Value ? reader["Address"].ToString() : null,
-                                hasEgnAccount = Convert.ToInt32(reader["HasEgnAccount"]) > 0,
-                                email = reader["Email"] != DBNull.Value ? reader["Email"].ToString() : null,
-                                phone = reader["Phone"] != DBNull.Value ? reader["Phone"].ToString() : null
-                            });
+                             {
+                                 nic = reader["Nic"].ToString(),
+                                 fullName = reader["FullName"].ToString(),
+                                 dob = reader["Dob"] != DBNull.Value ? reader["Dob"].ToString() : null,
+                                 gender = reader["Gender"].ToString(),
+                                 maritalStatus = reader["MaritalStatus"].ToString(),
+                                 religion = reader["Religion"] != DBNull.Value ? reader["Religion"].ToString() : null,
+                                 occupation = reader["Occupation"] != DBNull.Value ? reader["Occupation"].ToString() : null,
+                                 relationshipToHead = reader["RelationshipToHead"] != DBNull.Value ? reader["RelationshipToHead"].ToString() : null,
+                                 lifeStatus = reader["LifeStatus"].ToString(),
+                                 gnDivisionId = reader["GnDivisionId"] != DBNull.Value ? reader["GnDivisionId"].ToString() : null,
+                                 pastFamilyCardNumber = reader["PastFamilyCardNumber"] != DBNull.Value ? reader["PastFamilyCardNumber"].ToString() : null,
+                                 familyCardNumber = reader["FamilyCardNumber"] != DBNull.Value ? reader["FamilyCardNumber"].ToString() : null,
+                                 familyCardStatus = reader["FamilyCardStatus"] != DBNull.Value ? reader["FamilyCardStatus"].ToString() : null,
+                                 address = reader["Address"] != DBNull.Value ? reader["Address"].ToString() : null,
+                                 hasEgnAccount = Convert.ToInt32(reader["HasEgnAccount"]) > 0,
+                                 email = reader["Email"] != DBNull.Value ? reader["Email"].ToString() : null,
+                                 phone = reader["Phone"] != DBNull.Value ? reader["Phone"].ToString() : null
+                             });
                         }
                     }
                 }
@@ -173,7 +174,10 @@ namespace EGN_Service_Management.Controllers
         {
             try
             {
-                var totalCitizens = await _context.CitizenMasters.CountAsync(cm => cm.GnDivisionId == divisionId || cm.FamilyCard!.GnDivisionId == divisionId);
+                var totalCitizens = await _context.CitizenMasters
+                    .Where(cm => cm.GnDivisionId == divisionId)
+                    .Where(cm => _context.VoterRegistries.Any(vr => vr.CitizenNic == cm.Nic))
+                    .CountAsync();
                 var totalFamilies = await _context.FamilyCards.CountAsync(fc => fc.GnDivisionId == divisionId);
 
                 return Ok(ApiResponse<object>.SuccessResponse(new
@@ -202,6 +206,7 @@ namespace EGN_Service_Management.Controllers
                 FamilyCardNumber = requestDTO.FamilyCardNumber,
                 PastFamilyCardNumber = requestDTO.PastFamilyCardNumber,
                 LifeStatus = requestDTO.LifeStatus,
+                MonthlyIncome = requestDTO.MonthlyIncome
             };
         }
 
@@ -220,7 +225,8 @@ namespace EGN_Service_Management.Controllers
                 PastFamilyCardNumber = entity.PastFamilyCardNumber,
                 LifeStatus = entity.LifeStatus,
                 Address = entity.FamilyCard?.Address,
-                GnDivisionId = entity.GnDivisionId
+                GnDivisionId = entity.GnDivisionId,
+                MonthlyIncome = entity.MonthlyIncome
             };
         }
     }

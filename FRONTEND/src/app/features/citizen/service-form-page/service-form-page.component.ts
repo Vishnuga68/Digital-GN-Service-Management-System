@@ -341,11 +341,21 @@ export class ServiceFormPageComponent implements OnInit {
     // Add new dynamic controls
     this.formSchema.forEach(field => {
       const validators = [];
-      if (field.isRequired) validators.push(Validators.required);
+      const isSingleCheckbox = field.fieldType === 'checkbox' && (!field.parsedOptions || field.parsedOptions.length === 0);
+
+      if (field.isRequired) {
+        if (isSingleCheckbox) {
+          validators.push(Validators.requiredTrue);
+        } else {
+          validators.push(Validators.required);
+        }
+      }
       
       let initialValue: any = '';
-      if (field.parsedValidationRules?.multiple || field.fieldType === 'checkbox') {
+      if (field.parsedValidationRules?.multiple || (field.fieldType === 'checkbox' && !isSingleCheckbox)) {
         initialValue = [];
+      } else if (isSingleCheckbox) {
+        initialValue = false;
       } else if (field.parsedValidationRules?.defaultValue) {
         initialValue = field.parsedValidationRules.defaultValue;
       } else if (field.fieldName === 'transferFamilyMembers') {
@@ -568,6 +578,72 @@ export class ServiceFormPageComponent implements OnInit {
       }
 
     });
+
+    if (this.selectedCategory?.categoryId === 52) {
+      this.applicantType = 'myself';
+      this.populateLoggedCitizenDetails();
+      this.populateChildSelectionOptions();
+
+      const childSelectionControl = dynamicGroup.get('childSelection');
+      if (childSelectionControl) {
+        const childSub = childSelectionControl.valueChanges.subscribe(nic => {
+          // Clear previous child's values before populating the new selection
+          dynamicGroup.patchValue({
+            fullName: '',
+            dob: '',
+            religion: '',
+            occupation: '',
+            newOfficialNic: ''
+          }, { emitEvent: false });
+
+          if (nic) {
+            const child = this.familyMembersData.find(m => (m.nic || m.Nic) === nic);
+            if (child) {
+              dynamicGroup.patchValue({
+                fullName: child.fullName || child.FullName || '',
+                dob: this.formatDateForInput(child.dob || child.Dob),
+                religion: child.religion || child.Religion || '',
+                occupation: child.occupation || child.Occupation || ''
+              }, { emitEvent: false });
+            }
+          }
+          this.evaluateVisibility();
+        });
+        this.dynamicSubscriptions.push(childSub);
+      }
+
+      const newOfficialNicControl = dynamicGroup.get('newOfficialNic');
+      if (newOfficialNicControl) {
+        const nicSub = newOfficialNicControl.valueChanges.subscribe((val: any) => {
+          if (!val) {
+            newOfficialNicControl.setErrors({ required: true });
+            return;
+          }
+
+          const cleanVal = ((val as string) || '').trim();
+          const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
+          if (!nicRegex.test(cleanVal)) {
+            newOfficialNicControl.setErrors({ invalidNicFormat: true });
+            return;
+          }
+
+          // Check if already exists in CitizenMaster
+          this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${cleanVal}`).subscribe({
+            next: (res) => {
+              newOfficialNicControl.setErrors({ nicExists: true });
+            },
+            error: (err) => {
+              if (err.status === 404) {
+                newOfficialNicControl.setErrors(null);
+              } else {
+                newOfficialNicControl.setErrors({ serverError: true });
+              }
+            }
+          });
+        });
+        this.dynamicSubscriptions.push(nicSub);
+      }
+    }
 
     // Category 3: Removal of Deceased Family Member (Conditional display of New Family Head)
     const affectedPersonControl = dynamicGroup.get('affectedPerson');
@@ -796,7 +872,15 @@ export class ServiceFormPageComponent implements OnInit {
       let isVisible = true;
 
       // 1. Evaluate conditionalVisibility if present
-      if (field.parsedValidationRules?.conditionalVisibility) {
+      if (this.selectedCategory?.categoryId === 52 && (field.fieldName === 'childSelection' || field.fieldName === 'monthlyIncome' || field.fieldName === 'newOfficialNic')) {
+        if (field.fieldName === 'childSelection') {
+          isVisible = this.applicantType === 'child';
+        } else if (field.fieldName === 'monthlyIncome') {
+          isVisible = this.applicantType === 'myself';
+        } else if (field.fieldName === 'newOfficialNic') {
+          isVisible = this.applicantType === 'child' && this.isChildEligibleForOfficialNic();
+        }
+      } else if (field.parsedValidationRules?.conditionalVisibility) {
         const rule = field.parsedValidationRules.conditionalVisibility;
         let targetValue: any = undefined;
         if (rule.field === 'applicantType') {
@@ -1111,7 +1195,128 @@ export class ServiceFormPageComponent implements OnInit {
 
   setApplicantType(type: string) {
     this.applicantType = type;
+
+    if (this.selectedCategory?.categoryId === 52) {
+      const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+      if (dynamicGroup) {
+        if (type === 'myself') {
+          // Switching back to Yourself: clear child controls and selection
+          dynamicGroup.get('childSelection')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('newOfficialNic')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('fullName')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('dob')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('religion')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('occupation')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('monthlyIncome')?.setValue('', { emitEvent: false });
+
+          // Reload logged-in citizen's details
+          this.populateLoggedCitizenDetails();
+        } else if (type === 'child') {
+          // Switching from Yourself to Child Under 18: clear Yourself values
+          dynamicGroup.get('childSelection')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('newOfficialNic')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('fullName')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('dob')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('religion')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('occupation')?.setValue('', { emitEvent: false });
+          dynamicGroup.get('monthlyIncome')?.setValue('', { emitEvent: false });
+
+          // Populate child selection options
+          this.populateChildSelectionOptions();
+        }
+      }
+    }
+
     this.evaluateVisibility();
+  }
+
+  populateLoggedCitizenDetails() {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    if (!dynamicGroup || !this.currentProfile) return;
+
+    const nic = this.currentProfile.nic || this.currentProfile.Nic;
+    if (!nic) return;
+
+    this.http.get<any>(`http://localhost:5058/api/CitizenMaster/${nic}`).subscribe({
+      next: (res) => {
+        const citizen = res.data || res.Data || res;
+        dynamicGroup.patchValue({
+          fullName: citizen.fullName || citizen.FullName || '',
+          dob: this.formatDateForInput(citizen.dob || citizen.Dob),
+          religion: citizen.religion || citizen.Religion || '',
+          occupation: citizen.occupation || citizen.Occupation || '',
+          monthlyIncome: citizen.monthlyIncome !== undefined ? citizen.monthlyIncome : (citizen.MonthlyIncome !== undefined ? citizen.MonthlyIncome : '')
+        }, { emitEvent: false });
+      },
+      error: (err) => {
+        console.error('Failed to load logged-in citizen Master details', err);
+        // Fallback to currentProfile
+        dynamicGroup.patchValue({
+          fullName: this.currentProfile.fullName || this.currentProfile.FullName || '',
+          dob: this.formatDateForInput(this.currentProfile.dob || this.currentProfile.Dob),
+          religion: this.currentProfile.religion || this.currentProfile.Religion || '',
+          occupation: this.currentProfile.occupation || this.currentProfile.Occupation || '',
+          monthlyIncome: this.currentProfile.monthlyIncome || this.currentProfile.MonthlyIncome || ''
+        }, { emitEvent: false });
+      }
+    });
+  }
+
+  populateChildSelectionOptions() {
+    const field = this.formSchema.find(f => f.fieldName === 'childSelection');
+    if (!field) return;
+
+    const children = this.familyMembersData.filter(m => {
+      const status = (m.lifeStatus || m.LifeStatus || 'Alive').toLowerCase();
+      if (status !== 'alive') return false;
+
+      const nic = (m.nic || m.Nic || '').trim();
+      if (!nic.toUpperCase().startsWith('T')) return false;
+
+      const dob = m.dob || m.Dob;
+      if (!dob) return false;
+      const dobYear = new Date(dob).getFullYear();
+      const currentYear = new Date().getFullYear();
+      const age = currentYear - dobYear;
+      return age < 18;
+    });
+
+    field.parsedOptions = children.map(c => ({
+      label: c.fullName || c.FullName,
+      value: c.nic || c.Nic
+    }));
+  }
+
+  isChildEligibleForOfficialNic(): boolean {
+    const dynamicGroup = this.requestForm.get('dynamicData') as FormGroup;
+    if (!dynamicGroup) return false;
+    const selectedChildNic = dynamicGroup.get('childSelection')?.value;
+    if (!selectedChildNic) return false;
+
+    const child = this.familyMembersData.find(m => (m.nic || m.Nic || m.nicNumber || m.NicNumber) === selectedChildNic);
+    if (!child) return false;
+
+    const nic = (child.nic || child.Nic || '').trim();
+    if (!nic.toUpperCase().startsWith('T')) return false;
+
+    const dob = child.dob || child.Dob;
+    if (!dob) return false;
+    const birthDate = new Date(dob);
+    if (isNaN(birthDate.getTime())) return false;
+
+    const currentYear = new Date().getFullYear();
+    return (currentYear - birthDate.getFullYear()) >= 16;
+  }
+
+  formatDateForInput(dob: any): string {
+    if (!dob) return '';
+    try {
+      const date = new Date(dob);
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().split('T')[0];
+    } catch {
+      return '';
+    }
   }
 
   onFileChange(event: any, fieldName?: string) {
@@ -1139,12 +1344,12 @@ export class ServiceFormPageComponent implements OnInit {
       const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
       const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
       if (!allowedExtensions.includes(extension)) {
-        alert('Only PDF, JPG, JPEG, and PNG files are allowed.');
+        this.showError('Only PDF, JPG, JPEG, and PNG files are allowed.');
         return;
       }
       
       if (file.size > 5 * 1024 * 1024) {
-        alert('Maximum file size allowed is 5MB.');
+        this.showError('Maximum file size allowed is 5MB.');
         return;
       }
 
@@ -1164,7 +1369,7 @@ export class ServiceFormPageComponent implements OnInit {
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           if (file.size > 5 * 1024 * 1024) {
-            alert(`File ${file.name} is too large. Max size 5MB.`);
+            this.showError(`File ${file.name} is too large. Max size 5MB.`);
             continue;
           }
           this.supportingFiles.push(file);
@@ -1369,7 +1574,7 @@ export class ServiceFormPageComponent implements OnInit {
           const spouseNic = dynamicGroup.get('spouseNic')?.value || '';
           
           if (spouseNic === loggedNic) {
-            alert('You cannot select your own NIC as the spouse NIC.');
+            this.showError('You cannot select your own NIC as the spouse NIC.');
             return;
           }
 
@@ -1394,7 +1599,7 @@ export class ServiceFormPageComponent implements OnInit {
       // Append files
       if (this.selectedCategory.categoryId === 43 || this.selectedCategory.categoryName.includes('Document Verification')) {
         if (!this.mainDocumentFile) {
-          alert('Please upload the Main Document to be verified.');
+          this.showError('Please upload the Main Document to be verified.');
           return;
         }
         formData.append('MainDocument', this.mainDocumentFile);
@@ -1424,7 +1629,8 @@ export class ServiceFormPageComponent implements OnInit {
           error: (err) => {
             console.error('Submission failed', err);
             this.isSubmitting = false;
-            alert('Failed to submit request. Please try again.');
+            const errorMsg = err?.error?.error || err?.error?.message || 'Failed to submit request. Please try again.';
+            this.showError(errorMsg);
           }
         });
 
@@ -1432,7 +1638,7 @@ export class ServiceFormPageComponent implements OnInit {
       console.log('Form is invalid or missing service/category. Marking as touched.');
       this.requestForm.markAllAsTouched();
       // Alert the user if it's invalid
-      alert('Please fill out all required fields marked with *');
+      this.showError('Please fill out all required fields marked with *');
     }
   }
 
@@ -1443,6 +1649,11 @@ export class ServiceFormPageComponent implements OnInit {
 
   closeErrorModal() {
     this.isErrorModalOpen = false;
+  }
+
+  showError(message: string) {
+    this.errorModalMessage = message;
+    this.isErrorModalOpen = true;
   }
 
   goBack() {

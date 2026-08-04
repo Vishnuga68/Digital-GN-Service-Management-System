@@ -108,6 +108,46 @@ namespace EGN_Service_Management.Services
                     requestDto.GnDivisionId = gnDivisionId;
                 }
 
+                if (requestDto.CategoryId == 7)
+                {
+                    var citizen = await _dbContext.CitizenMasters.FirstOrDefaultAsync(c => c.Nic == requestDto.CitizenNic);
+                    if (citizen == null)
+                    {
+                        throw new ArgumentException("Citizen record not found.");
+                    }
+
+                    var today = DateOnly.FromDateTime(GetSriLankanTime());
+                    var birthDate = citizen.Dob;
+                    var age = today.Year - birthDate.Year;
+
+                    if (age < 18)
+                    {
+                        throw new ArgumentException("Citizen must be at least 18 years old in the registration year to register as a voter.");
+                    }
+
+                    if (string.IsNullOrEmpty(citizen.LifeStatus) || !string.Equals(citizen.LifeStatus, "Alive", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new ArgumentException("Citizen is not alive.");
+                    }
+
+                    var isAlreadyRegistered = await _dbContext.VoterRegistries.AnyAsync(vr => vr.CitizenNic == requestDto.CitizenNic);
+                    if (isAlreadyRegistered)
+                    {
+                        throw new ArgumentException("Citizen is already registered in the voter registry.");
+                    }
+
+                    var hasPendingRequest = await _dbContext.UnifiedRequests.AnyAsync(r =>
+                        r.CitizenNic == requestDto.CitizenNic &&
+                        r.CategoryId == 7 &&
+                        r.CurrentStatus != "Accepted" &&
+                        r.CurrentStatus != "Approved" &&
+                        r.CurrentStatus != "Rejected");
+                    if (hasPendingRequest)
+                    {
+                        throw new ArgumentException("A pending voter registration request already exists for this citizen.");
+                    }
+                }
+
                 // Get GN Officer NIC for the division
                 var gnOfficerNic = await _dbContext.GnOfficers
                     .Where(g => g.GnDivisionId == gnDivisionId)

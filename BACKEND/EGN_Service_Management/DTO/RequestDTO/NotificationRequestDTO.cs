@@ -1,7 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace 
-EGN_Service_Management.DTO.RequestDTO
+namespace EGN_Service_Management.DTO.RequestDTO
 {
     public class NotificationRequestDTO
     {
@@ -14,6 +14,10 @@ EGN_Service_Management.DTO.RequestDTO
 
         [Required]
         [MaxLength(30)]
+        public string RecipientRole { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(30)]
         public string Type { get; set; } = string.Empty;
 
         [Required]
@@ -23,9 +27,28 @@ EGN_Service_Management.DTO.RequestDTO
         [Required]
         public string Message { get; set; } = string.Empty;
 
+        [MaxLength(50)]
+        public string? RelatedEntityType { get; set; }
+
+        [MaxLength(50)]
+        public string? RelatedEntityId { get; set; }
+
+        [MaxLength(255)]
+        public string? ActionUrl { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string Priority { get; set; } = "Low";
+
         public bool IsRead { get; set; }
+
+        public DateTime? ReadDate { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [MaxLength(50)]
+        public string? CreatedBy { get; set; }
+
+        public bool IsActive { get; set; } = true;
     }
 }

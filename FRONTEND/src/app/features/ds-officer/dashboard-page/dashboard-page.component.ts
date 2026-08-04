@@ -17,6 +17,7 @@ export class DashboardPageComponent implements OnInit {
   divisionName = 'Loading...';
   divisionId = '';
   today = new Date();
+  userImageUrl = '';
 
   stats = [
     { label: 'Total GN Officers', value: '0', icon: 'assets/icons/registry.png', color: '#3B82F6' },
@@ -37,6 +38,7 @@ export class DashboardPageComponent implements OnInit {
     this.officerName = profile.FullName || profile.fullName || 'DS Officer';
     this.divisionName = profile.DsDivisionName || profile.dsDivisionName || 'DS Division';
     this.divisionId = profile.DsDivisionId || profile.dsDivisionId || '';
+    this.userImageUrl = profile.Profile || profile.profile || '';
   }
 
   updateStats(stats: any) {
@@ -46,6 +48,18 @@ export class DashboardPageComponent implements OnInit {
       { label: 'Total Service Requests', value: stats.TotalRequests?.toString() || '0', icon: 'assets/icons/switch.png', color: '#F59E0B' },
       { label: 'Total Registered Citizens', value: stats.TotalCitizens?.toString() || '0', icon: 'assets/icons/notification.png', color: '#EF4444' }
     ];
+
+    if (stats.RecentActivities) {
+      this.recentActivities = stats.RecentActivities.map((a: any) => ({
+        id: a.id ?? a.Id,
+        type: a.type ?? a.Type,
+        description: a.description ?? a.Description,
+        time: a.time ?? a.Time,
+        status: a.status ?? a.Status
+      }));
+    } else {
+      this.recentActivities = [];
+    }
   }
 
   ngOnInit(): void {

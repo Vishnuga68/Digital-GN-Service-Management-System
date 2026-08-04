@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RouterModule } from '@angular/router';
+import { SearchService } from '../../../core/services/search.service';
 
 export interface DocumentCategory {
   categoryId: number;
@@ -42,9 +43,14 @@ export class DocumentHandlingPageComponent implements OnInit {
   filteredForms: GNDocument[] = [];
 
   private http = inject(HttpClient);
+  private searchService = inject(SearchService);
   private apiUrl = 'http://localhost:5058/api';
 
   ngOnInit(): void {
+    this.searchService.searchQuery$.subscribe(query => {
+      this.searchQuery = query;
+      this.filterForms();
+    });
     this.loadCategories();
     this.loadDocuments();
   }

@@ -34,9 +34,9 @@
       <div class="header-left">
       </div>
       
-      <div class="search-bar">
+      <div class="search-bar" *ngIf="router.url !== '/citizen/help'">
         <img src="/assets/icons/search.png" alt="search" class="search-icon">
-        <input type="text" [placeholder]="searchPlaceholder">
+        <input type="text" [placeholder]="searchPlaceholder" [(ngModel)]="searchQuery" (input)="onSearchChange()">
       </div>
       
       <div class="header-actions">
@@ -147,7 +147,7 @@
       </div>
       <!-- FOOTER -->
       <footer class="dashboard-footer">
-        <p>&copy; All Rights Reserved. GN System.</p>
+        <p>&copy; 2026 Digital Grama Niladhari System. All Rights Reserved. | Democratic Socialist Republic of Sri Lanka</p>
       </footer>
     </div>
   </main>
@@ -155,16 +155,15 @@
 
 <!-- EDIT PROFILE MODAL -->
 <div class="modal-overlay" *ngIf="isEditProfileModalOpen">
-  <div class="edit-profile-modal fade-in">
+  <div class="edit-profile-modal fade-in" style="position: relative;">
+    <div class="modal-loading-overlay" *ngIf="isLoading"><div class="spinner"></div></div>
     <div class="modal-header">
       <h3>Edit Your Profile</h3>
       <button class="close-x" (click)="toggleEditProfileModal()">&times;</button>
     </div>
     
     <div class="modal-body">
-      <!-- Section 1: Profile Information -->
       <div class="modal-section">
-        <!--<h4 class="section-label">Profile Information</h4>-->
         <div class="profile-photo-row">
           <div class="current-photo">
             <img *ngIf="userImageUrl" [src]="userImageUrl" alt="Profile" class="avatar-img-edit">
@@ -179,33 +178,30 @@
             <p class="helper-text">Supported image formats: PNG and JPG. Maximum file size 5 MB.</p>
           </div>
         </div>
-        
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" [value]="citizenName" readonly class="readonly-input">
-          </div>
-          <div class="form-group">
-            <label>NIC Number</label>
-            <input type="text" [value]="citizenNIC" readonly class="readonly-input">
-          </div>
-        </div>
-        <div class="form-group full-width">
-          <label>Permanent Address</label>
-          <input type="text" [value]="citizenAddress" readonly class="readonly-input">
-        </div>
       </div>
-
-      <!-- Section 2: Account Details -->
-      <div class="modal-section account-details-section">
-        <h4 class="section-label">Account Details</h4>
-        <div class="form-grid">
-          <div class="form-group full-width">
+      
+      <!-- Section 2: Contact Info -->
+      <div class="modal-section border-top">
+        <h4 class="section-label">Contact Details</h4>
+        <div class="form-grid-two">
+          <div class="form-group">
+            <label>NIC No</label>
+            <input type="text" [value]="citizenNIC" disabled class="disabled-input">
+          </div>
+          <div class="form-group">
+            <label>Address</label>
+            <input type="text" [value]="citizenAddress" disabled class="disabled-input">
+          </div>
+          <div class="form-group">
             <label>Email Address</label>
             <div class="input-with-action">
               <input type="email" [value]="citizenEmail" readonly class="readonly-input">
               <button class="btn-change" (click)="toggleChangeEmailModal()">Change Email</button>
             </div>
+          </div>
+          <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="text" [(ngModel)]="editablePhone" placeholder="Enter mobile number">
           </div>
           <div class="form-group full-width">
             <label>Password</label>
@@ -215,22 +211,17 @@
             </div>
           </div>
         </div>
-        <div class="form-group full-width">
-          <label>Phone Number</label>
-          <input type="tel" [(ngModel)]="editablePhone" placeholder="+94 7X XXX XXXX">
-        </div>
       </div>
-
+      
       <!-- Section 3: Delete Account -->
-      <div class="modal-section delete-section">
-        <h4 class="section-label danger">Delete Your Account?</h4>
-        <p class="danger-desc">Deleting your account will remove all access and data. This action cannot be undone.</p>
-        <button class="btn-delete-trigger" (click)="openDeleteModal()">Delete Account</button>
+      <div class="modal-section delete-section border-top" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+        <h4 class="section-label danger" style="color: #ef4444; font-weight: 600; margin-top: 0; margin-bottom: 5px;">Delete Your Account?</h4>
+        <p class="danger-desc" style="font-size: 0.85rem; color: #6b7280; margin-top: 0; margin-bottom: 10px;">Deleting your account will remove all access. This action cannot be undone.</p>
+        <button class="btn-delete-trigger" style="background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 500;" (click)="openDeleteModal()">Delete Account</button>
       </div>
     </div>
-
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="toggleEditProfileModal()">Close</button>
+      <button class="btn-secondary" (click)="toggleEditProfileModal()">Cancel</button>
       <button class="btn-primary" (click)="saveProfile()">Save Changes</button>
     </div>
   </div>
@@ -238,78 +229,122 @@
 
 <!-- DELETE CONFIRMATION MODAL -->
 <div class="modal-overlay danger-overlay" *ngIf="isDeleteModalOpen">
-  <div class="confirmation-modal fade-in">
+  <div class="confirmation-modal fade-in" style="position: relative;">
+    <div class="modal-loading-overlay" *ngIf="isLoading"><div class="spinner"></div></div>
     <div class="modal-header">
       <h3 class="danger">Confirm Account Deletion</h3>
       <button class="close-x" (click)="closeDeleteModal()">&times;</button>
     </div>
-    <div class="modal-body">
-      <img src="/assets/icons/warning.png" alt="Warning" class="warning-img">
-      <p class="warning-title">Are you sure you want to delete your account?</p>
-      <!--<p class="warning-desc">All your data will be permanently removed. This action cannot be undone.</p>-->
+    <div class="modal-body" style="text-align: left;">
+      <p class="warning-title" style="color: #ef4444; font-weight: 600; margin-bottom: 12px;">Are you sure you want to delete your account?</p>
+      <p class="warning-desc" style="font-size: 0.85rem; color: #4b5563; margin-bottom: 15px;">Warning: This action is permanent. All access will be revoked. Enter your password to authorize this action.</p>
+      <div class="form-group">
+        <label style="font-weight: 500; display: block; margin-bottom: 6px;">Current Password</label>
+        <input type="password" [(ngModel)]="deleteConfirmPassword" placeholder="Enter current password" autocomplete="new-password" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" (click)="closeDeleteModal()">Cancel</button>
-      <button class="btn-danger" (click)="confirmDeleteAccount()">Delete Permanently</button>
+      <button class="btn-danger" (click)="confirmDeleteAccount()" [disabled]="!deleteConfirmPassword">Delete Permanently</button>
     </div>
   </div>
 </div>
 <!-- CHANGE EMAIL MODAL -->
 <div class="modal-overlay" *ngIf="isChangeEmailModalOpen">
-  <div class="edit-profile-modal change-sub-modal change-email-modal fade-in">
+  <div class="edit-profile-modal change-sub-modal change-email-modal fade-in" style="position: relative;">
+    <div class="modal-loading-overlay" *ngIf="isLoading"><div class="spinner"></div></div>
     <div class="modal-header">
       <h3>Change Email</h3>
       <button class="close-x" (click)="toggleChangeEmailModal()">&times;</button>
     </div>
     <div class="modal-body">
-      <div class="form-group">
-        <label>New Email</label>
-        <div class="sub-group-content">
-          <input type="email" [(ngModel)]="newEmail" placeholder="Enter new email">
-          <div class="btn-row">
-            <button class="btn-action-small" (click)="sendOTP()" [disabled]="isOtpSent">Send OTP</button>
-          </div>
-        </div>
+      <!-- Step 1: Password Verification -->
+      <div class="form-group animate-fade" *ngIf="emailChangeStep === 'password'">
+        <label>Current Password <span class="req">*</span></label>
+        <p class="helper-text" style="margin-bottom: 12px; color: #6b7280; font-size: 0.85rem;">To change your email address, please verify your identity by entering your current password.</p>
+        <input type="password" [(ngModel)]="currentPassword" placeholder="Enter current password" autocomplete="new-password" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
       </div>
-      <div class="form-group" *ngIf="isOtpSent">
-        <label>Enter OTP</label>
-        <div class="sub-group-content">
-          <input type="text" [(ngModel)]="otpValue" placeholder="Enter OTP">
-          <p class="helper-text success">OTP sent. Please check your inbox. Expires in 10 minutes.</p>
+
+      <!-- Step 2: New Email Address -->
+      <div class="form-group animate-fade" *ngIf="emailChangeStep === 'email'">
+        <label>New Email Address <span class="req">*</span></label>
+        <p class="helper-text" style="margin-bottom: 12px; color: #6b7280; font-size: 0.85rem;">Enter the new email address you want to link to your account.</p>
+        <input type="email" [(ngModel)]="newEmail" placeholder="Enter new email" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+      </div>
+
+      <!-- Step 3: OTP Verification Code -->
+      <div class="form-group animate-fade" *ngIf="emailChangeStep === 'otp'">
+        <label>Enter Verification Code (OTP) <span class="req">*</span></label>
+        <p class="helper-text success" style="margin-bottom: 12px; color: #059669; font-size: 0.85rem;">A verification OTP has been sent to {{ newEmail }}. Code is valid for 10 minutes.</p>
+        <input type="text" [(ngModel)]="otpValue" placeholder="Enter 6-digit OTP" class="form-control" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-bottom: 12px;">
+        <div class="resend-container" style="display: flex; align-items: center; justify-content: space-between;">
+          <span class="helper-text" style="font-size: 0.85rem; color: #6b7280;">
+            <span *ngIf="resendCountdown > 0">Resend code in {{ resendCountdown }}s</span>
+          </span>
+          <button type="button" class="btn-action-small" (click)="sendOTP()" [disabled]="resendCountdown > 0" [style.background]="resendCountdown > 0 ? '#cbd5e1' : ''" [style.color]="resendCountdown > 0 ? '#64748b' : ''" [style.cursor]="resendCountdown > 0 ? 'not-allowed' : 'pointer'">Resend OTP</button>
         </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn-secondary" (click)="toggleChangeEmailModal()">Cancel</button>
-      <button class="btn-primary" (click)="verifyOTP()" [disabled]="!otpValue">Save / Verify</button>
+      
+      <!-- Footer Button for Step 1 -->
+      <button class="btn-primary" *ngIf="emailChangeStep === 'password'" (click)="goToEmailStep()" [disabled]="!currentPassword">Next</button>
+      
+      <!-- Footer Button for Step 2 -->
+      <button class="btn-primary" *ngIf="emailChangeStep === 'email'" (click)="sendOTP()" [disabled]="!newEmail">Send OTP</button>
+      
+      <!-- Footer Button for Step 3 -->
+      <button class="btn-primary" *ngIf="emailChangeStep === 'otp'" (click)="verifyOTP()" [disabled]="!otpValue">Verify & Save</button>
     </div>
   </div>
 </div>
 
 <!-- CHANGE PASSWORD MODAL -->
 <div class="modal-overlay" *ngIf="isChangePasswordModalOpen">
-  <div class="edit-profile-modal change-sub-modal fade-in">
+  <div class="edit-profile-modal change-sub-modal fade-in" style="position: relative;">
+    <div class="modal-loading-overlay" *ngIf="isLoading"><div class="spinner"></div></div>
     <div class="modal-header">
       <h3>Change Password</h3>
-      <button class="close-x" (click)="toggleChangePasswordModal()">&times;</button>
+      <button class="close-x" *ngIf="!isForcedPasswordChange" (click)="toggleChangePasswordModal()">&times;</button>
     </div>
     <div class="modal-body">
+      <p class="helper-text" *ngIf="isForcedPasswordChange" style="color: #dc2626; font-weight: 500; font-size: 0.85rem; margin-bottom: 12px; text-align: left;">
+        First Login Detected: You must change your default password before you can proceed to the dashboard.
+      </p>
       <div class="form-group">
-        <label>Old Password</label>
-        <input type="password" [(ngModel)]="oldPassword" placeholder="Enter old password">
+        <label>Current Password</label>
+        <input type="password" [(ngModel)]="oldPassword" placeholder="Enter current password" autocomplete="new-password">
       </div>
       <div class="form-group">
         <label>New Password</label>
-        <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password">
+        <input type="password" [(ngModel)]="newPassword" placeholder="Enter new password" autocomplete="new-password">
       </div>
       <div class="form-group">
         <label>Confirm Password</label>
-        <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password">
+        <input type="password" [(ngModel)]="confirmPassword" placeholder="Confirm new password" autocomplete="new-password">
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn-secondary" (click)="toggleChangePasswordModal()">Cancel</button>
-      <button class="btn-primary" (click)="updatePassword()" [disabled]="!newPassword || newPassword !== confirmPassword">Save Changes</button>
+      <button class="btn-secondary" *ngIf="!isForcedPasswordChange" (click)="toggleChangePasswordModal()">Cancel</button>
+      <button class="btn-primary" (click)="updatePassword()" [disabled]="!oldPassword || !newPassword || newPassword !== confirmPassword">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOM MESSAGE MODAL -->
+<div class="custom-modal-backdrop" *ngIf="showCustomModal" style="z-index: 10000;">
+  <div class="custom-modal-content">
+    <div class="custom-modal-header" [style.border-bottom]="customModalType === 'success' ? '2px solid #10b981' : ''">
+      <h3 [style.color]="customModalType === 'error' ? '#ef4444' : (customModalType === 'success' ? '#10b981' : '#0f172a')">
+        {{ customModalTitle }}
+      </h3>
+    </div>
+    <div class="custom-modal-body">
+      <p>{{ customModalMessage }}</p>
+    </div>
+    <div class="custom-modal-footer">
+      <button class="btn btn-secondary" [style.background-color]="customModalType === 'success' ? '#10b981' : ''" [style.color]="customModalType === 'success' ? '#ffffff' : ''" [style.border]="customModalType === 'success' ? 'none' : ''" (click)="closeCustomModal()">Close</button>
     </div>
   </div>
 </div>

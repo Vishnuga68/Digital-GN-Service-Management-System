@@ -1,5 +1,544 @@
-<div style="padding: 2rem; font-family: 'Poppins', sans-serif;">
-  <a routerLink="/citizen" style="color: #2563eb; text-decoration: none; font-weight: 600;">&larr; Back to Dashboard</a>
-  <h1 style="margin-top: 1rem; color: #1f2937;">Help & Guide</h1>
-  <p style="color: #6b7280;">Placeholder content for the how-to-use page.</p>
+<div class="help-container">
+  <!-- Top Nav Bar (Matching existing system back button style) -->
+  <div class="page-header-nav">
+    <button class="back-link" (click)="goBack()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Back to Main Page
+    </button>
+  </div>
+
+  <!-- Header with EGN Logo -->
+  <header class="help-header">
+    <div class="header-main">
+      <img src="/assets/images/logo.png" alt="EGN Logo" class="egn-logo">
+      <div class="header-title-text">
+        <h1>Help & User Guide</h1>
+        <p class="subtitle">Complete documentation for the Digital Grama Niladhari Service Management System</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Split Layout: Sidebar on Left, Content on Right -->
+  <div class="help-layout">
+    <!-- Sidebar Navigation (Sticky) -->
+    <aside class="help-sidebar">
+      <div class="sidebar-card">
+        <h3>Quick Navigation</h3>
+        <nav class="sidebar-nav">
+          <a href="#welcome" (click)="scrollTo($event, 'welcome')">Welcome</a>
+          <a href="#section-1" (click)="scrollTo($event, 'section-1')">1. Sign In</a>
+          <a href="#section-2" (click)="scrollTo($event, 'section-2')">2. First-Time Login</a>
+          <a href="#section-3" (click)="scrollTo($event, 'section-3')">3. Forgot Password</a>
+          <a href="#section-4" (click)="scrollTo($event, 'section-4')">4. Dashboard Overview</a>
+          <a href="#section-5" (click)="scrollTo($event, 'section-5')">5. Your Profile</a>
+          <a href="#section-6" (click)="scrollTo($event, 'section-6')">6. Change Email</a>
+          <a href="#section-7" (click)="scrollTo($event, 'section-7')">7. Change Password</a>
+          <a href="#section-8" (click)="scrollTo($event, 'section-8')">8. Available Services</a>
+          <a href="#section-9" (click)="scrollTo($event, 'section-9')">9. Submit Request</a>
+          <a href="#section-10" (click)="scrollTo($event, 'section-10')">10. Supporting Documents</a>
+          <a href="#section-11" (click)="scrollTo($event, 'section-11')">11. Track Requests</a>
+          <a href="#section-12" (click)="scrollTo($event, 'section-12')">12. Request Statuses</a>
+          <a href="#section-13" (click)="scrollTo($event, 'section-13')">13. Additional Info</a>
+          <a href="#section-14" (click)="scrollTo($event, 'section-14')">14. Family Cards</a>
+          <a href="#section-15" (click)="scrollTo($event, 'section-15')">15. Voter Registration</a>
+          <a href="#section-16" (click)="scrollTo($event, 'section-16')">16. Certificates</a>
+          <a href="#section-17" (click)="scrollTo($event, 'section-17')">17. Welfare & Aswesuma</a>
+          <a href="#section-18" (click)="scrollTo($event, 'section-18')">18. Book Appointments</a>
+          <a href="#section-19" (click)="scrollTo($event, 'section-19')">19. Appointment Status</a>
+          <a href="#section-20" (click)="scrollTo($event, 'section-20')">20. Document Vault</a>
+          <a href="#section-21" (click)="scrollTo($event, 'section-21')">21. Download Certificate</a>
+          <a href="#section-22" (click)="scrollTo($event, 'section-22')">22. Verify QR Code</a>
+          <a href="#section-23" (click)="scrollTo($event, 'section-23')">23. Announcements</a>
+          <a href="#section-24" (click)="scrollTo($event, 'section-24')">24. Public Documents</a>
+          <a href="#section-25" (click)="scrollTo($event, 'section-25')">25. Community Polls</a>
+          <a href="#section-26" (click)="scrollTo($event, 'section-26')">26. Contact GN (Chat)</a>
+          <a href="#section-27" (click)="scrollTo($event, 'section-27')">27. Notifications</a>
+          <a href="#section-28" (click)="scrollTo($event, 'section-28')">28. Common Problems</a>
+          <a href="#section-29" (click)="scrollTo($event, 'section-29')">29. Safety & Privacy</a>
+          <a href="#section-30" (click)="scrollTo($event, 'section-30')">30. Log Out</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <article class="help-content">
+      <!-- Welcome Section -->
+      <section id="welcome" class="content-section card animate-fade">
+        <p class="lead">Welcome to the Digital Grama Niladhari Service Management System.</p>
+        <p>This system helps you access Grama Niladhari services online in a simple and convenient way. You can submit service requests, upload documents, check request progress, book appointments, contact your GN Officer, and download issued certificates.</p>
+      </section>
+
+      <!-- Section 1 -->
+      <section id="section-1" class="content-section card animate-fade">
+        <h2>1. Sign In to Your Account</h2>
+        <p>Enter your registered email address and password on the login page.</p>
+        <p>After signing in successfully, you will be directed to your Citizen Dashboard.</p>
+        <div class="note-box alert-warning">
+          <i class="fas fa-exclamation-triangle"></i> Keep your password private and do not share it with anyone.
+        </div>
+      </section>
+
+      <!-- Section 2 -->
+      <section id="section-2" class="content-section card animate-fade">
+        <h2>2. First-Time Login</h2>
+        <p>When you sign in for the first time, you may be asked to change your temporary password.</p>
+        <p>Enter your current password, create a new password, and confirm it.</p>
+        <p>Use the new password for future logins.</p>
+      </section>
+
+      <!-- Section 3 -->
+      <section id="section-3" class="content-section card animate-fade">
+        <h2>3. Forgot Your Password</h2>
+        <p>Select <strong>Forgot Password</strong> on the login page.</p>
+        <p>Enter your registered email address and follow the instructions sent to your email.</p>
+        <p>You may receive a One-Time Password, also known as an OTP, to verify your identity.</p>
+        <div class="note-box alert-danger">
+          <i class="fas fa-shield-alt"></i> Do not share your OTP with anyone.
+        </div>
+      </section>
+
+      <!-- Section 4 -->
+      <section id="section-4" class="content-section card animate-fade">
+        <h2>4. Citizen Dashboard</h2>
+        <p>The dashboard gives you a quick view of your activities.</p>
+        <p>You can see:</p>
+        <ul class="styled-list">
+          <li>Submitted requests</li>
+          <li>Pending requests</li>
+          <li>Approved requests</li>
+          <li>Rejected requests</li>
+          <li>Upcoming appointments</li>
+          <li>Recent messages</li>
+          <li>Notifications</li>
+          <li>Issued documents</li>
+          <li>Announcements</li>
+          <li>Community polls</li>
+        </ul>
+        <p>Use the dashboard shortcuts to access the main services quickly.</p>
+      </section>
+
+      <!-- Section 5 -->
+      <section id="section-5" class="content-section card animate-fade">
+        <h2>5. Your Profile</h2>
+        <p>Open the <strong>Profile</strong> section to view your personal information.</p>
+        <p>You may see details such as:</p>
+        <ul class="styled-list">
+          <li>Full name</li>
+          <li>NIC number</li>
+          <li>Date of birth</li>
+          <li>Contact number</li>
+          <li>Email address</li>
+          <li>Address</li>
+          <li>Family card details</li>
+          <li>GN Division</li>
+          <li>Assigned GN Officer</li>
+        </ul>
+        <p>Some personal information can be updated directly.</p>
+        <p>For changes to official records, contact your GN Officer.</p>
+      </section>
+
+      <!-- Section 6 -->
+      <section id="section-6" class="content-section card animate-fade">
+        <h2>6. Change Your Email Address</h2>
+        <p>Open the <strong>Change Email</strong> option from your profile.</p>
+        <p>Enter your current password and provide the new email address.</p>
+        <p>A verification code will be sent to the new email address.</p>
+        <p>Your email will be updated only after successful verification.</p>
+      </section>
+
+      <!-- Section 7 -->
+      <section id="section-7" class="content-section card animate-fade">
+        <h2>7. Change Your Password</h2>
+        <p>Open the <strong>Change Password</strong> section.</p>
+        <p>Enter your current password, new password, and confirm the new password.</p>
+        <p>Choose a secure password that is easy for you to remember but difficult for others to guess.</p>
+      </section>
+
+      <!-- Section 8 -->
+      <section id="section-8" class="content-section card animate-fade">
+        <h2>8. View Available Services</h2>
+        <p>Open the <strong>Services</strong> page to view the services available online.</p>
+        <p>Select a service to read its description, instructions, and required documents.</p>
+        <p>Available services may include:</p>
+        <ul class="styled-list">
+          <li>Family card services</li>
+          <li>Citizen record updates</li>
+          <li>Voter registration</li>
+          <li>Certificate requests</li>
+          <li>Document services</li>
+          <li>Welfare and assistance requests</li>
+          <li>Complaints and general requests</li>
+        </ul>
+      </section>
+
+      <!-- Section 9 -->
+      <section id="section-9" class="content-section card animate-fade">
+        <h2>9. Submit a Service Request</h2>
+        <p>Select the required service and complete the application form.</p>
+        <p>Fill in all mandatory fields and check the information carefully before submitting.</p>
+        <p>Upload the requested documents where necessary.</p>
+        <p>After successful submission, you will receive a request reference number.</p>
+        <div class="note-box alert-success">
+          <i class="fas fa-bookmark"></i> Keep this reference number for future reference.
+        </div>
+      </section>
+
+      <!-- Section 10 -->
+      <section id="section-10" class="content-section card animate-fade">
+        <h2>10. Upload Supporting Documents</h2>
+        <p>Some requests require documents such as certificates, identification copies, or other evidence.</p>
+        <p>Upload clear and valid files in the accepted format.</p>
+        <p>Make sure:</p>
+        <ul class="styled-list">
+          <li>The document is readable</li>
+          <li>The correct file is selected</li>
+          <li>The file size is within the allowed limit</li>
+          <li>The document is related to your request</li>
+        </ul>
+        <p class="text-danger" style="color: #ef4444; font-weight: 500;">Incorrect or unclear documents may delay the request.</p>
+      </section>
+
+      <!-- Section 11 -->
+      <section id="section-11" class="content-section card animate-fade">
+        <h2>11. Track Your Requests</h2>
+        <p>Open <strong>My Requests</strong> to view all requests submitted through your account.</p>
+        <p>Select a request to view:</p>
+        <ul class="styled-list">
+          <li>Request reference number</li>
+          <li>Service name</li>
+          <li>Submitted date</li>
+          <li>Current status</li>
+          <li>Submitted information</li>
+          <li>Uploaded documents</li>
+          <li>GN Officer remarks</li>
+          <li>Request history</li>
+        </ul>
+      </section>
+
+      <!-- Section 12 -->
+      <section id="section-12" class="content-section card animate-fade">
+        <h2>12. Understanding Request Status</h2>
+        <div class="status-explanation">
+          <div class="status-item">
+            <span class="status-label" style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Submitted</span>
+            <span>Your request has been successfully sent and is waiting for review.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Under Review</span>
+            <span>The GN Officer is currently checking your request and documents.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #fee2e2; color: #b91c1c; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Additional Info</span>
+            <span>The GN Officer requires more information or another document from you. Open the request and follow the instructions provided.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Verified</span>
+            <span>The submitted information or document has been checked successfully.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #e0e7ff; color: #4338ca; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Forwarded</span>
+            <span>The request has been forwarded to another GN Officer for further processing.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Approved</span>
+            <span>Your request has been approved.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Rejected</span>
+            <span>Your request has not been approved. Open the request to view the reason.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #ecfdf5; color: #047857; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 140px; display: inline-block; text-align: center; margin-right: 10px;">Completed</span>
+            <span>The service process has been completed. Any issued document may be available in your Document Vault.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 13 -->
+      <section id="section-13" class="content-section card animate-fade">
+        <h2>13. Provide Additional Information</h2>
+        <p>When the GN Officer requests more information, open the relevant request.</p>
+        <p>Read the message carefully and provide the requested details or documents.</p>
+        <p>Submit the information as soon as possible to avoid delays.</p>
+      </section>
+
+      <!-- Section 14 -->
+      <section id="section-14" class="content-section card animate-fade">
+        <h2>14. Family Card Services</h2>
+        <p>You can use the system for family card-related requests such as:</p>
+        <ul class="styled-list">
+          <li>Adding a newborn</li>
+          <li>Adding a family member</li>
+          <li>Removing a deceased family member</li>
+          <li>Changing the family head</li>
+          <li>Requesting a new family card</li>
+          <li>Removing a family member</li>
+          <li>Moving to another GN Division</li>
+        </ul>
+        <p>Complete the form carefully and provide the correct family and address information.</p>
+      </section>
+
+      <!-- Section 15 -->
+      <section id="section-15" class="content-section card animate-fade">
+        <h2>15. Voter Registration</h2>
+        <p>Eligible citizens can submit a voter registration request online.</p>
+        <p>Complete the required declaration and upload any requested documents.</p>
+        <p>The GN Officer will review your information before making a decision.</p>
+      </section>
+
+      <!-- Section 16 -->
+      <section id="section-16" class="content-section card animate-fade">
+        <h2>16. Certificate Requests</h2>
+        <p>You can apply for certificates and official letters through the system.</p>
+        <p>Available documents may include:</p>
+        <ul class="styled-list">
+          <li>Character Certificate</li>
+          <li>Residence Certificate</li>
+          <li>Temporary Residence Certificate</li>
+          <li>Income Confirmation</li>
+          <li>Death Confirmation Letter</li>
+          <li>Other official certificates</li>
+        </ul>
+        <p>Once the request is approved, the document may be available for download.</p>
+      </section>
+
+      <!-- Section 17 -->
+      <section id="section-17" class="content-section card animate-fade">
+        <h2>17. Welfare and Assistance Requests</h2>
+        <p>You can apply for available welfare and assistance programmes.</p>
+        <p>These may include:</p>
+        <ul class="styled-list">
+          <li>Aswesuma assistance</li>
+          <li>Public assistance</li>
+          <li>Elderly assistance</li>
+          <li>Disability assistance</li>
+          <li>Kidney patient assistance</li>
+          <li>Pregnant mother assistance</li>
+          <li>Housing assistance</li>
+        </ul>
+        <div class="note-box alert-info">
+          <i class="fas fa-info-circle"></i> The system may show suggestions based on your available information. These suggestions do not guarantee approval. The final decision is made by the responsible Officer.
+        </div>
+      </section>
+
+      <!-- Section 18 -->
+      <section id="section-18" class="content-section card animate-fade">
+        <h2>18. Book an Appointment</h2>
+        <p>Open the <strong>Appointments</strong> section to view available dates and times.</p>
+        <p>Select a suitable date and time and submit your appointment request.</p>
+        <p class="text-warning" style="color: #d97706; font-weight: 500;">Dates that are unavailable, fully booked, weekends, or public holidays cannot be selected.</p>
+        <p>Your appointment is confirmed only after approval by the GN Officer.</p>
+      </section>
+
+      <!-- Section 19 -->
+      <section id="section-19" class="content-section card animate-fade">
+        <h2>19. Appointment Status</h2>
+        <div class="status-explanation">
+          <div class="status-item">
+            <span class="status-label" style="background: #e0f2fe; color: #0369a1; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 120px; display: inline-block; text-align: center; margin-right: 10px;">Pending</span>
+            <span>Your appointment request is waiting for confirmation.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #dcfce7; color: #15803d; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 120px; display: inline-block; text-align: center; margin-right: 10px;">Confirmed</span>
+            <span>The GN Officer has accepted the appointment.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 120px; display: inline-block; text-align: center; margin-right: 10px;">Rescheduled</span>
+            <span>The appointment date or time has been changed.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #fee2e2; color: #dc2626; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 120px; display: inline-block; text-align: center; margin-right: 10px;">Cancelled</span>
+            <span>The appointment has been cancelled.</span>
+          </div>
+          <div class="status-item" style="margin-top: 10px;">
+            <span class="status-label" style="background: #ecfdf5; color: #047857; padding: 4px 8px; border-radius: 4px; font-weight: 600; min-width: 120px; display: inline-block; text-align: center; margin-right: 10px;">Completed</span>
+            <span>The appointment has already taken place.</span>
+          </div>
+        </div>
+        <p style="margin-top: 15px;">Always check your latest appointment details before visiting the GN Office.</p>
+      </section>
+
+      <!-- Section 20 -->
+      <section id="section-20" class="content-section card animate-fade">
+        <h2>20. Document Vault</h2>
+        <p>The <strong>Document Vault</strong> stores your available personal and official documents.</p>
+        <p>You can use it to:</p>
+        <ul class="styled-list">
+          <li>View uploaded documents</li>
+          <li>View issued certificates</li>
+          <li>Download official documents</li>
+          <li>Check document dates</li>
+          <li>Search for a document</li>
+        </ul>
+        <p>Keep downloaded documents in a safe place.</p>
+      </section>
+
+      <!-- Section 21 -->
+      <section id="section-21" class="content-section card animate-fade">
+        <h2>21. Download a Certificate</h2>
+        <p>When a certificate is issued, open the Document Vault.</p>
+        <p>Find the required document and select the view or download option.</p>
+        <p>The certificate may include an official signature, stamp, certificate number, and QR code.</p>
+      </section>
+
+      <!-- Section 22 -->
+      <section id="section-22" class="content-section card animate-fade">
+        <h2>22. Verify a Certificate</h2>
+        <p>Certificates issued through the system may contain a QR code.</p>
+        <p>Scan the QR code using a mobile phone to open the verification page.</p>
+        <p>The page will show whether the certificate is valid, invalid, or revoked.</p>
+        <div class="note-box alert-danger">
+          <i class="fas fa-times-circle"></i> Do not accept a certificate that is shown as invalid or revoked.
+        </div>
+      </section>
+
+      <!-- Section 23 -->
+      <section id="section-23" class="content-section card animate-fade">
+        <h2>23. Announcements and Notices</h2>
+        <p>Open the <strong>Announcements</strong> section to view important notices from your GN Officer.</p>
+        <p>Announcements may include:</p>
+        <ul class="styled-list">
+          <li>Office closures</li>
+          <li>Community programmes</li>
+          <li>Public meetings</li>
+          <li>Service updates</li>
+          <li>Important deadlines</li>
+          <li>Emergency information</li>
+        </ul>
+        <p>Check announcements regularly to stay informed.</p>
+      </section>
+
+      <!-- Section 24 -->
+      <section id="section-24" class="content-section card animate-fade">
+        <h2>24. Public Documents</h2>
+        <p>The Public Documents section may contain:</p>
+        <ul class="styled-list">
+          <li>Application forms</li>
+          <li>Circulars</li>
+          <li>Notices</li>
+          <li>Guidelines</li>
+          <li>Other public documents</li>
+        </ul>
+        <p>You can view or download the required document.</p>
+      </section>
+
+      <!-- Section 25 -->
+      <section id="section-25" class="content-section card animate-fade">
+        <h2>25. Community Polls</h2>
+        <p>You may take part in community polls published by the GN Officer.</p>
+        <p>Select your preferred answer and submit your vote.</p>
+        <p>Each citizen can vote only once in a poll.</p>
+      </section>
+
+      <!-- Section 26 -->
+      <section id="section-26" class="content-section card animate-fade">
+        <h2>26. Contact Your GN Officer</h2>
+        <p>Use the <strong>Chat</strong> section to communicate with your assigned GN Officer.</p>
+        <p>Use the general chat for common questions.</p>
+        <p>Use the request chat for questions related to a specific service request.</p>
+        <p>You may use chat to:</p>
+        <ul class="styled-list">
+          <li>Ask for clarification</li>
+          <li>Respond to an Officer</li>
+          <li>Discuss a request</li>
+          <li>Send a requested document</li>
+          <li>Receive instructions</li>
+        </ul>
+        <p>Always use clear and respectful language.</p>
+      </section>
+
+      <!-- Section 27 -->
+      <section id="section-27" class="content-section card animate-fade">
+        <h2>27. Notifications</h2>
+        <p>Notifications inform you about important updates.</p>
+        <p>You may receive a notification when:</p>
+        <ul class="styled-list">
+          <li>A request is submitted</li>
+          <li>A request review begins</li>
+          <li>More information is required</li>
+          <li>A request is approved or rejected</li>
+          <li>A certificate is issued</li>
+          <li>An appointment is confirmed or changed</li>
+          <li>A new message is received</li>
+          <li>A new announcement is published</li>
+        </ul>
+        <p>Select a notification to open the related page.</p>
+      </section>
+
+      <!-- Section 28 -->
+      <section id="section-28" class="content-section card animate-fade">
+        <h2>28. Common Problems</h2>
+        
+        <div class="problem-box">
+          <h3 class="problem-title">Unable to Sign In</h3>
+          <p>Check your email address and password. Use the Forgot Password option when necessary. Contact your GN Officer if your account is inactive.</p>
+        </div>
+
+        <div class="problem-box" style="margin-top: 15px;">
+          <h3 class="problem-title">OTP Not Received</h3>
+          <p>Check your spam or junk email folder. Confirm that the email address is correct. Request a new OTP if the previous one has expired.</p>
+        </div>
+
+        <div class="problem-box" style="margin-top: 15px;">
+          <h3 class="problem-title">Unable to Submit a Request</h3>
+          <p>Check all mandatory fields. Make sure the required documents are uploaded. Correct any errors shown on the form.</p>
+        </div>
+
+        <div class="problem-box" style="margin-top: 15px;">
+          <h3 class="problem-title">Unable to Upload a Document</h3>
+          <p>Check the file type and file size. Make sure the document is clear and not damaged.</p>
+        </div>
+
+        <div class="problem-box" style="margin-top: 15px;">
+          <h3 class="problem-title">Unable to Book an Appointment</h3>
+          <p>The selected date may be unavailable, fully booked, a weekend, or a public holiday. Select another available date.</p>
+        </div>
+
+        <div class="problem-box" style="margin-top: 15px;">
+          <h3 class="problem-title">Certificate Not Available</h3>
+          <p>Check whether the request has been approved and completed. Then check the Document Vault and notifications.</p>
+        </div>
+      </section>
+
+      <!-- Section 29 -->
+      <section id="section-29" class="content-section card animate-fade">
+        <h2>29. Safety and Privacy</h2>
+        <p>To protect your account:</p>
+        <ul class="styled-list">
+          <li>Do not share your password</li>
+          <li>Do not share your OTP</li>
+          <li>Log out after using a shared device</li>
+          <li>Upload only genuine documents</li>
+          <li>Do not send your password through chat</li>
+          <li>Report suspicious activity to your GN Officer</li>
+        </ul>
+        <div class="note-box alert-danger">
+          <i class="fas fa-exclamation-circle"></i> Your GN Officer will never ask for your password.
+        </div>
+      </section>
+
+      <!-- Section 30 -->
+      <section id="section-30" class="content-section card animate-fade">
+        <h2>30. Log Out</h2>
+        <p>Always select <strong>Logout</strong> after completing your work.</p>
+        <p>This is especially important when using a shared or public computer.</p>
+      </section>
+
+      <!-- Need Help? -->
+      <section id="need-help" class="content-section card help-footer-card animate-fade">
+        <h2>Need Help?</h2>
+        <p>For general assistance, contact your assigned GN Officer using the Chat section.</p>
+        <p>For help with a submitted request, open the request and use the related request chat.</p>
+        <p class="text-primary" style="color: #2563eb; font-weight: 500;">Include the request reference number and explain the issue clearly.</p>
+        <div class="note-box alert-warning">
+          <i class="fas fa-user-shield"></i> Never include your password or OTP in a message.
+        </div>
+        <p class="footer-note" style="margin-top: 2rem; font-size: 0.9rem; color: #6b7280; font-style: italic;">
+          The Digital Grama Niladhari Service Management System is designed to help you access GN services more easily, reduce unnecessary office visits, and receive important updates in one secure location.
+        </p>
+      </section>
+    </article>
+  </div>
 </div>

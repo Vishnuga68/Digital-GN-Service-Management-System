@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AnnouncementService, GnAnnouncementResponseDTO } from '../../../core/services/announcement.service';
 import { CardHeaderComponent, AttachmentChipComponent, PollUiComponent } from './components/announcement-ui';
+import { SearchService } from '../../../core/services/search.service';
 
 @Component({
   selector: 'app-announcements-page',
@@ -21,10 +22,17 @@ export class AnnouncementsPageComponent implements OnInit {
   votedPolls = new Set<number>(); // Track which polls the user voted in this session
   votedPollsData = new Map<number, number>(); // Map<announcementId, optionId>
   totalVotesCache = new Map<number, number>();
+  
+  private searchService = inject(SearchService);
+  searchQuery = '';
 
   constructor(private announcementService: AnnouncementService) {}
 
   ngOnInit(): void {
+    this.searchService.searchQuery$.subscribe(query => {
+      this.searchQuery = query;
+      this.filterAnnouncements();
+    });
     this.loadAnnouncements();
   }
 
@@ -67,6 +75,15 @@ export class AnnouncementsPageComponent implements OnInit {
         'Surveys': 'Survey'
       };
       filtered = filtered.filter(a => a.announcementType === typeMap[this.activeTab]);
+    }
+
+    if (this.searchQuery) {
+      const q = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(a => 
+        (a.title || '').toLowerCase().includes(q) || 
+        (a.description || '').toLowerCase().includes(q) ||
+        (a.announcementType || '').toLowerCase().includes(q)
+      );
     }
     
     // Sort by latest date

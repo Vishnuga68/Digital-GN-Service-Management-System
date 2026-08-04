@@ -8,7 +8,7 @@
             <h2>Welcome, {{ citizenName }} 👋</h2>
             <p>Here’s a quick overview of your requests and pending activities.</p>
           </div>
-          <img src="https://cdn-icons-png.flaticon.com/512/4149/4149660.png" alt="Welcome Illustration" class="welcome-illustration">
+          <img [src]="userImageUrl ? userImageUrl : '/assets/images/default_profile.jpg'" alt="Welcome Illustration" class="welcome-illustration">
         </div>
 
         <!-- GN Division Info Card -->

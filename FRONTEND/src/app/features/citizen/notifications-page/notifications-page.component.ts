@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NotificationService, NotificationModel } from '../../../core/services/notification.service';
 
 @Component({
   selector: 'app-notifications-page',
@@ -10,7 +11,10 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './notifications-page.component.html',
   styleUrls: ['./notifications-page.component.scss']
 })
-export class NotificationsPageComponent {
+export class NotificationsPageComponent implements OnInit {
+  private router = inject(Router);
+  notificationService = inject(NotificationService);
+
   activeFilter = 'all';
   searchQuery = '';
   isSelectionMode = false;
@@ -23,95 +27,42 @@ export class NotificationsPageComponent {
   citizenName = 'John Doe';
   userImageUrl = ''; // Default profile will be used
 
-  notifications = [
-    {
-      id: 1,
-      type: 'approved',
-      title: 'Income Certificate Approved',
-      message: 'Your income certificate request has been approved.',
-      time: '2 hours ago',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'rejected',
-      title: 'Residence Certificate Rejected',
-      message: 'Your request was rejected due to missing documents.',
-      time: '5 hours ago',
-      read: false
-    },
-    {
-      id: 7,
-      type: 'pending',
-      title: 'Address Change Pending',
-      message: 'Your address change request is being reviewed by the GN officer.',
-      time: 'Just now',
-      read: false
-    },
-    {
-      id: 8,
-      type: 'approved',
-      title: 'Digital ID Issued',
-      message: 'Your new digital identity has been issued successfully.',
-      time: '3 hours ago',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'mention',
-      title: 'You were mentioned in a request',
-      message: 'GN officer mentioned you in Request #1023.',
-      time: 'Yesterday',
-      read: true
-    },
-    {
-      id: 10,
-      type: 'mention',
-      title: 'New Comment on Appointment',
-      message: 'Officer Sunil added a note to your Tuesday appointment.',
-      time: 'Yesterday',
-      read: false
-    },
-    {
-      id: 4,
-      type: 'info',
-      title: 'System Maintenance Notice',
-      message: 'The system will be unavailable on Sunday from 10 PM.',
-      time: '2 days ago',
-      read: true
-    },
-    {
-      id: 5,
-      type: 'approved',
-      title: 'Address Verification Success',
-      message: 'Your address has been verified successfully.',
-      time: '3 days ago',
-      read: true
-    },
-    {
-      id: 6,
-      type: 'info',
-      title: 'New Service Available',
-      message: 'You can now request Birth Certificates online.',
-      time: '1 week ago',
-      read: true
-    },
-    {
-      id: 11,
-      type: 'info',
-      title: 'Holiday Notice',
-      message: 'The GN office will be closed this Friday for Poya Day.',
-      time: '2 days ago',
-      read: true
-    }
-  ];
+  ngOnInit() {
+    this.notificationService.fetchNotifications().subscribe();
+    this.notificationService.notifications$.subscribe(list => {
+      this.notifications = list.map((n: NotificationModel) => ({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        message: n.message,
+        time: this.formatTime(n.createdAt),
+        read: n.isRead,
+        actionUrl: n.actionUrl
+      }));
+    });
+  }
+
+  formatTime(dateStr: string): string {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const diffMs = new Date().getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} mins ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    return date.toLocaleDateString();
+  }
+
+  notifications: any[] = [];
 
   categoryMapping: Record<string, string> = {
     'approved': 'Approval',
     'rejected': 'Rejection',
-    'mention': 'Mention',
-    'info': 'Information',
-    'pending': 'Status Update'
+    'pending': 'Status Update',
+    'appointment': 'Appointment',
+    'chat': 'New Message',
+    'info': 'Information'
   };
 
   toggleSidebar() {
@@ -193,22 +144,25 @@ export class NotificationsPageComponent {
   }
 
   markAsRead(id: number) {
-    const notif = this.notifications.find(n => n.id === id);
-    if (notif) notif.read = true;
+    this.notificationService.markAsRead(id).subscribe();
   }
 
   markAllAsRead() {
-    this.notifications.forEach(n => n.read = true);
+    this.notificationService.markAllAsRead().subscribe();
   }
 
   deleteNotification(id: number) {
-    this.notifications = this.notifications.filter(n => n.id !== id);
+    this.notificationService.deleteNotification(id).subscribe();
   }
 
   viewNotification(id: number) {
-    console.log('Viewing notification:', id);
-    this.markAsRead(id);
-    // Add navigation or modal logic here if needed
+    const notif = this.notifications.find(n => n.id === id);
+    if (notif) {
+      this.notificationService.markAsRead(id).subscribe();
+      if (notif.actionUrl) {
+        this.router.navigateByUrl(notif.actionUrl);
+      }
+    }
   }
 
   toggleSelectionMode() {
@@ -270,7 +224,9 @@ export class NotificationsPageComponent {
   }
 
   confirmBulkDelete() {
-    this.notifications = this.notifications.filter(n => !this.selectedIds.has(n.id));
+    this.selectedIds.forEach(id => {
+      this.notificationService.deleteNotification(id).subscribe();
+    });
     this.selectedIds.clear();
     this.isSelectionMode = false;
     this.isBulkDeleteConfirmVisible = false;

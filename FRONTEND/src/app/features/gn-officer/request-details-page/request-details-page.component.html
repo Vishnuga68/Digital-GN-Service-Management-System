@@ -480,7 +480,7 @@
                             *ngIf="showReleaseCertificateButton"
                             [disabled]="isProcessing || isNotAssignedToMe()"
                             style="width: 100%; grid-column: span 2; background-color: #10b981; border-color: #10b981; color: white; margin-top: 8px;">
-                        {{ (requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6 || requestDetails.categoryId === 42) ? 'Release Family Card' : 'Release Certificate' }}
+                        {{ ((requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6) || requestDetails.categoryId === 53 || requestDetails.categoryId === 42) ? 'Release Family Card' : 'Release Certificate' }}
                     </button>
                 </div>
 
@@ -740,8 +740,8 @@
         <h3 *ngIf="requestDetails.categoryId === 42">Confirm Family Division Transfer</h3>
       </div>
       <div class="custom-modal-body">
-        <p *ngIf="(requestDetails.categoryId < 1 || requestDetails.categoryId > 6) && requestDetails.categoryId !== 42">Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
-        <p *ngIf="requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6 && requestDetails.categoryId !== 42">Are you sure you want to release the updated Family Card to the citizen? This will publish the final signed Family Card and mark the request as Accepted.</p>
+        <p *ngIf="(requestDetails.categoryId < 1 || requestDetails.categoryId > 6) && requestDetails.categoryId !== 53 && requestDetails.categoryId !== 42">Are you sure you want to release the verified document to the citizen? This will publish the final signed PDF and mark the request as Accepted.</p>
+        <p *ngIf="((requestDetails.categoryId >= 1 && requestDetails.categoryId <= 6) || requestDetails.categoryId === 53) && requestDetails.categoryId !== 42">Are you sure you want to release the updated Family Card to the citizen? This will publish the final signed Family Card and mark the request as Accepted.</p>
         
         <div *ngIf="requestDetails.categoryId === 42" style="text-align: left; margin-bottom: 16px;">
           <p style="font-weight: 600; margin-bottom: 8px;">By accepting this request:</p>

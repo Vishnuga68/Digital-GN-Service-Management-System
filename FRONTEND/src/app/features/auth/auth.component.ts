@@ -31,6 +31,11 @@ export class AuthComponent implements OnInit {
   isLoading = false;
   toastMessage: string | null = null;
   toastType: 'success' | 'error' = 'success';
+  showPassword = false;
+
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
 
   ngOnInit(): void {
     this.translationService.translations$.subscribe(data => {
@@ -55,12 +60,13 @@ export class AuthComponent implements OnInit {
 
     this.resetForm = this.fb.group({
       otp: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(4)]]
-    });
+      newPassword: ['', [Validators.required, Validators.minLength(6)]],
+      confirmPassword: ['', Validators.required]
+    }, { validators: this.passwordMatchValidator });
   }
 
   passwordMatchValidator(g: AbstractControl): { [key: string]: boolean } | null {
-    const password = g.get('password')?.value;
+    const password = g.get('newPassword')?.value;
     const confirmPassword = g.get('confirmPassword')?.value;
     if (password && confirmPassword && password !== confirmPassword) {
       return { 'mismatch': true };
@@ -92,6 +98,11 @@ export class AuthComponent implements OnInit {
     this.authService.login(nic, password, role).subscribe(res => {
       this.isLoading = false;
       if (res.success) {
+        if (res.isFirstLogin) {
+          sessionStorage.setItem('isFirstLogin', 'true');
+        } else {
+          sessionStorage.removeItem('isFirstLogin');
+        }
         this.showToast(this.translations.SUCCESS_LOGIN + ' Role: ' + res.role, 'success');
         if (res.role === 'Citizen') {
           this.router.navigate(['/citizen']);
@@ -118,7 +129,14 @@ export class AuthComponent implements OnInit {
   }
 
   onResetPassword() {
-    if (this.resetForm.invalid) return;
+    if (this.resetForm.hasError('mismatch')) {
+      this.showToast('Passwords do not match.', 'error');
+      return;
+    }
+    if (this.resetForm.invalid) {
+      this.showToast('Please fill in all fields correctly (password min 6 chars).', 'error');
+      return;
+    }
     this.isLoading = true;
     const { otp, newPassword } = this.resetForm.value;
     this.authService.resetPassword(otp, newPassword).subscribe(res => {

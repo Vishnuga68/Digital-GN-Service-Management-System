@@ -94,7 +94,7 @@
       <div class="panel-header">
         <div class="title-with-icon">
           <img src="/assets/icons/registry.png" alt="Welfare Details">
-          <h3>Welfare Assistance</h3>
+          <h3>Eligibility Suggestions & Welfare Assistance</h3>
         </div>
       </div>
       
@@ -106,22 +106,46 @@
           <span *ngIf="verification.officer"><strong>Verified By GN Officer NIC:</strong> {{ verification.officer }}</span>
         </div>
 
-        <!-- Confirmed Welfare Cards Grid -->
-        <div class="welfare-cards-grid" *ngIf="hasActiveWelfare()">
-          <ng-container *ngFor="let prog of getWelfarePrograms()">
-            <div *ngIf="prog.status === 'Eligible'" class="welfare-card" [ngClass]="[prog.cardClass, prog.statusClass]">
-              <div class="welfare-card-content">
-                <img [src]="prog.icon" class="welfare-card-icon" alt="icon">
-                <div class="welfare-card-text">
-                  <span class="welfare-card-title">{{ prog.name }}</span>
-                  <span class="welfare-status-text">{{ prog.status }}</span>
+        <!-- Active Welfare Assistance Section -->
+        <div class="info-section">
+          <div class="section-title">Active Welfare Assistance</div>
+          <div class="welfare-cards-grid" *ngIf="hasActiveWelfare()">
+            <ng-container *ngFor="let prog of getWelfarePrograms()">
+              <div *ngIf="prog.status === 'Eligible'" class="welfare-card" [ngClass]="[prog.cardClass, prog.statusClass]">
+                <div class="welfare-card-content">
+                  <img [src]="prog.icon" class="welfare-card-icon" alt="icon">
+                  <div class="welfare-card-text">
+                    <span class="welfare-card-title">{{ prog.name }}</span>
+                    <span class="welfare-status-text">{{ prog.status }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </ng-container>
+            </ng-container>
+          </div>
+          <div *ngIf="!hasActiveWelfare()" style="font-size: 0.85rem; color: #94a3b8; font-style: italic; padding: 0.5rem 0;">
+            No active welfare benefits registered.
+          </div>
         </div>
-        <div *ngIf="!hasActiveWelfare()" style="font-size: 0.85rem; color: #94a3b8; font-style: italic; padding: 0.5rem 0;">
-          No active welfare benefits registered.
+
+        <!-- Eligibility Suggestions Section -->
+        <div class="info-section" style="margin-top: 2rem;">
+          <div class="section-title">Eligibility Suggestions</div>
+          <div class="welfare-cards-grid" *ngIf="hasSuggestions()">
+            <ng-container *ngFor="let prog of getWelfarePrograms()">
+              <div *ngIf="prog.status === 'Suggested'" class="welfare-card" [ngClass]="[prog.cardClass, prog.statusClass]">
+                <div class="welfare-card-content">
+                  <img [src]="prog.icon" class="welfare-card-icon" alt="icon">
+                  <div class="welfare-card-text">
+                    <span class="welfare-card-title">{{ prog.name }}</span>
+                    <span class="welfare-status-text">{{ prog.status }}</span>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+          <div *ngIf="!hasSuggestions()" style="font-size: 0.85rem; color: #94a3b8; font-style: italic; padding: 0.5rem 0;">
+            No eligibility suggestions available.
+          </div>
         </div>
       </div>
     </div>

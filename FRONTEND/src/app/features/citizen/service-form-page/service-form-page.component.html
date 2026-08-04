@@ -109,7 +109,7 @@
                       <!-- Skip applicant-type as it's rendered above statically via radio buttons if present in schema -->
                       <div class="form-group gn-field-wrapper" [hidden]="!field.isVisible" [style.gridColumn]="(field.fieldType === 'file' || field.fieldType === 'checkbox' || field.fieldType === 'textarea') ? '1 / -1' : ''" *ngIf="field.fieldType !== 'applicant-type' && field.isVisible">
                         
-                        <label>{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
+                        <label *ngIf="field.fieldType !== 'checkbox' || (field.parsedOptions && field.parsedOptions.length > 0)">{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
                         
                         <ng-container [ngSwitch]="field.fieldType">
                           
@@ -181,10 +181,18 @@
 
                           <!-- Checkboxes -->
                           <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
-                            <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
-                              <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
-                              <span class="label-text">{{ opt.label }}</span>
-                            </label>
+                            <ng-container *ngIf="field.parsedOptions && field.parsedOptions.length > 0; else singleCheckbox1">
+                              <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                                <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
+                                <span class="label-text">{{ opt.label }}</span>
+                              </label>
+                            </ng-container>
+                            <ng-template #singleCheckbox1>
+                              <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                                <input type="checkbox" [formControlName]="field.fieldName"> 
+                                <span class="label-text">{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired" style="color: #ef4444;">*</span></span>
+                              </label>
+                            </ng-template>
                           </div>
 
                           <!-- File Upload -->
@@ -218,7 +226,22 @@
                           <!-- Default Fallback -->
                           <input *ngSwitchDefault type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                           
-                        </ng-container>
+                         </ng-container>
+
+                        <div *ngIf="field.fieldName === 'newOfficialNic' && requestForm.get('dynamicData.newOfficialNic')?.invalid && requestForm.get('dynamicData.newOfficialNic')?.touched" class="error-message" style="color: #ef4444; font-size: 13px; margin-top: 4px; font-weight: 500;">
+                          <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['required']">
+                            New Official NIC Number is required.
+                          </div>
+                          <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['invalidNicFormat']">
+                            Invalid NIC format. Must be 9 digits followed by 'V/X' or 12 digits.
+                          </div>
+                          <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['nicExists']">
+                            This NIC Number already exists in the Citizen Registry.
+                          </div>
+                          <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['serverError']">
+                            Failed to check NIC availability. Please try again.
+                          </div>
+                        </div>
 
                       </div>
                     </ng-container>
@@ -238,7 +261,7 @@
                     <!-- Skip applicant-type as it's rendered above statically via radio buttons if present in schema -->
                   <div class="form-group gn-field-wrapper" [hidden]="!field.isVisible" [style.gridColumn]="(field.fieldType === 'file' || field.fieldType === 'checkbox' || field.fieldType === 'textarea') ? '1 / -1' : ''" *ngIf="field.fieldType !== 'applicant-type' && field.isVisible">
                     
-                    <label>{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
+                    <label *ngIf="field.fieldType !== 'checkbox' || (field.parsedOptions && field.parsedOptions.length > 0)">{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired">*</span></label>
                     
                     <ng-container [ngSwitch]="field.fieldType">
                       
@@ -311,10 +334,18 @@
 
                       <!-- Checkboxes -->
                       <div *ngSwitchCase="'checkbox'" class="checkbox-group" style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; margin-top: 5px;" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
-                        <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
-                          <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
-                          <span class="label-text">{{ opt.label }}</span>
-                        </label>
+                        <ng-container *ngIf="field.parsedOptions && field.parsedOptions.length > 0; else singleCheckbox2">
+                          <label *ngFor="let opt of field.parsedOptions" class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                            <input type="checkbox" [value]="opt.value" (change)="onCheckboxChange($event, field.fieldName); $event.stopPropagation();"> 
+                            <span class="label-text">{{ opt.label }}</span>
+                          </label>
+                        </ng-container>
+                        <ng-template #singleCheckbox2>
+                          <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer;">
+                            <input type="checkbox" [formControlName]="field.fieldName"> 
+                            <span class="label-text">{{ field.fieldLabel }} <span class="required" *ngIf="field.isRequired" style="color: #ef4444;">*</span></span>
+                          </label>
+                        </ng-template>
                       </div>
 
                       <!-- File Upload -->
@@ -410,6 +441,21 @@
                       <input *ngSwitchDefault type="text" [formControlName]="field.fieldName" class="gn-input" [class.error]="requestForm.get('dynamicData.' + field.fieldName)?.touched && requestForm.get('dynamicData.' + field.fieldName)?.invalid">
                       
                     </ng-container>
+
+                    <div *ngIf="field.fieldName === 'newOfficialNic' && requestForm.get('dynamicData.newOfficialNic')?.invalid && requestForm.get('dynamicData.newOfficialNic')?.touched" class="error-message" style="color: #ef4444; font-size: 13px; margin-top: 4px; font-weight: 500;">
+                      <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['required']">
+                        New Official NIC Number is required.
+                      </div>
+                      <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['invalidNicFormat']">
+                        Invalid NIC format. Must be 9 digits followed by 'V/X' or 12 digits.
+                      </div>
+                      <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['nicExists']">
+                        This NIC Number already exists in the Citizen Registry.
+                      </div>
+                      <div *ngIf="requestForm.get('dynamicData.newOfficialNic')?.errors?.['serverError']">
+                        Failed to check NIC availability. Please try again.
+                      </div>
+                    </div>
 
                   </div>
                 </ng-container>

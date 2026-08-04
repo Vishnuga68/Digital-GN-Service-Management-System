@@ -65,7 +65,7 @@ export class CertificateEditorPageComponent implements OnInit {
   // Family Card Category ID 1 & 2 variables
   categoryId = 0;
   get isFamilyCardCategory(): boolean {
-    return this.categoryId >= 1 && this.categoryId <= 6;
+    return (this.categoryId >= 1 && this.categoryId <= 6) || this.categoryId === 53;
   }
   familyCardNumber = '';
   headOfHouseholdName = '';

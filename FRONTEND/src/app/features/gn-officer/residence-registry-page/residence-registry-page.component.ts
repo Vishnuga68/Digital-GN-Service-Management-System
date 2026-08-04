@@ -34,6 +34,8 @@ export class ResidenceRegistryPageComponent implements OnInit {
 
   citizens: any[] = [];
   filteredCitizens: any[] = [];
+  voters: any[] = [];
+  filteredVoters: any[] = [];
 
   // Selected Citizen for Details View
   selectedCitizen: any = null;
@@ -132,6 +134,7 @@ export class ResidenceRegistryPageComponent implements OnInit {
             dob: this.parseDate(c.dob)
           }));
           this.filterCitizens();
+          this.loadVoters();
 
           // Auto-open citizen details if NIC is passed as query param
           const targetNic = this.route.snapshot.queryParams['nic'];
@@ -166,6 +169,15 @@ export class ResidenceRegistryPageComponent implements OnInit {
   }
 
   filterCitizens() {
+    if (this.selectedFilter === 'Voters') {
+       if (!this.voters || this.voters.length === 0) {
+         this.loadVoters();
+       } else {
+         this.filterVoters();
+       }
+       return;
+    }
+
     let filtered = this.citizens;
 
     if (this.selectedFilter === 'Welfare') {
@@ -331,9 +343,18 @@ export class ResidenceRegistryPageComponent implements OnInit {
     return age;
   }
 
-  isVoterEligible(dob: string, lifeStatus?: string): boolean {
-    if (lifeStatus && lifeStatus !== 'Alive') return false;
-    return this.calculateAge(dob) >= 18;
+  isVoterEligible(dob: any, lifeStatus?: string): boolean {
+    if (lifeStatus && lifeStatus !== 'Alive' && lifeStatus !== 'Active') return false;
+    if (!dob) return false;
+    const parsed = this.parseDate(dob);
+    const birthDate = parsed instanceof Date ? parsed : new Date(parsed as string);
+    if (isNaN(birthDate.getTime())) return false;
+    return (new Date().getFullYear() - birthDate.getFullYear()) >= 18;
+  }
+
+  isRegisteredVoter(nic: string): boolean {
+    if (!nic) return false;
+    return this.voters.some(v => v.citizenNic === nic);
   }
 
   viewFamilyMemberDetails(member: any) {
@@ -672,7 +693,7 @@ export class ResidenceRegistryPageComponent implements OnInit {
       {
         name: 'Voter Registration',
         icon: '/assets/icons/vote.png',
-        status: findSuggestion('Voter') ? 'Suggested' : (isVoter ? 'Eligible' : 'Not Eligible'),
+        status: findConfirmed('voter') ? 'Eligible' : (findSuggestion('Voter') ? 'Suggested' : 'Not Eligible'),
         cardClass: 'card-voter'
       }
     ];
@@ -694,7 +715,6 @@ export class ResidenceRegistryPageComponent implements OnInit {
     return this.getWelfarePrograms().some(p => p.status === 'Suggested');
   }
 
-
   getCommonVerificationDetails(confirmedWelfare: any[]): { date: string; officer: string } | null {
     if (!confirmedWelfare) return null;
     const item = confirmedWelfare.find((w: any) => w.lastVerifiedDate || w.verifiedBy);
@@ -703,5 +723,74 @@ export class ResidenceRegistryPageComponent implements OnInit {
       date: item.lastVerifiedDate || '',
       officer: item.verifiedBy || ''
     };
+  }
+
+  loadVoters() {
+    const token = sessionStorage.getItem('token');
+    if (!token || !this.gnDivisionId) return;
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    
+    this.http.get<any>(`http://localhost:5058/api/VoterRegistry/division/${encodeURIComponent(this.gnDivisionId)}`, { headers }).subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          this.voters = res.data;
+          this.filterVoters();
+        }
+      },
+      error: (err) => console.error('Error loading voters:', err)
+    });
+  }
+
+  filterVoters() {
+    let filtered = this.voters || [];
+    if (this.searchQuery.trim()) {
+      const q = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(v => 
+        (v.citizenName && v.citizenName.toLowerCase().includes(q)) || 
+        (v.citizenNic && v.citizenNic.toLowerCase().includes(q))
+      );
+    }
+    this.filteredVoters = filtered;
+  }
+
+  exportVoters() {
+    if (!this.gnDivisionId) return;
+    const token = sessionStorage.getItem('token');
+    if (!token) return;
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    
+    this.isSubmitting = true;
+    this.http.post(`http://localhost:5058/api/VoterRegistry/division/${encodeURIComponent(this.gnDivisionId)}/export`, {}, {
+      headers,
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob) => {
+        this.isSubmitting = false;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `voters_export_${this.gnDivisionId}_${new Date().toISOString().slice(0,10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        // Reload voters list to update IsExported flags
+        this.loadVoters();
+        
+        this.alertModalTitle = 'Export Successful';
+        this.alertModalMessage = 'Approved voter records exported successfully as CSV, and marked as exported.';
+        this.alertModalType = 'success';
+        this.isAlertModalOpen = true;
+      },
+      error: (err) => {
+        this.isSubmitting = false;
+        console.error('Export failed:', err);
+        this.alertModalTitle = 'Export Failed';
+        this.alertModalMessage = 'Failed to export voter records. No new approved voter records to export or connection error.';
+        this.alertModalType = 'error';
+        this.isAlertModalOpen = true;
+      }
+    });
   }
 }

@@ -42,32 +42,48 @@ export class DashboardPageComponent implements OnInit {
     this.citizenPhone = profile.Phone || profile.phone || 'No Phone';
     this.gnDivision = profile.GnDivisionId || profile.gnDivisionId || 'Unknown Division';
     this.gnOfficer = profile.GnOfficerName || profile.gnOfficerName || 'Unassigned';
+    this.userImageUrl = profile.Profile || profile.profile || '';
   }
 
   updateStats(stats: any) {
     this.pendingRequests = stats.PendingRequests || stats.pendingRequests || 0;
+    this.newMessages = stats.NewMessages || stats.newMessages || 0;
+    this.upcomingMeetings = stats.UpcomingMeetings || stats.upcomingMeetings || 0;
+    this.recentActivities = stats.RecentActivities || stats.recentActivities || [];
     
-    const approved = stats.ApprovedRequests || stats.approvedRequests || 0;
     const pending = stats.PendingRequests || stats.pendingRequests || 0;
-    const total = stats.TotalRequests || stats.totalRequests || 0;
-    const other = Math.max(0, total - approved - pending);
+    const inProgress = stats.InProgressRequests || stats.inProgressRequests || 0;
+    const approved = stats.ApprovedRequests || stats.approvedRequests || 0;
+    const rejected = stats.RejectedRequests || stats.rejectedRequests || 0;
+    const total = pending + inProgress + approved + rejected;
     
     // Update charts dynamically based on real data
     this.pieChartData = {
-      labels: [ 'Pending Requests', 'Approved', 'Other/Completed' ],
+      labels: [ 'Pending', 'In Progress', 'Approved', 'Rejected' ],
       datasets: [ {
-        data: [ pending, approved, other ],
-        backgroundColor: ['#FEF3C7', '#D1FAE5', '#FEE2E2'],
-        hoverBackgroundColor: ['#FDE68A', '#A7F3D0', '#FECACA'],
-        borderColor: ['#D97706', '#059669', '#DC2626']
+        data: [ pending, inProgress, approved, rejected ],
+        backgroundColor: ['#FEF3C7', '#DBEAFE', '#D1FAE5', '#FEE2E2'],
+        hoverBackgroundColor: ['#FDE68A', '#BFDBFE', '#A7F3D0', '#FECACA'],
+        borderColor: ['#D97706', '#2563EB', '#059669', '#DC2626']
       } ]
     };
     
     this.pieChartAnalysis = [
-      { label: 'Pending Requests', value: pending, percentage: total > 0 ? (pending * 100 / total).toFixed(1) + '%' : '0%', color: '#D97706' },
+      { label: 'Pending', value: pending, percentage: total > 0 ? (pending * 100 / total).toFixed(1) + '%' : '0%', color: '#D97706' },
+      { label: 'In Progress', value: inProgress, percentage: total > 0 ? (inProgress * 100 / total).toFixed(1) + '%' : '0%', color: '#2563EB' },
       { label: 'Approved', value: approved, percentage: total > 0 ? (approved * 100 / total).toFixed(1) + '%' : '0%', color: '#059669' },
-      { label: 'Other/Completed', value: other, percentage: total > 0 ? (other * 100 / total).toFixed(1) + '%' : '0%', color: '#DC2626' }
+      { label: 'Rejected', value: rejected, percentage: total > 0 ? (rejected * 100 / total).toFixed(1) + '%' : '0%', color: '#DC2626' }
     ];
+
+    const weeklyData = stats.WeeklyActivity || stats.weeklyActivity || [0, 0, 0, 0, 0, 0, 0];
+    const weeklyLabels = stats.WeeklyActivityLabels || stats.weeklyActivityLabels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    this.barChartData = {
+      labels: weeklyLabels,
+      datasets: [
+        { ...this.barChartData.datasets[0], data: weeklyData }
+      ]
+    };
   }
 
   ngOnInit() {

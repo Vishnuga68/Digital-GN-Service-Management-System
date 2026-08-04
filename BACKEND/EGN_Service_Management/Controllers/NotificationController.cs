@@ -1,13 +1,19 @@
-﻿using EGN_Service_Management.DTO.RequestDTO;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using EGN_Service_Management.DTO.RequestDTO;
 using EGN_Service_Management.DTO.ResponseDTO;
 using EGN_Service_Management.Entity;
 using EGN_Service_Management.IServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EGN_Service_Management.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationService _notificationService;
@@ -18,33 +24,42 @@ namespace EGN_Service_Management.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllNotificationRecords()
+        public async Task<IActionResult> GetMyNotifications()
         {
-            var records = await _notificationService.GetAllAsync();
+            var userNic = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userNic) || string.IsNullOrEmpty(userRole))
+            {
+                return Unauthorized();
+            }
+
+            var records = await _notificationService.GetUserNotificationsAsync(userNic, userRole);
             return Ok(records.Select(MapToResponseDTO));
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetNotificationById(int id)
+        [HttpGet("unread-count")]
+        public async Task<IActionResult> GetUnreadCount()
         {
-            try
+            var userNic = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userNic) || string.IsNullOrEmpty(userRole))
             {
-                var record = await _notificationService.GetByIdAsync(id);
-                return Ok(MapToResponseDTO(record));
+                return Unauthorized();
             }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "Notification not found." });
-            }
+
+            var count = await _notificationService.GetUnreadCountAsync(userNic, userRole);
+            return Ok(new { count });
         }
 
-        [HttpPost]
-        public async Task<IActionResult> CreateNotification([FromBody] NotificationRequestDTO requestDTO)
+        [HttpPost("{id}/read")]
+        public async Task<IActionResult> MarkAsRead(int id)
         {
             try
             {
-                var record = await _notificationService.CreateAsync(MapToEntity(requestDTO));
-                return CreatedAtAction(nameof(GetNotificationById), new { id = record.Id }, MapToResponseDTO(record));
+                await _notificationService.MarkAsReadAsync(id);
+                return Ok(new { success = true, message = "Notification marked as read." });
             }
             catch (Exception ex)
             {
@@ -52,19 +67,21 @@ namespace EGN_Service_Management.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateNotification(int id, [FromBody] NotificationRequestDTO requestDTO)
+        [HttpPost("mark-all-read")]
+        public async Task<IActionResult> MarkAllAsRead()
         {
+            var userNic = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (string.IsNullOrEmpty(userNic) || string.IsNullOrEmpty(userRole))
+            {
+                return Unauthorized();
+            }
+
             try
             {
-                var entity = MapToEntity(requestDTO);
-                entity.Id = id;
-                var record = await _notificationService.UpdateAsync(id, entity);
-                return Ok(MapToResponseDTO(record));
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new { message = "Notification not found." });
+                await _notificationService.MarkAllAsReadAsync(userNic, userRole);
+                return Ok(new { success = true, message = "All notifications marked as read." });
             }
             catch (Exception ex)
             {
@@ -90,31 +107,25 @@ namespace EGN_Service_Management.Controllers
             }
         }
 
-        private static Notification MapToEntity(NotificationRequestDTO requestDTO)
-        {
-            return new Notification
-            {
-                Id = requestDTO.Id,
-                RecipientNic = requestDTO.RecipientNic,
-                Type = requestDTO.Type,
-                Title = requestDTO.Title,
-                Message = requestDTO.Message,
-                IsRead = requestDTO.IsRead,
-                CreatedAt = requestDTO.CreatedAt,
-            };
-        }
-
         private static NotificationResponseDTO MapToResponseDTO(Notification entity)
         {
             return new NotificationResponseDTO
             {
                 Id = entity.Id,
                 RecipientNic = entity.RecipientNic,
+                RecipientRole = entity.RecipientRole,
                 Type = entity.Type,
                 Title = entity.Title,
                 Message = entity.Message,
+                RelatedEntityType = entity.RelatedEntityType,
+                RelatedEntityId = entity.RelatedEntityId,
+                ActionUrl = entity.ActionUrl,
+                Priority = entity.Priority,
                 IsRead = entity.IsRead,
+                ReadDate = entity.ReadDate,
                 CreatedAt = entity.CreatedAt,
+                CreatedBy = entity.CreatedBy,
+                IsActive = entity.IsActive
             };
         }
     }

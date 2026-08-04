@@ -78,7 +78,7 @@
 
     <div class="filter-controls">
       <div class="filter-group">
-        <label>Category</label>
+        <label>Service</label>
         <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="form-control">
           <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
         </select>

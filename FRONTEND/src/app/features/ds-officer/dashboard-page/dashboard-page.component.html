@@ -8,7 +8,7 @@
         <h2>Welcome back, <span>{{ officerName }}</span></h2>
         <p>Here's what's happening in your DS division today.</p>
       </div>
-      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135768.png" alt="Officer Illustration" class="welcome-illustration">
+      <img [src]="userImageUrl ? userImageUrl : '/assets/images/default_profile.jpg'" alt="Officer Illustration" class="welcome-illustration">
     </div>
 
     <!-- Division Info Card -->
@@ -50,10 +50,6 @@
         <button class="action-btn" routerLink="/ds-officer/transfers">
           <img src="/assets/icons/switch.png" alt="Transfers">
           <span>GN Transfers</span>
-        </button>
-        <button class="action-btn">
-          <img src="/assets/icons/downloads.png" alt="Reports">
-          <span>Reports</span>
         </button>
       </div>
     </section>

@@ -23,11 +23,17 @@ public class Account
     [MaxLength(20)]
     public string? Phone { get; set; }
 
+    [Column("ProfileImage")]
+    public string? Profile { get; set; }
+
     [Required]
     [MaxLength(20)]
     public string Status { get; set; } = "Active";
 
     public DateTime? LastLogin { get; set; }
+
+    public bool? IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     public DsOfficer? DsOfficer { get; set; }
     public GnOfficer? GnOfficer { get; set; }

@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace EGN_Service_Management.Controllers
 {
@@ -23,13 +24,15 @@ namespace EGN_Service_Management.Controllers
         private readonly IMapper _mapper;
         private readonly ITokenService _tokenService;
         private readonly EgnDbContext _context;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(IAccountService accountService, IMapper mapper, ITokenService tokenService, EgnDbContext context)
+        public AccountController(IAccountService accountService, IMapper mapper, ITokenService tokenService, EgnDbContext context, IConfiguration configuration)
         {
             _accountService = accountService;
             _mapper = mapper;
             _tokenService = tokenService;
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet]
@@ -111,6 +114,11 @@ namespace EGN_Service_Management.Controllers
             if (!isPasswordValid)
             {
                 return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid NIC or password."));
+            }
+
+            if (account.IsDeleted == true)
+            {
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Access denied: Your account has been deleted. Please contact support."));
             }
 
             if (account.Status != "Active")
@@ -231,6 +239,9 @@ namespace EGN_Service_Management.Controllers
             // Generate secure signed JWT Access Token
             var token = _tokenService.GenerateToken(account, activeRole);
 
+            // Determine if this is the first login before updating LastLogin
+            bool isFirstLogin = !account.LastLogin.HasValue;
+
             // Record login audit timestamp
             account.LastLogin = DateTime.UtcNow;
             await _accountService.UpdateAsync(account.Nic, account);
@@ -240,7 +251,8 @@ namespace EGN_Service_Management.Controllers
                 Nic = account.Nic,
                 Role = activeRole,
                 Email = account.Email,
-                Token = token
+                Token = token,
+                IsFirstLogin = isFirstLogin
             };
 
             return Ok(ApiResponse<LoginResponseDTO>.SuccessResponse(loginResponse, "Login successful."));
@@ -249,54 +261,162 @@ namespace EGN_Service_Management.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDTO request)
         {
-            Account account;
-            try
-            {
-                account = await _accountService.GetByIdAsync(request.Nic);
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(ApiResponse<object>.ErrorResponse("No account found with this NIC."));
-            }
+            // Do not reveal whether an email or account exists in the system.
+            // Always return a generic response: "If an account exists with the provided email, an OTP has been sent."
+            // But internally, search using NIC or email case-insensitively:
+            var searchNic = request.Nic?.Trim() ?? string.Empty;
+            var searchEmail = request.Email?.Trim() ?? string.Empty;
 
-            if (account.Email == null || !account.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase))
-            {
-                return BadRequest(ApiResponse<object>.ErrorResponse("The email does not match our records for this account."));
-            }
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => 
+                    a.Nic.ToLower() == searchNic.ToLower() || 
+                    a.Nic.ToLower() == searchEmail.ToLower() ||
+                    (a.Email != null && a.Email.ToLower() == searchNic.ToLower()) ||
+                    (a.Email != null && a.Email.ToLower() == searchEmail.ToLower())
+                );
 
-            // Generate a mock 6-digit verification code
-            string mockOtpCode = "123456";
-            
-            // Console Logging for local debugging so they can instantly test ResetPassword
-            Console.WriteLine($"[AUDIT / EMAIL MOCK] Password recovery requested for NIC: {request.Nic}. Temporary recovery OTP is: {mockOtpCode}");
+            if (account != null)
+            {
+                // Invalidate any existing unused OTPs for this account
+                var existingOtps = await _context.AccountPasswordResetOtps
+                    .Where(o => o.AccountNic == account.Nic && !o.IsUsed)
+                    .ToListAsync();
+                foreach (var oldOtp in existingOtps)
+                {
+                    oldOtp.IsUsed = true;
+                    oldOtp.UsedAt = DateTime.UtcNow;
+                }
+
+                // Generate a secure random 6-digit OTP
+                var random = new Random();
+                string otpCode = random.Next(100000, 999999).ToString();
+
+                // Hash the OTP using BCrypt
+                string otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
+
+                // Create new OTP record
+                var newOtp = new AccountPasswordResetOtp
+                {
+                    AccountNic = account.Nic,
+                    OtpHash = otpHash,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(10), // 10 minutes expiry
+                    AttemptCount = 0,
+                    MaxAttempts = 5,
+                    IsVerified = false,
+                    IsUsed = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedIp = HttpContext.Connection.RemoteIpAddress?.ToString()
+                };
+
+                _context.AccountPasswordResetOtps.Add(newOtp);
+                await _context.SaveChangesAsync();
+
+                // Log the OTP code to console as standard recovery mock
+                Console.WriteLine($"[AUDIT / EMAIL OTP] Forgot password OTP generated for account {account.Nic} (Email: {account.Email ?? "None"}). OTP is: {otpCode}");
+                
+                // Write to local debug file for easy viewing
+                try
+                {
+                    System.IO.File.WriteAllText("otp_debug.txt", $"Account NIC: {account.Nic}\nOTP Code: {otpCode}\nGenerated At: {DateTime.UtcNow} UTC\n");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[DEBUG] Failed to write otp_debug.txt: {ex.Message}");
+                }
+
+                // Send email OTP via Mailtrap if configured
+                var smtpHost = _configuration["SmtpSettings:Host"] ?? "sandbox.smtp.mailtrap.io";
+                var smtpPortStr = _configuration["SmtpSettings:Port"] ?? "2525";
+                var smtpUsername = _configuration["SmtpSettings:Username"];
+                var smtpPassword = _configuration["SmtpSettings:Password"];
+                
+                if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword) && smtpUsername != "your_mailtrap_username" && !string.IsNullOrEmpty(account.Email))
+                {
+                    try
+                    {
+                        using (var client = new System.Net.Mail.SmtpClient(smtpHost, int.Parse(smtpPortStr)))
+                        {
+                            client.Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword);
+                            client.EnableSsl = true;
+
+                            var mailMessage = new System.Net.Mail.MailMessage();
+                            mailMessage.From = new System.Net.Mail.MailAddress(_configuration["SmtpSettings:FromEmail"] ?? "no-reply@egn.gov.lk", _configuration["SmtpSettings:FromName"] ?? "EGN Service Management");
+                            mailMessage.To.Add(account.Email);
+                            mailMessage.Subject = "EGN Account Password Reset OTP";
+                            mailMessage.Body = $"Hello,\n\nYour temporary one-time password (OTP) reset code is: {otpCode}\n\nThis OTP is valid for 10 minutes. Please do not share this code with anyone.\n\nBest regards,\nEGN Team";
+                            mailMessage.IsBodyHtml = false;
+
+                            await client.SendMailAsync(mailMessage);
+                            Console.WriteLine($"[MAILTRAP] OTP email sent successfully to {account.Email}");
+                        }
+                    }
+                    catch (Exception mailEx)
+                    {
+                        Console.WriteLine($"[MAILTRAP ERROR] Failed to send email via SMTP: {mailEx.Message}");
+                    }
+                }
+            }
 
             return Ok(ApiResponse<object>.SuccessResponse(
-                data: new { testOtpCode = mockOtpCode }, 
-                message: "A password recovery code has been generated. For local testing, use code '123456'."
+                data: null, 
+                message: "If an account exists with the provided email, an OTP has been sent."
             ));
         }
 
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDTO request)
         {
-            if (request.Code != "123456")
+            // Find the account by NIC or Email
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.Nic == request.Nic || a.Email == request.Nic);
+
+            if (account == null)
             {
-                return BadRequest(ApiResponse<object>.ErrorResponse("Invalid or expired verification code."));
+                return BadRequest(ApiResponse<object>.ErrorResponse("Invalid request: Account not found."));
             }
 
-            Account account;
-            try
+            // Find the active, non-expired OTP record for this account
+            var activeOtp = await _context.AccountPasswordResetOtps
+                .Where(o => o.AccountNic == account.Nic && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow)
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (activeOtp == null)
             {
-                account = await _accountService.GetByIdAsync(request.Nic);
+                return BadRequest(ApiResponse<object>.ErrorResponse("No active reset code found. Please request a new OTP."));
             }
-            catch (KeyNotFoundException)
+
+            // Check max attempts
+            if (activeOtp.AttemptCount >= activeOtp.MaxAttempts)
             {
-                return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+                activeOtp.IsUsed = true;
+                activeOtp.UsedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return BadRequest(ApiResponse<object>.ErrorResponse("Maximum verification attempts exceeded. Please request a new OTP."));
             }
+
+            // Increment attempt count
+            activeOtp.AttemptCount++;
+            await _context.SaveChangesAsync();
+
+            // Verify the OTP code
+            bool isValid = BCrypt.Net.BCrypt.Verify(request.Code, activeOtp.OtpHash);
+            if (!isValid)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse($"Invalid verification code. {activeOtp.MaxAttempts - activeOtp.AttemptCount} attempts remaining."));
+            }
+
+            // OTP verified successfully!
+            activeOtp.IsVerified = true;
+            activeOtp.VerifiedAt = DateTime.UtcNow;
+            activeOtp.IsUsed = true;
+            activeOtp.UsedAt = DateTime.UtcNow;
 
             // Securely hash the new password using BCrypt
             account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            await _accountService.UpdateAsync(account.Nic, account);
+            _context.Accounts.Update(account);
+
+            await _context.SaveChangesAsync();
 
             return Ok(ApiResponse<object>.SuccessResponse("Your password has been successfully reset. You can now login with your new credentials."));
         }
@@ -340,6 +460,88 @@ namespace EGN_Service_Management.Controllers
             var existingAccount = await _context.Accounts.FindAsync(dto.Nic);
             if (existingAccount != null)
             {
+                if (existingAccount.IsDeleted == true)
+                {
+                    // Reactivate soft-deleted account!
+                    using var reactivateTransactionGn = await _context.Database.BeginTransactionAsync();
+                    try
+                    {
+                        existingAccount.IsDeleted = false;
+                        existingAccount.DeletedAt = null;
+                        existingAccount.Status = "Active";
+                        existingAccount.LastLogin = null; // Reset first login check
+                        existingAccount.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+                        if (!string.IsNullOrEmpty(dto.Email)) existingAccount.Email = dto.Email;
+                        if (!string.IsNullOrEmpty(dto.Phone)) existingAccount.Phone = dto.Phone;
+                        
+                        _context.Accounts.Update(existingAccount);
+
+                        // 1. Create or Update GN Officer Profile
+                        var existingGnOfficer = await _context.GnOfficers.FindAsync(dto.Nic);
+                        if (existingGnOfficer == null)
+                        {
+                            var gnOfficer = new GnOfficer
+                            {
+                                Nic = dto.Nic,
+                                FullName = dto.FullName,
+                                GnDivisionId = dto.GnDivisionId
+                            };
+                            _context.GnOfficers.Add(gnOfficer);
+                        }
+                        else
+                        {
+                            existingGnOfficer.FullName = dto.FullName;
+                            existingGnOfficer.GnDivisionId = dto.GnDivisionId;
+                            _context.GnOfficers.Update(existingGnOfficer);
+                        }
+
+                        // 2. Create Assignment Record
+                        if (dto.GnDivisionId != null)
+                        {
+                            var newAssignment = new GnDivisionAssignment
+                            {
+                                GnOfficerNic = dto.Nic,
+                                GnDivisionId = dto.GnDivisionId,
+                                StartDate = DateTime.UtcNow,
+                                Status = "Active"
+                            };
+                            _context.GnDivisionAssignments.Add(newAssignment);
+                        }
+
+                        // 3. Update or add EGN Service User profile link
+                        var existingEgnUser = await _context.EgnServiceUsers.FindAsync(dto.Nic);
+                        if (existingEgnUser == null)
+                        {
+                            var egnUser = new EgnServiceUser
+                            {
+                                Nic = dto.Nic,
+                                Username = dto.Email ?? dto.Nic,
+                                RegisteredAt = DateTime.UtcNow
+                            };
+                            _context.EgnServiceUsers.Add(egnUser);
+                        }
+
+                        await _context.SaveChangesAsync();
+
+                        // 5. Insert the user role mapping into [user_roles] table
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT 1 FROM [user_roles] WHERE [Nic] = {0} AND [RoleId] = {1})
+                            BEGIN
+                                INSERT INTO [user_roles] ([Nic], [RoleId]) VALUES ({0}, {1})
+                            END", 
+                            dto.Nic, gnRoleId
+                        );
+
+                        await reactivateTransactionGn.CommitAsync();
+                        return Ok(ApiResponse<object>.SuccessResponse(null, "GN Officer account reactivated successfully."));
+                    }
+                    catch (Exception ex)
+                    {
+                        await reactivateTransactionGn.RollbackAsync();
+                        return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during reactivation: {ex.Message}"));
+                    }
+                }
+
                 // Check if they already have GNOfficer role
                 bool hasGnRole = false;
                 using (var cmd = _context.Database.GetDbConnection().CreateCommand())
@@ -703,6 +905,68 @@ namespace EGN_Service_Management.Controllers
             var existingAccount = await _context.Accounts.FindAsync(dto.Nic);
             if (existingAccount != null)
             {
+                if (existingAccount.IsDeleted == true)
+                {
+                    // Reactivate soft-deleted account!
+                    using var reactivateTransactionCitizen = await _context.Database.BeginTransactionAsync();
+                    try
+                    {
+                        existingAccount.IsDeleted = false;
+                        existingAccount.DeletedAt = null;
+                        existingAccount.Status = "Active";
+                        existingAccount.LastLogin = null; // Reset first login check
+                        existingAccount.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+                        if (!string.IsNullOrEmpty(dto.Email)) existingAccount.Email = dto.Email;
+                        if (!string.IsNullOrEmpty(dto.Phone)) existingAccount.Phone = dto.Phone;
+                        
+                        _context.Accounts.Update(existingAccount);
+
+                        // Ensure user role mapping exists
+                        await _context.Database.ExecuteSqlRawAsync(@"
+                            IF NOT EXISTS (SELECT 1 FROM [user_roles] WHERE [Nic] = {0} AND [RoleId] = {1})
+                            BEGIN
+                                INSERT INTO [user_roles] ([Nic], [RoleId]) VALUES ({0}, {1})
+                            END", 
+                            dto.Nic, citizenRoleId
+                        );
+
+                        // Ensure EgnServiceUser exists
+                        var existingEgnUser = await _context.EgnServiceUsers.FindAsync(dto.Nic);
+                        if (existingEgnUser == null)
+                        {
+                            var egnUser = new EgnServiceUser
+                            {
+                                Nic = dto.Nic,
+                                Username = dto.Username,
+                                RegisteredAt = DateTime.UtcNow
+                            };
+                            _context.EgnServiceUsers.Add(egnUser);
+                        }
+                        else
+                        {
+                            existingEgnUser.Username = dto.Username;
+                            _context.EgnServiceUsers.Update(existingEgnUser);
+                        }
+
+                        // Assign division of the logged-in GN Officer if null
+                        if (string.IsNullOrEmpty(citizenMaster.GnDivisionId))
+                        {
+                            citizenMaster.GnDivisionId = loggedInGnOfficer.GnDivisionId;
+                            _context.CitizenMasters.Update(citizenMaster);
+                        }
+
+                        await _context.SaveChangesAsync();
+                        await reactivateTransactionCitizen.CommitAsync();
+
+                        return Ok(ApiResponse<object>.SuccessResponse(new { nic = dto.Nic }, "Citizen account reactivated successfully."));
+                    }
+                    catch (Exception ex)
+                    {
+                        await reactivateTransactionCitizen.RollbackAsync();
+                        return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during reactivation: {ex.Message}"));
+                    }
+                }
+
                 // Check if citizen role already exists
                 bool hasCitizenRole = false;
                 using (var cmd = _context.Database.GetDbConnection().CreateCommand())
@@ -938,5 +1202,389 @@ namespace EGN_Service_Management.Controllers
                 return StatusCode(500, ApiResponse<object>.ErrorResponse($"An error occurred during transaction: {ex.Message} (Inner: {innerMsg})"));
             }
         }
+
+        [HttpPost("profile/verify-password")]
+        [Authorize]
+        public async Task<IActionResult> VerifyPassword([FromBody] VerifyPasswordDTO request)
+        {
+            var nic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(nic)) return Unauthorized();
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+            if (account == null) return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+
+            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash);
+            if (!isPasswordCorrect)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Incorrect password. Please enter your correct current password."));
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Password verified successfully."));
+        }
+
+        [HttpPost("profile/delete")]
+        [Authorize]
+        public async Task<IActionResult> DeleteProfileAccount([FromBody] VerifyPasswordDTO request)
+        {
+            try
+            {
+                var nic = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                          ?? User.Identity?.Name;
+
+                if (string.IsNullOrEmpty(nic))
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResponse("Unauthorized: User identification claim not found."));
+                }
+
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+                if (account == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+                }
+
+                // Verify password
+                bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash);
+                if (!isPasswordCorrect)
+                {
+                    return BadRequest(ApiResponse<object>.ErrorResponse("Incorrect password. Please enter your correct current password to verify deletion."));
+                }
+
+                // Soft delete
+                account.IsDeleted = true;
+                account.DeletedAt = DateTime.UtcNow;
+                account.Status = "Inactive"; // Mark status inactive
+
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Account deleted successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse($"Failed to delete account: {ex.Message}"));
+            }
+        }
+
+        [HttpPost("profile/change-email/request")]
+        [Authorize]
+        public async Task<IActionResult> RequestEmailChange([FromBody] ChangeEmailRequestDTO request)
+        {
+            var nic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(nic)) return Unauthorized();
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+            if (account == null) return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+
+            // Validate that CurrentPassword matches account.PasswordHash
+            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, account.PasswordHash);
+            if (!isPasswordCorrect)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Incorrect password. Please enter your current password to authorize changes."));
+            }
+
+            var newEmail = request.NewEmail?.Trim() ?? string.Empty;
+            if (string.IsNullOrEmpty(newEmail))
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("New email is required."));
+            }
+
+            // Validate email format
+            if (!IsValidEmail(newEmail))
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Invalid email format. Please enter a valid email address."));
+            }
+
+            // Validate that the new email is different
+            if (string.Equals(account.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("New email must be different from your current email."));
+            }
+
+            // Validate that the new email is not already used by another account
+            var isEmailUsed = await _context.Accounts.AnyAsync(a => a.Nic != nic && a.Email != null && a.Email.ToLower() == newEmail.ToLower());
+            if (isEmailUsed)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("This email address is already registered with another account."));
+            }
+
+            // Invalidate any existing unused email change OTPs for this account
+            var existingOtps = await _context.AccountPasswordResetOtps
+                .Where(o => o.AccountNic == account.Nic && !o.IsUsed && o.CreatedIp.StartsWith("EMAIL_CHANGE:"))
+                .ToListAsync();
+            foreach (var oldOtp in existingOtps)
+            {
+                oldOtp.IsUsed = true;
+                oldOtp.UsedAt = DateTime.UtcNow;
+            }
+
+            // Generate a secure random 6-digit OTP code
+            var random = new Random();
+            string otpCode = random.Next(100000, 999999).ToString();
+            string otpHash = BCrypt.Net.BCrypt.HashPassword(otpCode);
+
+            // Save new OTP record
+            var newOtp = new AccountPasswordResetOtp
+            {
+                AccountNic = account.Nic,
+                OtpHash = otpHash,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(10), // 10 minutes expiry
+                AttemptCount = 0,
+                MaxAttempts = 5,
+                IsVerified = false,
+                IsUsed = false,
+                CreatedAt = DateTime.UtcNow,
+                CreatedIp = $"EMAIL_CHANGE:{newEmail}" // store email address in CreatedIp
+            };
+
+            _context.AccountPasswordResetOtps.Add(newOtp);
+            await _context.SaveChangesAsync();
+
+            // Log OTP to console/debug
+            Console.WriteLine($"[AUDIT / EMAIL CHANGE OTP] OTP code generated for email change of {account.Nic} to {newEmail}: {otpCode}");
+            try
+            {
+                System.IO.File.WriteAllText("otp_debug.txt", $"Account NIC: {account.Nic}\nNew Email: {newEmail}\nOTP Code: {otpCode}\nGenerated At: {DateTime.UtcNow} UTC\n");
+            }
+            catch {}
+
+            // Send SMTP via Mailtrap if configured
+            var smtpHost = _configuration["SmtpSettings:Host"] ?? "sandbox.smtp.mailtrap.io";
+            var smtpPortStr = _configuration["SmtpSettings:Port"] ?? "2525";
+            var smtpUsername = _configuration["SmtpSettings:Username"];
+            var smtpPassword = _configuration["SmtpSettings:Password"];
+            
+            if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword) && smtpUsername != "your_mailtrap_username")
+            {
+                try
+                {
+                    using (var client = new System.Net.Mail.SmtpClient(smtpHost, int.Parse(smtpPortStr)))
+                    {
+                        client.Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword);
+                        client.EnableSsl = true;
+
+                        var mailMessage = new System.Net.Mail.MailMessage();
+                        mailMessage.From = new System.Net.Mail.MailAddress(_configuration["SmtpSettings:FromEmail"] ?? "no-reply@egn.gov.lk", _configuration["SmtpSettings:FromName"] ?? "EGN Service Management");
+                        mailMessage.To.Add(newEmail);
+                        mailMessage.Subject = "EGN Email Change Verification OTP";
+                        mailMessage.Body = $"Hello,\n\nYour temporary one-time password (OTP) code to verify your new email address is: {otpCode}\n\nThis OTP is valid for 10 minutes. Please enter this code in your profile to complete the change.\n\nBest regards,\nEGN Team";
+                        mailMessage.IsBodyHtml = false;
+
+                        await client.SendMailAsync(mailMessage);
+                        Console.WriteLine($"[MAILTRAP] Email change verification OTP sent successfully to {newEmail}");
+                    }
+                }
+                catch (Exception mailEx)
+                {
+                    Console.WriteLine($"[MAILTRAP ERROR] Failed to send email change verification OTP via SMTP: {mailEx.Message}");
+                }
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "A verification OTP has been sent to your new email. Please verify to complete the change."));
+        }
+
+        [HttpPost("profile/change-email/verify")]
+        [Authorize]
+        public async Task<IActionResult> VerifyEmailChange([FromBody] VerifyEmailChangeDTO request)
+        {
+            var nic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(nic)) return Unauthorized();
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+            if (account == null) return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+
+            // Find active OTP record for email change
+            var activeOtp = await _context.AccountPasswordResetOtps
+                .Where(o => o.AccountNic == account.Nic && !o.IsUsed && o.ExpiresAt > DateTime.UtcNow && o.CreatedIp.StartsWith("EMAIL_CHANGE:"))
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (activeOtp == null)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("No active email verification code found or it has expired. Please request a new code."));
+            }
+
+            if (activeOtp.AttemptCount >= activeOtp.MaxAttempts)
+            {
+                activeOtp.IsUsed = true;
+                activeOtp.UsedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return BadRequest(ApiResponse<object>.ErrorResponse("Maximum verification attempts exceeded. Please request a new code."));
+            }
+
+            activeOtp.AttemptCount++;
+            await _context.SaveChangesAsync();
+
+            bool isValid = BCrypt.Net.BCrypt.Verify(request.Code, activeOtp.OtpHash);
+            if (!isValid)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse($"Invalid verification code. {activeOtp.MaxAttempts - activeOtp.AttemptCount} attempts remaining."));
+            }
+
+            // OTP is valid! Mark verified & used
+            activeOtp.IsVerified = true;
+            activeOtp.VerifiedAt = DateTime.UtcNow;
+            activeOtp.IsUsed = true;
+            activeOtp.UsedAt = DateTime.UtcNow;
+
+            string oldEmail = account.Email;
+            string newEmail = activeOtp.CreatedIp.Substring("EMAIL_CHANGE:".Length);
+
+            // Update Email
+            account.Email = newEmail;
+            _context.Accounts.Update(account);
+            await _context.SaveChangesAsync();
+
+            // Send confirmation email to OLD email address
+            if (!string.IsNullOrEmpty(oldEmail))
+            {
+                var smtpHost = _configuration["SmtpSettings:Host"] ?? "sandbox.smtp.mailtrap.io";
+                var smtpPortStr = _configuration["SmtpSettings:Port"] ?? "2525";
+                var smtpUsername = _configuration["SmtpSettings:Username"];
+                var smtpPassword = _configuration["SmtpSettings:Password"];
+                
+                if (!string.IsNullOrEmpty(smtpUsername) && !string.IsNullOrEmpty(smtpPassword) && smtpUsername != "your_mailtrap_username")
+                {
+                    try
+                    {
+                        using (var client = new System.Net.Mail.SmtpClient(smtpHost, int.Parse(smtpPortStr)))
+                        {
+                            client.Credentials = new System.Net.NetworkCredential(smtpUsername, smtpPassword);
+                            client.EnableSsl = true;
+
+                            var mailMessage = new System.Net.Mail.MailMessage();
+                            mailMessage.From = new System.Net.Mail.MailAddress(_configuration["SmtpSettings:FromEmail"] ?? "no-reply@egn.gov.lk", _configuration["SmtpSettings:FromName"] ?? "EGN Service Management");
+                            mailMessage.To.Add(oldEmail);
+                            mailMessage.Subject = "Security Notification: EGN Account Email Address Changed";
+                            mailMessage.Body = $"Hello,\n\nThis is a security notification to confirm that the email address for your EGN Account ({account.Nic}) has been successfully updated to: {newEmail}.\n\nIf you did not request this change, please contact administration immediately.\n\nBest regards,\nEGN Team";
+                            mailMessage.IsBodyHtml = false;
+
+                            await client.SendMailAsync(mailMessage);
+                            Console.WriteLine($"[MAILTRAP] Email change notification sent to old email {oldEmail}");
+                        }
+                    }
+                    catch (Exception mailEx)
+                    {
+                        Console.WriteLine($"[MAILTRAP ERROR] Failed to send email change confirmation notification: {mailEx.Message}");
+                    }
+                }
+            }
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Your email address has been successfully verified and updated."));
+        }
+
+        [HttpPost("profile/change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+        {
+            var nic = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(nic)) return Unauthorized();
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+            if (account == null) return NotFound(ApiResponse<object>.ErrorResponse("Account not found."));
+
+            // Verify current password
+            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, account.PasswordHash);
+            if (!isPasswordCorrect)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("Incorrect current password. Please try again."));
+            }
+
+            // Ensure password policy
+            if (string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length < 6)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("New password must be at least 6 characters long."));
+            }
+
+            // Prevent user from reusing current password
+            bool isSamePassword = BCrypt.Net.BCrypt.Verify(request.NewPassword, account.PasswordHash);
+            if (isSamePassword)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse("New password cannot be the same as your current password. Please select a different password."));
+            }
+
+            // Update password hash
+            account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            _context.Accounts.Update(account);
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<object>.SuccessResponse(null, "Your password has been successfully updated."));
+        }
+
+        [HttpPut("profile/update")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfileDetails([FromBody] UpdateProfileDetailsDTO request)
+        {
+            try
+            {
+                var nic = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier)
+                          ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                          ?? User.Identity?.Name;
+
+                if (string.IsNullOrEmpty(nic))
+                {
+                    return Unauthorized(ApiResponse<object>.ErrorResponse("Unauthorized: User identification claim not found in authentication token."));
+                }
+
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Nic == nic);
+                if (account == null)
+                {
+                    return NotFound(ApiResponse<object>.ErrorResponse($"Account associated with NIC '{nic}' was not found."));
+                }
+
+                account.Phone = request.Phone;
+                account.Profile = request.Profile;
+
+                // Call SaveChangesAsync; EF Core tracks changes and updates only modified fields
+                await _context.SaveChangesAsync();
+
+                return Ok(ApiResponse<object>.SuccessResponse(new { phone = account.Phone, profile = account.Profile }, "Profile updated successfully."));
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ApiResponse<object>.ErrorResponse($"Database update failed: {ex.Message}. Details: {ex.InnerException?.Message}"));
+            }
+        }
+
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public class ChangeEmailRequestDTO
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewEmail { get; set; } = string.Empty;
+    }
+
+    public class VerifyEmailChangeDTO
+    {
+        public string Code { get; set; } = string.Empty;
+    }
+
+    public class UpdateProfileDetailsDTO
+    {
+        public string? Phone { get; set; }
+        public string? Profile { get; set; }
+    }
+
+    public class ChangePasswordDTO
+    {
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class VerifyPasswordDTO
+    {
+        public string Password { get; set; } = string.Empty;
     }
 }
